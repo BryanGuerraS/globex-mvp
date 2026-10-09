@@ -1,0 +1,20 @@
+# Entorno virtual
+venv/
+.venv/
+env/
+
+# Variables de entorno y contraseñas (CRÍTICO: NO SUBIR)
+.env
+
+# Base de datos local con números telefónicos reales
+globex.db
+
+# PDFs generados con datos de clientes
+cotizaciones_pdf/
+*.pdf
+
+# Archivos temporales de Python
+__pycache__/
+*.py[cod]
+*$py.class
+.streamlit/
