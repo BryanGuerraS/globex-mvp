@@ -28,25 +28,80 @@ def enviar_archivo_a_whatsapp(
     nombre_archivo: str,
     caption: str = "📄 Adjunto tu Proforma Oficial de Globex Courier",
 ) -> bool:
-    """Envía un archivo PDF real al WhatsApp del cliente usando sendFileByUpload de Green API."""
-    GREEN_URL = os.getenv("GREEN_API_URL")
-    ID_INST = os.getenv("GREEN_ID_INSTANCE")
-    TOKEN = os.getenv("GREEN_API_TOKEN")
-    url = f"{GREEN_URL}/waInstance{ID_INST}/sendFileByUpload/{TOKEN}"
+    """Sube y envía un archivo PDF real al WhatsApp del cliente usando la Graph API oficial de Meta."""
+    META_PHONE_ID = os.getenv("META_PHONE_NUMBER_ID")
+    META_TOKEN = os.getenv("META_ACCESS_TOKEN")
 
-    files = {"file": (nombre_archivo, file_bytes, "application/pdf")}
-    data = {"chatId": chat_id, "fileName": nombre_archivo, "caption": caption}
+    if not META_PHONE_ID or not META_TOKEN:
+        st.error(
+            "Faltan credenciales de Meta (META_PHONE_NUMBER_ID o META_ACCESS_TOKEN) en el archivo .env"
+        )
+        return False
+
+    clean_phone = chat_id.replace("@c.us", "").strip()
 
     try:
-        with httpx.Client(timeout=25.0) as client:
-            res = client.post(url, data=data, files=files)
-            if res.status_code == 200:
+        with httpx.Client(timeout=30.0) as client:
+            # 1. SUBIR EL ARCHIVO A META (/media)
+            upload_url = (
+                f"https://graph.facebook.com/v21.0/{META_PHONE_ID}/media"
+            )
+            headers_upload = {"Authorization": f"Bearer {META_TOKEN}"}
+            files = {"file": (nombre_archivo, file_bytes, "application/pdf")}
+            data_upload = {
+                "messaging_product": "whatsapp",
+                "type": "application/pdf",
+            }
+
+            upload_res = client.post(
+                upload_url,
+                headers=headers_upload,
+                data=data_upload,
+                files=files,
+            )
+
+            if upload_res.status_code != 200:
+                st.error(
+                    f"Error de Meta al subir archivo ({upload_res.status_code}): {upload_res.text}"
+                )
+                return False
+
+            media_id = upload_res.json().get("id")
+
+            # 2. ENVIAR EL MENSAJE CON EL ARCHIVO ADJUNTO AL CLIENTE
+            messages_url = (
+                f"https://graph.facebook.com/v21.0/{META_PHONE_ID}/messages"
+            )
+            headers_message = {
+                "Authorization": f"Bearer {META_TOKEN}",
+                "Content-Type": "application/json",
+            }
+            payload_message = {
+                "messaging_product": "whatsapp",
+                "recipient_type": "individual",
+                "to": clean_phone,
+                "type": "document",
+                "document": {
+                    "id": media_id,
+                    "caption": caption,
+                    "filename": nombre_archivo,
+                },
+            }
+
+            send_res = client.post(
+                messages_url, headers=headers_message, json=payload_message
+            )
+
+            if send_res.status_code == 200:
                 return True
             else:
-                st.error(f"Error Green API ({res.status_code}): {res.text}")
+                st.error(
+                    f"Error de Meta al entregar documento ({send_res.status_code}): {send_res.text}"
+                )
                 return False
+
     except Exception as e:
-        st.error(f"Error de conexión al enviar archivo: {e}")
+        st.error(f"Error de conexión con Meta Cloud API: {e}")
         return False
     
 # ----------------- 1. LOGIN DE ASESORES -----------------
@@ -312,7 +367,7 @@ if (
                 st.success("Cambiado")
                 st.rerun()
 
-        # Acciones Comerciales y Recuperador de Leads
+        # Acciones Comerciales y Recuperador de Leads (Versión Meta Cloud API)
         with c_act3:
             st.write("Recuperador de Leads:")
             if st.button("⚡ Enviar Recordatorio"):
@@ -320,23 +375,43 @@ if (
                 monto_txt = f"de ${cot:,.2f} USD" if cot else ""
                 nudge_msg = (
                     f"¡Hola {info_chat['nombre']}! 👋 Te escribo de Globex para recordarte que tu cotización {monto_txt} "
-                    f"sigue guardada. ¿Deseas que te asigne tu casillero en Miami para proceder con tu compra?"
+                    f"sigue guardada en nuestro sistema.\n\n"
+                    f"¿Deseas que te asigne tu casillero oficial en Miami para proceder con tu compra?"
                 )
-                GREEN_URL = os.getenv("GREEN_API_URL")
-                ID_INST = os.getenv("GREEN_ID_INSTANCE")
-                TOKEN = os.getenv("GREEN_API_TOKEN")
-                url = f"{GREEN_URL}/waInstance{ID_INST}/sendMessage/{TOKEN}"
-                res = httpx.post(
-                    url,
-                    json={"chatId": sel_id, "message": nudge_msg},
-                    timeout=10.0,
-                )
-                if res.status_code == 200:
-                    registrar_mensaje_saliente(
-                        sel_id, usuario["nombre"], nudge_msg
+
+                META_PHONE_ID = os.getenv("META_PHONE_NUMBER_ID")
+                META_TOKEN = os.getenv("META_ACCESS_TOKEN")
+                clean_phone = sel_id.replace("@c.us", "").strip()
+
+                url = f"https://graph.facebook.com/v21.0/{META_PHONE_ID}/messages"
+                headers = {
+                    "Authorization": f"Bearer {META_TOKEN}",
+                    "Content-Type": "application/json",
+                }
+                payload = {
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": clean_phone,
+                    "type": "text",
+                    "text": {"preview_url": False, "body": nudge_msg},
+                }
+
+                try:
+                    res = httpx.post(
+                        url, json=payload, headers=headers, timeout=10.0
                     )
-                    st.success("Recordatorio enviado")
-                    st.rerun()
+                    if res.status_code == 200:
+                        registrar_mensaje_saliente(
+                            sel_id, usuario["nombre"], nudge_msg
+                        )
+                        st.success("¡Recordatorio enviado vía Meta Cloud API!")
+                        st.rerun()
+                    else:
+                        st.error(
+                            f"Error de Meta ({res.status_code}): {res.text}"
+                        )
+                except Exception as e:
+                    st.error(f"Error de conexión con Meta: {e}")
 
         # 📄 BOTÓN DE DESCARGA DE LA PROFORMA OFICIAL EN PDF (SI EXISTE)
         if info_chat.get("cotizacion_total"):
@@ -369,19 +444,28 @@ if (
             "Escribe tu respuesta como Asesor para enviar a WhatsApp:",
             key=f"input_{sel_id}",
         )
+        # EN dashboard.py (ENVÍO VÍA META CLOUD API):
         if st.button("📤 Enviar Mensaje a WhatsApp"):
             if respuesta_asesor.strip():
-                GREEN_URL = os.getenv("GREEN_API_URL")
-                ID_INST = os.getenv("GREEN_ID_INSTANCE")
-                TOKEN = os.getenv("GREEN_API_TOKEN")
-                url = f"{GREEN_URL}/waInstance{ID_INST}/sendMessage/{TOKEN}"
-
+                META_PHONE_ID = os.getenv("META_PHONE_NUMBER_ID")
+                META_TOKEN = os.getenv("META_ACCESS_TOKEN")
+                url = f"https://graph.facebook.com/v21.0/{META_PHONE_ID}/messages"
+                headers = {
+                    "Authorization": f"Bearer {META_TOKEN}",
+                    "Content-Type": "application/json",
+                }
                 mensaje_limpio = respuesta_asesor.strip().strip('"')
+                payload = {
+                    "messaging_product": "whatsapp",
+                    "recipient_type": "individual",
+                    "to": sel_id.replace("@c.us", ""),
+                    "type": "text",
+                    "text": {"preview_url": False, "body": mensaje_limpio},
+                }
+
                 try:
                     res = httpx.post(
-                        url,
-                        json={"chatId": sel_id, "message": mensaje_limpio},
-                        timeout=10.0,
+                        url, json=payload, headers=headers, timeout=10.0
                     )
                     if res.status_code == 200:
                         registrar_mensaje_saliente(
@@ -390,12 +474,12 @@ if (
                         actualizar_estado_chat(
                             sel_id, "Listo para Asesor", bot_activo=0
                         )
-                        st.success("Mensaje enviado con éxito")
+                        st.success("Mensaje entregado vía Meta Cloud API")
                         st.rerun()
                     else:
-                        st.error(f"Error Green API: {res.text}")
+                        st.error(f"Error Meta API ({res.status_code}): {res.text}")
                 except Exception as e:
-                    st.error(f"Error de conexión: {e}")
+                    st.error(f"Error de conexión con Meta: {e}")
 
         st.markdown("---")
 

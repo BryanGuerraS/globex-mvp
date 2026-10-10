@@ -1,11 +1,10 @@
-from fastapi import BackgroundTasks, FastAPI, Request
 import asyncio
 from datetime import datetime
 import json
 import os
 from typing import Dict, List
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 import httpx
 from openai import OpenAI
 
@@ -31,7 +30,7 @@ from product_catalog import buscar_peso_producto
 load_dotenv()
 init_db()
 
-app = FastAPI(title="Globex Atiende - Backend Oficial Green API")
+app = FastAPI(title="Globex Atiende - Servidor Oficial Meta Cloud API")
 
 # 1. Configuración de Groq (LLM 120B)
 client = OpenAI(
@@ -39,10 +38,11 @@ client = OpenAI(
 )
 MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
-# 2. Configuración de Green API
-GREEN_API_URL = os.getenv("GREEN_API_URL", "https://7107.api.greenapi.com")
-ID_INSTANCE = os.getenv("GREEN_ID_INSTANCE")
-API_TOKEN = os.getenv("GREEN_API_TOKEN")
+# 2. Configuración de Meta Cloud API
+META_PHONE_NUMBER_ID = os.getenv("META_PHONE_NUMBER_ID")
+META_WABA_ID = os.getenv("META_WABA_ID", "1827849438216727")
+META_ACCESS_TOKEN = os.getenv("META_ACCESS_TOKEN")
+META_VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN", "globex_token_secreto_2026")
 
 SYSTEM_PROMPT = """Eres el asistente virtual oficial de Globex Courier (importaciones USA a Perú).
 
@@ -161,23 +161,19 @@ TOOLS = [
     },
 ]
 
+# Control de sesiones y debouncing
 sessions: Dict[str, Dict] = {}
 message_buffer: Dict[str, List[str]] = {}
 buffer_tasks: Dict[str, asyncio.Task] = {}
 
 
 def get_or_create_history(chat_id: str) -> List[Dict[str, str]]:
-    """Mantiene la memoria completa de toda la conversación del cliente."""
     now = datetime.now()
     if chat_id in sessions:
         ultima_vez = sessions[chat_id].get("last_active", now)
         horas_inactivo = (now - ultima_vez).total_seconds() / 3600
-
-        # Si pasaron más de 12 horas sin hablar, reinicia limpio
         if horas_inactivo > 12:
-            print(
-                f"🔄 [TTL Expirado] Reiniciando contexto limpio para [{chat_id}] tras {horas_inactivo:.1f}h"
-            )
+            print(f"🔄 [TTL Expirado] Reiniciando contexto para [{chat_id}]")
             sessions[chat_id] = {
                 "history": [{"role": "system", "content": SYSTEM_PROMPT}],
                 "last_active": now,
@@ -189,27 +185,38 @@ def get_or_create_history(chat_id: str) -> List[Dict[str, str]]:
             "history": [{"role": "system", "content": SYSTEM_PROMPT}],
             "last_active": now,
         }
-
-    # Devuelve el historial íntegro sin ningún recorte
     return sessions[chat_id]["history"]
 
 
-async def send_whatsapp_message(chat_id: str, message: str):
-    """Envía un mensaje de texto oficial usando Green API."""
-    url = f"{GREEN_API_URL}/waInstance{ID_INSTANCE}/sendMessage/{API_TOKEN}"
-    payload = {"chatId": chat_id, "message": message}
+# 📤 FUNCIÓN OFICIAL PARA ENVIAR MENSAJES VÍA META CLOUD API
+async def send_meta_whatsapp_message(to_phone: str, message: str):
+    """Envía mensajes usando la Graph API oficial de Meta."""
+    url = f"https://graph.facebook.com/v21.0/{META_PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {META_ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": to_phone,
+        "type": "text",
+        "text": {"preview_url": False, "body": message},
+    }
 
     async with httpx.AsyncClient() as http_client:
         try:
-            res = await http_client.post(url, json=payload, timeout=10.0)
+            res = await http_client.post(
+                url, json=payload, headers=headers, timeout=10.0
+            )
             if res.status_code == 200:
-                print(f"✅ [Green API] Mensaje entregado a [{chat_id}]")
+                print(f"✅ [Meta Cloud API] Mensaje entregado a [{to_phone}]")
             else:
                 print(
-                    f"⚠️ Error Green API ({res.status_code}): {res.text}"
+                    f"⚠️ Error Meta API ({res.status_code}): {res.text}"
                 )
         except Exception as e:
-            print(f"❌ Error de conexión al enviar con Green API: {e}")
+            print(f"❌ Error de conexión al enviar con Meta: {e}")
 
 
 async def procesar_mensaje_consolidado(
@@ -217,7 +224,7 @@ async def procesar_mensaje_consolidado(
 ):
     print(f"\n🚀 Procesando consolidado de [{chat_id}]: '{texto_consolidado}'")
 
-    # 🛑 1. ESCAPE HATCH HUMANO INMEDIATO (T13 / F42 del Manual)
+    # 🛑 1. ESCAPE HATCH HUMANO INMEDIATO (T13 / F42)
     palabras_escape = [
         "humano",
         "asesor",
@@ -239,7 +246,7 @@ async def procesar_mensaje_consolidado(
             "directamente por este chat. Se comunicará contigo a la brevedad."
         )
         registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
-        await send_whatsapp_message(chat_id, bot_reply)
+        await send_meta_whatsapp_message(chat_id, bot_reply)
         return
 
     # 🛡️ 2. GUARDRAIL DE MERCANCÍA RESTRINGIDA / SUNAT (CE11, CE12, F28, F31)
@@ -267,17 +274,17 @@ async def procesar_mensaje_consolidado(
             )
 
         registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
-        await send_whatsapp_message(chat_id, bot_reply)
+        await send_meta_whatsapp_message(chat_id, bot_reply)
         return
 
-    # 💬 3. CONVERSACIÓN Y TOOL CALLING CON GROQ
+    # 💬 3. CONVERSACIÓN Y LLAMADA A HERRAMIENTAS (TOOL CALLING)
     history = get_or_create_history(chat_id)
     history.append({"role": "user", "content": texto_consolidado})
 
     resultado_calculo = None
 
     try:
-        # Llamada asíncrona a Groq para no congelar el servidor
+        # Llamada en hilo separado para no bloquear el servidor
         ai_response = await asyncio.to_thread(
             client.chat.completions.create,
             model=MODEL,
@@ -346,7 +353,7 @@ async def procesar_mensaje_consolidado(
                 else:
                     bot_reply = msg_2.content
 
-            # CÁLCULO DIRECTO DETERMINISTA
+            # CÁLCULO DETERMINISTA COURIER
             elif nombre_funcion == "calcular_cotizacion":
                 val = float(args.get("valor_producto_usd", 0))
                 peso = float(args.get("peso_kg", 0))
@@ -358,7 +365,7 @@ async def procesar_mensaje_consolidado(
                     resultado_calculo
                 )
 
-            # CONSULTA DE FAQs DE GLOBEX
+            # BASE DE CONOCIMIENTO (FAQs)
             elif nombre_funcion == "consultar_faq_comercial":
                 info_faq = buscar_faq_comercial(texto_consolidado)
                 bot_reply = (
@@ -420,13 +427,13 @@ async def procesar_mensaje_consolidado(
             print(f"Error generando PDF: {e}")
 
     registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
-    await send_whatsapp_message(chat_id, bot_reply)
+    await send_meta_whatsapp_message(chat_id, bot_reply)
 
 
 async def debounce_mensajes(chat_id: str, sender_name: str):
     """Ventana deslizante de 5 segundos."""
     try:
-        await asyncio.sleep(2.5)
+        await asyncio.sleep(5.0)
         if chat_id in message_buffer and message_buffer[chat_id]:
             mensajes_juntos = " ".join(message_buffer[chat_id])
             message_buffer[chat_id] = []
@@ -437,35 +444,71 @@ async def debounce_mensajes(chat_id: str, sender_name: str):
         pass
 
 
-# 🌐 ENDPOINT DE RECEPCIÓN GREEN API
-@app.post("/green-api-webhook")
-async def green_api_webhook(
-    request: Request, background_tasks: BackgroundTasks
-):
-    """Responde 200 OK a Green API en 1 milisegundo para que NUNCA encole mensajes."""
+# 🌐 1. ENDPOINT GET: VERIFICACIÓN DEL WEBHOOK DE META (HANDSHAKE)
+@app.get("/meta-webhook")
+async def verify_meta_webhook(request: Request):
+    params = request.query_params
+    mode = params.get("hub.mode")
+    token = params.get("hub.verify_token")
+    challenge = params.get("hub.challenge")
+
+    if mode == "subscribe" and token == META_VERIFY_TOKEN:
+        print("✅ [Meta Webhook] Handshake verificado exitosamente.")
+        return Response(content=challenge, media_type="text/plain")
+    return Response(
+        content="Token de verificación inválido", status_code=403
+    )
+
+
+# 🌐 2. ENDPOINT POST: RECEPCIÓN OFICIAL DE MENSAJES DE META
+@app.post("/meta-webhook")
+async def meta_webhook(request: Request):
     data = await request.json()
 
-    if data.get("typeWebhook") == "incomingMessageReceived":
-        id_message = data.get("idMessage")
+    # 🔍 TRACE DE AUDITORÍA: Imprime en consola CUALQUIER evento que toque tu servidor
+    print(
+        "\n📥 [META EVENTO ENTRANTE CRUDO]:", json.dumps(data, indent=2)
+    )  # <--- Esto te mostrará si tu celular realmente tocó el servidor
 
+    try:
+        entry = data.get("entry", [])[0]
+        changes = entry.get("changes", [])[0]
+        value = changes.get("value", {})
+
+        # Validar si el evento trae mensajes de WhatsApp
+        messages = value.get("messages", [])
+        if not messages:
+            # Podría ser un cambio de estado (sent, delivered, read) u otro evento
+            return {"status": "event_without_messages"}
+
+        msg = messages[0]
+        chat_id = msg.get("from")  # Teléfono del cliente
+        msg_type = msg.get("type")
+        id_message = msg.get("id")
+
+        # Nombre del cliente provisto por Meta
+        contacts = value.get("contacts", [])
+        sender_name = (
+            contacts[0].get("profile", {}).get("name", "Cliente")
+            if contacts
+            else "Cliente"
+        )
+
+        # 🛡️ PASO HP01: DEDUPLICACIÓN
         if id_message and es_mensaje_duplicado(id_message):
+            print(f"⚠️ [Deduplicación HP01] Mensaje Meta [{id_message}] ya procesado.")
             return {"status": "duplicate_ignored"}
 
-        message_data = data.get("messageData", {})
-        type_message = message_data.get("typeMessage")
-        sender_data = data.get("senderData", {})
-        chat_id = sender_data.get("chatId")
-        sender_name = sender_data.get("senderName", "Cliente")
-
-        # 🖼️🎙️ Archivos no textuales
-        if type_message in ["audioMessage", "imageMessage", "documentMessage"]:
+        # 🖼️🎙️ TRATAMIENTO DE NO-TEXTUALES
+        if msg_type in ["image", "audio", "document", "video"]:
             tipo_adjunto = (
                 "audio 🎙️"
-                if type_message == "audioMessage"
+                if msg_type == "audio"
                 else "imagen 📷"
-                if type_message == "imageMessage"
+                if msg_type == "image"
                 else "documento 📄"
             )
+            print(f"\n📎 Archivo no textual ({msg_type}) recibido de [{chat_id}]")
             registrar_mensaje_entrante(
                 chat_id,
                 sender_name,
@@ -481,22 +524,26 @@ async def green_api_webhook(
                 f"¿Podrías escribir brevemente tu consulta o describir el producto para ayudarte con tu cotización?"
             )
             registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
-            background_tasks.add_task(send_whatsapp_message, chat_id, bot_reply)
+            await send_meta_whatsapp_message(chat_id, bot_reply)
             return {"status": "media_handled"}
 
-        # 💬 Mensajes de texto
-        if type_message == "textMessage":
-            user_text = message_data.get("textMessageData", {}).get(
-                "textMessage", ""
-            )
+        # 💬 MENSAJES DE TEXTO
+        if msg_type == "text":
+            user_text = msg.get("text", {}).get("body", "").strip()
+            print(f"\n📩 [Meta] Mensaje de {sender_name} [{chat_id}]: {user_text}")
 
             registrar_mensaje_entrante(
                 chat_id, sender_name, user_text, id_mensaje=id_message
             )
 
+            # Silencio si el asesor humano tiene el control
             if not esta_bot_activo(chat_id):
+                print(
+                    f"🤫 [Bot Silenciado] El chat [{chat_id}] está bajo atención humana."
+                )
                 return {"status": "bot_silenced_for_human"}
 
+            # Debouncing de 5 segundos
             if chat_id not in message_buffer:
                 message_buffer[chat_id] = []
             message_buffer[chat_id].append(user_text)
@@ -504,12 +551,13 @@ async def green_api_webhook(
             if chat_id in buffer_tasks and not buffer_tasks[chat_id].done():
                 buffer_tasks[chat_id].cancel()
 
-            # Debouncing en background task
             buffer_tasks[chat_id] = asyncio.create_task(
                 debounce_mensajes(chat_id, sender_name)
             )
 
-    # Devolvemos 200 OK instantáneo para que Green API no encole
+    except Exception as e:
+        print(f"Error procesando webhook de Meta: {e}")
+
     return {"status": "ok"}
 
 
@@ -535,7 +583,7 @@ async def tarea_fondo_recordatorios():
                         print(
                             f"⚡ [Auto-Nudge] Recordatorio enviado a [{chat_id}]"
                         )
-                        await send_whatsapp_message(chat_id, msg_nudge)
+                        await send_meta_whatsapp_message(chat_id, msg_nudge)
                         registrar_mensaje_saliente(
                             chat_id, "bot (auto-recordatorio)", msg_nudge
                         )
@@ -544,8 +592,29 @@ async def tarea_fondo_recordatorios():
             print(f"Error en worker de recordatorios: {e}")
 
 
+# 🔗 FUNCIÓN DE AUTO-SUSCRIPCIÓN DE LA WABA A LA APP (Solución del Shadow Delivery)
+async def auto_suscribir_waba_a_la_app():
+    """Suscribe automáticamente la WABA de Meta a los eventos de la App para que lleguen los mensajes reales."""
+    url = f"https://graph.facebook.com/v21.0/{META_WABA_ID}/subscribed_apps"
+    headers = {"Authorization": f"Bearer {META_ACCESS_TOKEN}"}
+    async with httpx.AsyncClient() as client_http:
+        try:
+            res = await client_http.post(url, headers=headers, timeout=10.0)
+            if res.status_code == 200 and res.json().get("success"):
+                print(
+                    "🎉 [Meta WABA] Cuenta de WhatsApp suscrita a la App exitosamente (Entrega desbloqueada)."
+                )
+            else:
+                print(f"ℹ️ [Meta WABA Sync]: {res.text}")
+        except Exception as e:
+            print(f"Advertencia al suscribir WABA: {e}")
+
+
 @app.on_event("startup")
 async def startup_event():
+    # 1. Suscribe automáticamente la WABA a la App para recibir mensajes reales
+    asyncio.create_task(auto_suscribir_waba_a_la_app())
+    # 2. Inicia el worker de recordatorios
     asyncio.create_task(tarea_fondo_recordatorios())
 
 
@@ -553,7 +622,7 @@ async def startup_event():
 def health_check():
     return {
         "status": "online",
-        "service": "Globex Atiende Green API",
+        "service": "Globex Atiende Meta Cloud API Oficial",
         "model": MODEL,
         "database": "SQLite (globex.db)",
     }
