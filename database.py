@@ -16,6 +16,7 @@ def init_db():
     with get_connection() as conn:
         cursor = conn.cursor()
 
+        # 1. Tabla de Chats / Leads
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS chats (
@@ -36,10 +37,12 @@ def init_db():
         """
         )
 
+        # 2. Tabla de Mensajes (con id_mensaje único para deduplicación HP01)
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_mensaje TEXT UNIQUE,
                 chat_id TEXT,
                 emisor TEXT,
                 texto TEXT,
@@ -49,7 +52,7 @@ def init_db():
         """
         )
 
-        # Migración segura: agregar columnas si la base de datos ya existía
+        # 3. Migraciones seguras para chats (por si la BD ya existía)
         cursor.execute("PRAGMA table_info(chats)")
         columnas = [row["name"] for row in cursor.fetchall()]
 
@@ -69,6 +72,12 @@ def init_db():
             cursor.execute(
                 "ALTER TABLE chats ADD COLUMN recordatorio_enviado INTEGER DEFAULT 0"
             )
+
+        # 4. Migración segura para messages
+        cursor.execute("PRAGMA table_info(messages)")
+        cols_msg = [row["name"] for row in cursor.fetchall()]
+        if "id_mensaje" not in cols_msg:
+            cursor.execute("ALTER TABLE messages ADD COLUMN id_mensaje TEXT")
 
         conn.commit()
 
@@ -333,3 +342,52 @@ def marcar_recordatorio_enviado(chat_id: str):
             (chat_id,),
         )
         conn.commit()
+
+
+def es_mensaje_duplicado(id_mensaje: str) -> bool:
+    """Verifica si este mensaje exacto de WhatsApp ya fue procesado antes (HP01 / T28)."""
+    if not id_mensaje:
+        return False
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT 1 FROM messages WHERE id_mensaje = ?", (id_mensaje,)
+        )
+        return cursor.fetchone() is not None
+
+
+def registrar_mensaje_entrante(
+    chat_id: str, nombre: str, texto: str, id_mensaje: str = None
+):
+    init_db()
+
+    # Si ya lo registramos, lo ignoramos para evitar duplicados en la pantalla
+    if id_mensaje and es_mensaje_duplicado(id_mensaje):
+        return False
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        now = datetime.now()
+
+        cursor.execute(
+            """
+            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at, asesor_asignado)
+            VALUES (?, ?, ?, ?, 'Carlos (Asesor 1)')
+            ON CONFLICT(chat_id) DO UPDATE SET 
+                nombre = excluded.nombre,
+                updated_at = excluded.updated_at,
+                ultimo_mensaje_cliente_at = excluded.ultimo_mensaje_cliente_at
+        """,
+            (chat_id, nombre, now, now),
+        )
+
+        cursor.execute(
+            """
+            INSERT INTO messages (id_mensaje, chat_id, emisor, texto, timestamp)
+            VALUES (?, ?, 'cliente', ?, ?)
+        """,
+            (id_mensaje, chat_id, texto, now),
+        )
+
+        conn.commit()
+    return True
