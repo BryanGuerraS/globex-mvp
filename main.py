@@ -1,3 +1,6 @@
+import glob
+from fastapi.responses import FileResponse
+from pydantic import BaseModel
 import asyncio
 from datetime import datetime
 import json
@@ -8,16 +11,19 @@ from fastapi import FastAPI, Request, Response
 import httpx
 from openai import OpenAI
 
-# Módulos propios del proyecto Globex
+# ✅ AHORA (Con todos los métodos necesarios):
 from database import (
     actualizar_clasificacion_chat,
     actualizar_estado_chat,
     calcular_tiempo_relativo,
     es_mensaje_duplicado,
     esta_bot_activo,
+    get_connection,  # <-- AGREGAR
     init_db,
     marcar_recordatorio_enviado,
     obtener_chats_para_recordatorio,
+    obtener_mensajes_chat,  # <-- AGREGAR
+    obtener_todos_los_chats,  # <-- AGREGAR
     registrar_mensaje_entrante,
     registrar_mensaje_saliente,
 )
@@ -628,3 +634,97 @@ def health_check():
         "model": MODEL,
         "database": "SQLite (globex.db)",
     }
+
+
+class MensajeAsesorPayload(BaseModel):
+    chat_id: str
+    nombre_asesor: str
+    texto: str
+
+
+class ActualizarEstadoPayload(BaseModel):
+    chat_id: str
+    nuevo_estado: str
+    nuevo_asesor: str = None
+    bot_activo: int = None
+
+
+@app.get("/api/chats")
+def api_obtener_chats():
+    """Devuelve la lista completa de chats y sus estados para el Dashboard."""
+    return obtener_todos_los_chats()
+
+
+@app.get("/api/messages/{chat_id}")
+def api_obtener_mensajes(chat_id: str):
+    """Devuelve el historial de mensajes de un chat específico."""
+    return obtener_mensajes_chat(chat_id)
+
+
+@app.post("/api/send-advisor-message")
+async def api_enviar_mensaje_asesor(payload: MensajeAsesorPayload):
+    """Permite al asesor humano enviar un mensaje a WhatsApp desde el Dashboard."""
+    clean_phone = payload.chat_id.replace("@c.us", "").strip()
+    await send_meta_whatsapp_message(clean_phone, payload.texto)
+    registrar_mensaje_saliente(
+        payload.chat_id, payload.nombre_asesor, payload.texto
+    )
+    actualizar_estado_chat(
+        payload.chat_id, "Listo para Asesor", bot_activo=0
+    )
+    return {"status": "sent"}
+
+
+@app.post("/api/update-chat-status")
+def api_actualizar_estado(payload: ActualizarEstadoPayload):
+    """Permite al asesor cambiar el estado de un lead o reactivar el bot."""
+    actualizar_estado_chat(
+        payload.chat_id,
+        payload.nuevo_estado,
+        payload.nuevo_asesor,
+        payload.bot_activo,
+    )
+    return {"status": "updated"}
+
+
+@app.get("/api/download-pdf/{chat_id}")
+def api_descargar_pdf(chat_id: str):
+    """Permite al asesor descargar el PDF oficial generado en el servidor."""
+    numero_limpio = chat_id.replace("@c.us", "")
+    carpeta_pdf = "cotizaciones_pdf"
+    if os.path.exists(carpeta_pdf):
+        pdfs = [
+            f
+            for f in os.listdir(carpeta_pdf)
+            if f.startswith(f"Proforma_Globex_{numero_limpio}")
+        ]
+        if pdfs:
+            pdfs.sort(reverse=True)
+            ruta_pdf = os.path.join(carpeta_pdf, pdfs[0])
+            return FileResponse(
+                ruta_pdf, media_type="application/pdf", filename=pdfs[0]
+            )
+    return Response(content="PDF no encontrado", status_code=404)
+
+
+@app.post("/api/admin/clean-data")
+def api_limpiar_datos():
+    """Limpia la base de datos de pruebas y borra los PDFs acumulados en Render."""
+    # 1. Limpiar SQLite
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM messages;")
+        cursor.execute("DELETE FROM chats;")
+        cursor.execute("VACUUM;")
+        conn.commit()
+
+    # 2. Borrar PDFs
+    carpeta_pdf = "cotizaciones_pdf"
+    borrados = 0
+    if os.path.exists(carpeta_pdf):
+        archivos = glob.glob(os.path.join(carpeta_pdf, "*.pdf"))
+        for f in archivos:
+            os.remove(f)
+        borrados = len(archivos)
+
+    return {"status": "cleaned", "pdfs_borrados": borrados}
