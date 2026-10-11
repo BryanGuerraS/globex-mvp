@@ -7,7 +7,7 @@ import json
 import os
 from typing import Dict, List
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request, Response
+from fastapi import BackgroundTasks, FastAPI, Request, Response
 import httpx
 from openai import OpenAI
 
@@ -202,32 +202,38 @@ def get_or_create_history(chat_id: str) -> List[Dict[str, str]]:
 
 
 # 📤 FUNCIÓN OFICIAL PARA ENVIAR MENSAJES VÍA META CLOUD API
-async def send_meta_whatsapp_message(to_phone: str, message: str):
-    """Envía mensajes usando la Graph API oficial de Meta."""
+async def send_meta_whatsapp_message(to_recipient: str, message: str):
+    """Envía mensajes oficiales vía Meta Graph API soportando tanto Teléfonos (E.164) como BSUID."""
     url = f"https://graph.facebook.com/v21.0/{META_PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {META_ACCESS_TOKEN}",
         "Content-Type": "application/json",
     }
+    
+    clean_recipient = str(to_recipient).replace("@c.us", "").strip()
+
+    # Estructura base del mensaje
     payload = {
         "messaging_product": "whatsapp",
         "recipient_type": "individual",
-        "to": to_phone,
         "type": "text",
-        "text": {"preview_url": False, "body": message},
+        "text": {"preview_url": False, "body": message}
     }
+
+    # Si es un identificador BSUID (ej. PE.234727... o US.1349...) usamos 'recipient'
+    # Si es un número telefónico tradicional (solo dígitos) usamos 'to'
+    if "." in clean_recipient and not clean_recipient.isdigit():
+        payload["recipient"] = clean_recipient
+    else:
+        payload["to"] = clean_recipient
 
     async with httpx.AsyncClient() as http_client:
         try:
-            res = await http_client.post(
-                url, json=payload, headers=headers, timeout=10.0
-            )
+            res = await http_client.post(url, json=payload, headers=headers, timeout=10.0)
             if res.status_code == 200:
-                print(f"✅ [Meta Cloud API] Mensaje entregado a [{to_phone}]")
+                print(f"✅ [Meta Cloud API] Mensaje entregado a [{clean_recipient}]")
             else:
-                print(
-                    f"⚠️ Error Meta API ({res.status_code}): {res.text}"
-                )
+                print(f"⚠️ Error Meta API ({res.status_code}): {res.text}")
         except Exception as e:
             print(f"❌ Error de conexión al enviar con Meta: {e}")
 
@@ -475,25 +481,25 @@ async def verify_meta_webhook(request: Request):
 
 # 🌐 2. ENDPOINT POST: RECEPCIÓN OFICIAL DE MENSAJES DE META
 @app.post("/meta-webhook")
-async def meta_webhook(request: Request):
+async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
+    """Endpoint oficial que recibe y procesa todos los eventos de WhatsApp Cloud API."""
     data = await request.json()
 
     try:
         entry = data.get("entry", [])[0]
         changes = entry.get("changes", [])[0]
         value = changes.get("value", {})
-
-        # Validar si el evento trae mensajes de WhatsApp
         messages = value.get("messages", [])
+
+        # Si es solo un acuse de recibo de Meta (sent/delivered/read), lo ignoramos
         if not messages:
-            # Podría ser un cambio de estado (sent, delivered, read) u otro evento
             return {"status": "event_without_messages"}
 
-        # ✅ AHORA (EXTRACCIÓN BLINDADA CON RESPALDO WA_ID):
         msg = messages[0]
         msg_type = msg.get("type")
         id_message = msg.get("id")
 
+        # 1. Nombre del cliente provisto por Meta
         contacts = value.get("contacts", [])
         sender_name = (
             contacts[0].get("profile", {}).get("name", "Cliente")
@@ -501,26 +507,28 @@ async def meta_webhook(request: Request):
             else "Cliente"
         )
 
-        # 1. Si no viene en msg['from'], lo extrae de contacts['wa_id']:
-        chat_id = msg.get("from")
-        if (not chat_id or str(chat_id).strip() == "None") and contacts:
-            chat_id = contacts[0].get("wa_id")
-
+        # 2. Extracción Universal: Teléfono clásico ('from' / 'wa_id') o BSUID de Privacidad ('user_id')
+        chat_id = (
+            msg.get("from")
+            or (contacts[0].get("wa_id") if contacts else None)
+            or msg.get("from_user_id")
+            or (contacts[0].get("user_id") if contacts else None)
+        )
         chat_id = str(chat_id).strip() if chat_id else None
 
-        # Validación de seguridad: si no hay número válido, no procesamos
+        # Validación de seguridad: debe existir un identificador para poder responder
         if not chat_id or chat_id == "None":
             print(
-                f"⚠️ [Meta Webhook] Mensaje descartado: No se pudo extraer un número válido para {sender_name}."
+                f"⚠️ [Meta Webhook] No se pudo extraer un ID para {sender_name}. Payload: {msg}"
             )
-            return {"status": "missing_phone_number"}
+            return {"status": "missing_recipient_id"}
 
-        # 🛡️ PASO HP01: DEDUPLICACIÓN
+        # 🛡️ 3. PASO HP01: DEDUPLICACIÓN DE MENSAJES (Regla T28 del Manual)
         if id_message and es_mensaje_duplicado(id_message):
             print(f"⚠️ [Deduplicación HP01] Mensaje Meta [{id_message}] ya procesado.")
             return {"status": "duplicate_ignored"}
 
-        # 🖼️🎙️ TRATAMIENTO DE NO-TEXTUALES
+        # 🖼️🎙️ 4. TRATAMIENTO DE NO-TEXTUALES (Audios, Fotos, Documentos - OBS01 / T11)
         if msg_type in ["image", "audio", "document", "video"]:
             tipo_adjunto = (
                 "audio 🎙️"
@@ -529,7 +537,8 @@ async def meta_webhook(request: Request):
                 if msg_type == "image"
                 else "documento 📄"
             )
-            print(f"\n📎 Archivo no textual ({msg_type}) recibido de [{chat_id}]")
+            print(f"\n📎 Archivo no textual ({msg_type}) recibido de [{chat_id}] ({sender_name})")
+
             registrar_mensaje_entrante(
                 chat_id,
                 sender_name,
@@ -548,7 +557,7 @@ async def meta_webhook(request: Request):
             await send_meta_whatsapp_message(chat_id, bot_reply)
             return {"status": "media_handled"}
 
-        # 💬 MENSAJES DE TEXTO
+        # 💬 5. TRATAMIENTO DE MENSAJES DE TEXTO ESTÁNDAR
         if msg_type == "text":
             user_text = msg.get("text", {}).get("body", "").strip()
             print(f"\n📩 [Meta] Mensaje de {sender_name} [{chat_id}]: {user_text}")
@@ -559,16 +568,15 @@ async def meta_webhook(request: Request):
 
             # Silencio si el asesor humano tiene el control
             if not esta_bot_activo(chat_id):
-                print(
-                    f"🤫 [Bot Silenciado] El chat [{chat_id}] está bajo atención humana."
-                )
+                print(f"🤫 [Bot Silenciado] El chat [{chat_id}] está bajo atención humana.")
                 return {"status": "bot_silenced_for_human"}
 
-            # Debouncing de 5 segundos
+            # Acumular en buffer para Debouncing de 5 segundos
             if chat_id not in message_buffer:
                 message_buffer[chat_id] = []
             message_buffer[chat_id].append(user_text)
 
+            # Ventana deslizante: si entra otro mensaje dentro de los 5s, se reinicia el reloj
             if chat_id in buffer_tasks and not buffer_tasks[chat_id].done():
                 buffer_tasks[chat_id].cancel()
 
@@ -579,7 +587,8 @@ async def meta_webhook(request: Request):
     except Exception as e:
         print(f"Error procesando webhook de Meta: {e}")
 
-    return {"status": "ok"}
+    # Retorna 200 OK a Meta inmediatamente para evitar reintentos automáticos
+    return {"status": "received_ok"}
 
 
 # ⏰ TRABAJADOR DE FONDO: AUTO-NUDGE DE 20 MINUTOS
