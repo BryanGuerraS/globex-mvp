@@ -166,6 +166,13 @@ sessions: Dict[str, Dict] = {}
 message_buffer: Dict[str, List[str]] = {}
 buffer_tasks: Dict[str, asyncio.Task] = {}
 
+@app.post("/test-chiquito")
+async def test_chiquito(request: Request):
+    body = await request.json()
+    print(
+        "\n⚡ [DIAGNÓSTICO] ¡Llegó un POST exitoso al servidor local!", body
+    )
+    return {"status": "recibido_ok"}
 
 def get_or_create_history(chat_id: str) -> List[Dict[str, str]]:
     now = datetime.now()
@@ -464,11 +471,6 @@ async def verify_meta_webhook(request: Request):
 @app.post("/meta-webhook")
 async def meta_webhook(request: Request):
     data = await request.json()
-
-    # 🔍 TRACE DE AUDITORÍA: Imprime en consola CUALQUIER evento que toque tu servidor
-    print(
-        "\n📥 [META EVENTO ENTRANTE CRUDO]:", json.dumps(data, indent=2)
-    )  # <--- Esto te mostrará si tu celular realmente tocó el servidor
 
     try:
         entry = data.get("entry", [])[0]
