@@ -489,18 +489,31 @@ async def meta_webhook(request: Request):
             # Podría ser un cambio de estado (sent, delivered, read) u otro evento
             return {"status": "event_without_messages"}
 
+        # ✅ AHORA (EXTRACCIÓN BLINDADA CON RESPALDO WA_ID):
         msg = messages[0]
-        chat_id = msg.get("from")  # Teléfono del cliente
         msg_type = msg.get("type")
         id_message = msg.get("id")
 
-        # Nombre del cliente provisto por Meta
         contacts = value.get("contacts", [])
         sender_name = (
             contacts[0].get("profile", {}).get("name", "Cliente")
             if contacts
             else "Cliente"
         )
+
+        # 1. Si no viene en msg['from'], lo extrae de contacts['wa_id']:
+        chat_id = msg.get("from")
+        if (not chat_id or str(chat_id).strip() == "None") and contacts:
+            chat_id = contacts[0].get("wa_id")
+
+        chat_id = str(chat_id).strip() if chat_id else None
+
+        # Validación de seguridad: si no hay número válido, no procesamos
+        if not chat_id or chat_id == "None":
+            print(
+                f"⚠️ [Meta Webhook] Mensaje descartado: No se pudo extraer un número válido para {sender_name}."
+            )
+            return {"status": "missing_phone_number"}
 
         # 🛡️ PASO HP01: DEDUPLICACIÓN
         if id_message and es_mensaje_duplicado(id_message):
