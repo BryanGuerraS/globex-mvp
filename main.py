@@ -479,7 +479,7 @@ async def verify_meta_webhook(request: Request):
     )
 
 
-# 🌐 2. ENDPOINT POST: RECEPCIÓN OFICIAL DE MENSAJES DE META
+# 🌐 2. ENDPOINT POST: RECEPCIÓN OFICIAL DE MENSAJES DE META (CON FILTRO DE FANTASMAS)
 @app.post("/meta-webhook")
 async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
     """Endpoint oficial que recibe y procesa todos los eventos de WhatsApp Cloud API."""
@@ -498,8 +498,30 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
         msg = messages[0]
         msg_type = msg.get("type")
         id_message = msg.get("id")
+        msg_timestamp = msg.get(
+            "timestamp"
+        )  # Marca de tiempo original de WhatsApp
 
-        # 1. Nombre del cliente provisto por Meta
+        # ⏰ 1. FILTRO DE FRESCURA TEMPORAL: DESCARTAR REINTENTOS FANTASMA VIEJOS
+        # Si el mensaje fue enviado por el cliente hace más de 10 minutos (600s), se descarta de inmediato
+        if msg_timestamp:
+            import time
+
+            segundos_antiguedad = time.time() - float(msg_timestamp)
+            if segundos_antiguedad > 600:
+                print(
+                    f"⏰ [Reintento Fantasma Descartado] Mensaje [{id_message}] tiene {segundos_antiguedad/60:.1f} min de antigüedad. Se ignora."
+                )
+                return {"status": "stale_message_ignored"}
+
+        # 🛡️ 2. PASO HP01: DEDUPLICACIÓN DE MENSAJES POR ID (Regla T28 del Manual)
+        if id_message and es_mensaje_duplicado(id_message):
+            print(
+                f"⚠️ [Deduplicación HP01] Mensaje Meta [{id_message}] ya procesado."
+            )
+            return {"status": "duplicate_ignored"}
+
+        # 3. Nombre del cliente provisto por Meta
         contacts = value.get("contacts", [])
         sender_name = (
             contacts[0].get("profile", {}).get("name", "Cliente")
@@ -507,7 +529,7 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
             else "Cliente"
         )
 
-        # 2. Extracción Universal: Teléfono clásico ('from' / 'wa_id') o BSUID de Privacidad ('user_id')
+        # 4. Extracción Universal: Teléfono clásico ('from' / 'wa_id') o BSUID de Privacidad ('user_id')
         chat_id = (
             msg.get("from")
             or (contacts[0].get("wa_id") if contacts else None)
@@ -516,19 +538,13 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
         )
         chat_id = str(chat_id).strip() if chat_id else None
 
-        # Validación de seguridad: debe existir un identificador para poder responder
         if not chat_id or chat_id == "None":
             print(
                 f"⚠️ [Meta Webhook] No se pudo extraer un ID para {sender_name}. Payload: {msg}"
             )
             return {"status": "missing_recipient_id"}
 
-        # 🛡️ 3. PASO HP01: DEDUPLICACIÓN DE MENSAJES (Regla T28 del Manual)
-        if id_message and es_mensaje_duplicado(id_message):
-            print(f"⚠️ [Deduplicación HP01] Mensaje Meta [{id_message}] ya procesado.")
-            return {"status": "duplicate_ignored"}
-
-        # 🖼️🎙️ 4. TRATAMIENTO DE NO-TEXTUALES (Audios, Fotos, Documentos - OBS01 / T11)
+        # 🖼️🎙️ 5. TRATAMIENTO DE NO-TEXTUALES (Audios, Fotos, Documentos - OBS01 / T11)
         if msg_type in ["image", "audio", "document", "video"]:
             tipo_adjunto = (
                 "audio 🎙️"
@@ -537,7 +553,9 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
                 if msg_type == "image"
                 else "documento 📄"
             )
-            print(f"\n📎 Archivo no textual ({msg_type}) recibido de [{chat_id}] ({sender_name})")
+            print(
+                f"\n📎 Archivo no textual ({msg_type}) recibido de [{chat_id}] ({sender_name})"
+            )
 
             registrar_mensaje_entrante(
                 chat_id,
@@ -557,10 +575,12 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
             await send_meta_whatsapp_message(chat_id, bot_reply)
             return {"status": "media_handled"}
 
-        # 💬 5. TRATAMIENTO DE MENSAJES DE TEXTO ESTÁNDAR
+        # 💬 6. TRATAMIENTO DE MENSAJES DE TEXTO ESTÁNDAR
         if msg_type == "text":
             user_text = msg.get("text", {}).get("body", "").strip()
-            print(f"\n📩 [Meta] Mensaje de {sender_name} [{chat_id}]: {user_text}")
+            print(
+                f"\n📩 [Meta] Mensaje de {sender_name} [{chat_id}]: {user_text}"
+            )
 
             registrar_mensaje_entrante(
                 chat_id, sender_name, user_text, id_mensaje=id_message
@@ -568,7 +588,9 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
 
             # Silencio si el asesor humano tiene el control
             if not esta_bot_activo(chat_id):
-                print(f"🤫 [Bot Silenciado] El chat [{chat_id}] está bajo atención humana.")
+                print(
+                    f"🤫 [Bot Silenciado] El chat [{chat_id}] está bajo atención humana."
+                )
                 return {"status": "bot_silenced_for_human"}
 
             # Acumular en buffer para Debouncing de 5 segundos
