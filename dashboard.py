@@ -141,6 +141,33 @@ with st.sidebar:
     if usuario.get("rol") == "admin":
         st.markdown("---")
         st.markdown("### Administración")
+        with st.expander("⏱️ Costo y latencia del bot"):
+            horas = st.selectbox("Periodo", [1, 24, 168, 0], index=1,
+                                 format_func=lambda h: "Todo" if h == 0 else f"Últimas {h} h")
+            try:
+                r = api.get(f"{BACKEND_URL}/api/metricas", params={"horas": horas}, timeout=10.0)
+                datos = r.json() if r.status_code == 200 else {}
+            except Exception:
+                datos = {}
+            res = datos.get("resumen", {})
+            if not res.get("turnos"):
+                st.caption("Aún no hay turnos registrados en este periodo.")
+            else:
+                def _s(ms):
+                    return f"{ms / 1000:.1f} s" if ms is not None else "—"
+
+                st.metric("Turnos / conversaciones", f"{res['turnos']} / {res['conversaciones']}")
+                st.metric("Respuesta al cliente (p50 · p95)",
+                          f"{_s(res['latencia_total_cliente']['p50_ms'])} · {_s(res['latencia_total_cliente']['p95_ms'])}")
+                st.metric("LLM por turno (p50 · p95)",
+                          f"{_s(res['latencia_llm']['p50_ms'])} · {_s(res['latencia_llm']['p95_ms'])}")
+                st.metric("Costo por conversación", f"US$ {res['costo_por_conversacion_usd']:.5f}")
+                st.caption(
+                    f"Costo total US$ {res['costo_total_usd']:.4f} · "
+                    f"US$ {res['costo_por_1000_conversaciones_usd']:.2f} por 1 000 conversaciones · "
+                    f"{res['tokens_entrada_promedio']:.0f} + {res['tokens_salida_promedio']:.0f} tokens/turno"
+                )
+                st.caption("Tipos: " + ", ".join(f"{k} {v}" for k, v in res["tipos_respuesta"].items()))
         if st.button("🗑️ Limpiar Base de Datos y PDFs"):
             try:
                 res = api.post(f"{BACKEND_URL}/api/admin/clean-data", timeout=10.0)

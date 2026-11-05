@@ -124,7 +124,23 @@ Ejemplos verificados con el motor:
 
 ---
 
-## 5. Seguridad
+## 5. Costo y latencia
+
+Cada turno de Globix se registra en la tabla `metricas_turno` (ver [`metricas.py`](metricas.py)):
+
+| Campo | Qué mide |
+| :-- | :-- |
+| `llamadas_llm`, `tokens_entrada`, `tokens_salida` | Uso del LLM en el turno (según lo que reporta Groq) |
+| `costo_usd` | Costo estimado con el precio de Groq para `gpt-oss-120b`: USD 0.15 / M tokens de entrada y USD 0.60 / M de salida (configurable con `GROQ_PRECIO_ENTRADA_USD_M` y `GROQ_PRECIO_SALIDA_USD_M`) |
+| `latencia_llm_ms` | Tiempo de respuesta del LLM (suma de sus llamadas) |
+| `latencia_procesamiento_ms` | Desde que termina la espera del debounce hasta enviar la respuesta |
+| `latencia_total_ms` | **Lo que espera el cliente:** desde su primer mensaje hasta la respuesta (incluye los 5 s de debounce) |
+| `tipo_respuesta` | `cotizacion`, `faq`, `derivacion`, `menu`, `fuera_de_alcance`, `libre`, `bloqueado:<motivo>`, `guardrail`, `error`, `recuperacion` |
+| `herramientas` | Herramientas que llamó el LLM, con sus argumentos y resultado (JSON) |
+
+El resumen (p50/p95 de latencia, costo por conversación y por 1 000 conversaciones, tipos de respuesta) está en `GET /api/metricas?horas=24` y en el panel **⏱️ Costo y latencia del bot** del dashboard (rol admin).
+
+## 6. Seguridad
 
 | Control | Cómo funciona |
 | :-- | :-- |
@@ -137,7 +153,7 @@ Ejemplos verificados con el motor:
 
 ---
 
-## 6. Estructura del repositorio
+## 7. Estructura del repositorio
 
 ```text
 globex-mvp/
@@ -149,7 +165,8 @@ globex-mvp/
 ├── pdf_generator.py     # Proforma PDF (ReportLab)
 ├── database.py          # SQLite: chats, mensajes, estados, deduplicación
 ├── dashboard.py         # Consola de asesores (Streamlit)
-├── validaciones.py      # Validación de valor y peso antes del motor (dígitos o palabras)
+├── validaciones.py      # Validación de valor y peso, nombre del cliente y revisión de salida
+├── metricas.py          # Costo, latencia y herramientas por turno
 ├── tests/               # Pruebas automatizadas (pytest)
 ├── docs/                # Plan de evaluación y KPIs de calidad del modelo
 ├── requirements.txt
@@ -159,7 +176,7 @@ globex-mvp/
 
 ---
 
-## 7. Instalación local
+## 8. Instalación local
 
 **Requisitos:** Python 3.10+, una API key de [Groq](https://console.groq.com) y una app de Meta con WhatsApp Cloud API configurada (ver el *Manual técnico de integración con Meta Cloud API* del equipo).
 
@@ -187,6 +204,7 @@ Copiar `.env.example` a `.env` y completar:
 | `META_VERIFY_TOKEN` | Token que se registra en Meta al configurar el webhook |
 | `META_APP_SECRET` | App Secret de Meta (App settings → Basic), valida la firma de los webhooks |
 | `DASHBOARD_API_KEY` | Clave compartida entre backend y dashboard |
+| `GROQ_PRECIO_ENTRADA_USD_M`, `GROQ_PRECIO_SALIDA_USD_M` | Opcionales: precio de Groq por millón de tokens (por defecto 0.15 y 0.60) |
 | `BACKEND_URL` | URL del backend que usa el dashboard |
 
 Para generar `DASHBOARD_API_KEY`:
@@ -215,7 +233,7 @@ Para que Meta alcance un backend local hace falta exponerlo con un túnel HTTPS 
 
 ---
 
-## 8. Pruebas y evaluación
+## 9. Pruebas y evaluación
 
 El plan para medir la calidad del modelo está en [`docs/plan_evaluacion.md`](docs/plan_evaluacion.md). Propone 11 KPIs basados en τ-bench, BFCL, RAGAS y OWASP, entre ellos exactitud de herramienta y de argumentos, cotización indebida, exactitud de derivación y consistencia pass^3. El KPI de tiempo (≤ 60 min) queda como métrica de negocio.
 
@@ -249,7 +267,7 @@ Casos funcionales de referencia por WhatsApp:
 
 ---
 
-## 9. Hoja de ruta
+## 10. Hoja de ruta
 
 - [x] Migración de GREEN-API a Meta WhatsApp Cloud API
 - [x] Seguridad: firma de webhooks, API key del dashboard, PDFs sin teléfono
@@ -261,7 +279,8 @@ Casos funcionales de referencia por WhatsApp:
 - [ ] Resumen automático del caso al derivar al asesor
 - [x] Plan de evaluación con KPIs de calidad del modelo ([docs/plan_evaluacion.md](docs/plan_evaluacion.md))
 - [ ] Script de evaluación con el LLM real sobre un set reservado (3 repeticiones por caso)
-- [ ] Registrar en SQLite las herramientas llamadas y sus argumentos
+- [x] Registrar en SQLite las herramientas llamadas y sus argumentos
+- [x] Medir costo y latencia por turno (`/api/metricas` y panel admin)
 - [ ] Registro de tiempos para medir el KPI de ≤ 60 min
 - [ ] 36 casos sintéticos de verificación del motor
 - [ ] Credenciales del dashboard fuera del código (después de la fase de pruebas)

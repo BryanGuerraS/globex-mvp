@@ -26,7 +26,9 @@ from database import (
     guardar_nombre_cliente,
     guardar_telefono,
     marcar_esperando_nombre,
-    obtener_chat,  # <-- AGREGAR
+    obtener_chat,
+    obtener_metricas,
+    registrar_metrica_turno,  # <-- AGREGAR
     init_db,
     marcar_recordatorio_enviado,
     obtener_chats_para_recordatorio,
@@ -41,6 +43,7 @@ from knowledge_base import buscar_faq_comercial
 from pdf_generator import buscar_ultimo_pdf, generar_pdf_cotizacion
 from pricing_engine import GlobexPricingEngine
 from product_catalog import buscar_peso_producto
+from metricas import MedidorTurno, resumir as resumir_metricas
 from validaciones import (
     extraer_nombre,
     limpiar_respuesta_llm,
@@ -706,8 +709,44 @@ def ejecutar_herramienta(
     return {"error": f"La herramienta '{nombre_funcion}' no existe."}, None
 
 
+# Momento en que llegó el primer mensaje de cada lote (para la latencia que percibe el cliente)
+llegada_buffer: Dict[str, float] = {}
+
+# Tipo de respuesta según lo que devolvió la herramienta que la armó
+_TIPO_POR_RESULTADO = {
+    "cotizacion_emitida": "cotizacion",
+    "derivado": "derivacion",
+    "respondido": "faq",
+    "menu_mostrado": "menu",
+    "redirigido": "fuera_de_alcance",
+}
+
+
 async def procesar_mensaje_consolidado(
     chat_id: str, sender_name: str, texto_consolidado: str
+):
+    """Procesa un turno y registra su costo y latencia (tabla metricas_turno)."""
+    medidor = MedidorTurno(chat_id)
+    inicio = time.perf_counter()
+    try:
+        await _procesar_turno(chat_id, sender_name, texto_consolidado, medidor)
+    finally:
+        procesamiento_ms = (time.perf_counter() - inicio) * 1000
+        llegada = llegada_buffer.pop(chat_id, None)
+        total_ms = (time.monotonic() - llegada) * 1000 if llegada else procesamiento_ms
+        try:
+            registrar_metrica_turno(medidor.fila(procesamiento_ms, total_ms))
+            print(
+                f"⏱️ [Métricas] [{chat_id}] {medidor.tipo_respuesta} | LLM x{medidor.llamadas_llm} "
+                f"{medidor.latencia_llm_ms:.0f} ms | total {total_ms:.0f} ms | "
+                f"{medidor.tokens_entrada}+{medidor.tokens_salida} tokens"
+            )
+        except Exception as e:
+            print(f"Error registrando métricas: {e}")
+
+
+async def _procesar_turno(
+    chat_id: str, sender_name: str, texto_consolidado: str, medidor: MedidorTurno
 ):
     print(f"\n🚀 Procesando consolidado de [{chat_id}]: '{texto_consolidado}'")
 
@@ -722,6 +761,7 @@ async def procesar_mensaje_consolidado(
             f"🚨 [Guardrail Activado] Mercancía restringida ({entidad}) detectada en [{chat_id}]"
         )
         bot_reply = alerta_aduanera["mensaje"]
+        medidor.tipo_respuesta = "guardrail"
 
         if alerta_aduanera["tipo"] == "prohibido":
             actualizar_clasificacion_chat(
@@ -771,8 +811,10 @@ async def procesar_mensaje_consolidado(
     try:
         bot_reply = None
         respuestas_finales: List[str] = []
+        tipos_finales: List[str] = []
 
         for _ in range(MAX_RONDAS_HERRAMIENTAS):
+            inicio_llm = time.perf_counter()
             ai_response = await asyncio.to_thread(
                 client.chat.completions.create,
                 model=MODEL,
@@ -781,13 +823,16 @@ async def procesar_mensaje_consolidado(
                 tool_choice="auto",
                 temperature=0.2,
             )
+            medidor.registrar_llamada_llm(ai_response, (time.perf_counter() - inicio_llm) * 1000)
             response_message = ai_response.choices[0].message
 
             if not response_message.tool_calls:
                 bot_reply = limpiar_respuesta_llm(response_message.content)
+                medidor.tipo_respuesta = "libre"
                 # Capa 2: revisión determinista de la respuesta libre antes de enviarla
                 motivo = revisar_respuesta_libre(bot_reply, textos_cliente)
                 if motivo:
+                    medidor.tipo_respuesta = f"bloqueado:{motivo}"
                     print(f"🛑 [Revisión de salida] Respuesta bloqueada en [{chat_id}] ({motivo}): {bot_reply!r}")
                     bot_reply = TEXTO_FUERA_DE_ALCANCE
                     estado["menu"] = BOTONES_MENU
@@ -829,16 +874,26 @@ async def procesar_mensaje_consolidado(
                         "content": json.dumps(resultado_para_llm, ensure_ascii=False),
                     }
                 )
+                medidor.registrar_herramienta(
+                    tool_call.function.name, tool_call.function.arguments, resultado_para_llm
+                )
                 if respuesta_final:
                     respuestas_finales.append(respuesta_final)
+                    tipo = next(
+                        (t for clave, t in _TIPO_POR_RESULTADO.items() if clave in resultado_para_llm),
+                        tool_call.function.name,
+                    )
+                    tipos_finales.append(tipo)
 
             # Cotización, FAQ o derivación: la respuesta la arma el código, no el LLM.
             if respuestas_finales:
                 bot_reply = "\n\n".join(respuestas_finales)
+                medidor.tipo_respuesta = "+".join(dict.fromkeys(tipos_finales))
                 break
 
         if not bot_reply:
             bot_reply = RESPUESTA_ERROR
+            medidor.tipo_respuesta = "error"
         history.append({"role": "assistant", "content": bot_reply})
         resultado_calculo = estado["resultado_calculo"]
 
@@ -850,6 +905,7 @@ async def procesar_mensaje_consolidado(
         resultado_calculo = None
         estado["menu"] = None
         bot_reply = RESPUESTA_ERROR
+        medidor.tipo_respuesta = "error"
         history.append({"role": "assistant", "content": bot_reply})
 
     # 🔁 Dos fallos seguidos: en vez de repetir el error, ofrecer opciones y asesor
@@ -860,6 +916,7 @@ async def procesar_mensaje_consolidado(
     ):
         bot_reply = TEXTO_RECUPERACION
         estado["menu"] = BOTONES_RECUPERACION
+        medidor.tipo_respuesta = "recuperacion"
 
     # 📄 GENERAR PROFORMA PDF SI HUBO COTIZACIÓN
     if resultado_calculo:
@@ -1104,6 +1161,8 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
             # Acumular en buffer para Debouncing de 5 segundos
             if chat_id not in message_buffer:
                 message_buffer[chat_id] = []
+            if not message_buffer[chat_id]:
+                llegada_buffer[chat_id] = time.monotonic()
             message_buffer[chat_id].append(user_text)
 
             # Ventana deslizante: si entra otro mensaje dentro de los 5s, se reinicia el reloj
@@ -1255,6 +1314,14 @@ def api_descargar_pdf(chat_id: str):
     return Response(content="PDF no encontrado", status_code=404)
 
 
+@app.get("/api/metricas", dependencies=[Depends(verificar_api_key)])
+def api_metricas(horas: float = 24, ultimos: int = 20):
+    """Costo y latencia de los turnos del bot en las últimas `horas` (0 = todo)."""
+    desde = datetime.now() - timedelta(hours=horas) if horas > 0 else None
+    filas = obtener_metricas(desde)
+    return {"resumen": resumir_metricas(filas), "ultimos": filas[-max(0, ultimos):]}
+
+
 @app.post("/api/admin/clean-data", dependencies=[Depends(verificar_api_key)])
 def api_limpiar_datos():
     """Limpia la base de datos de pruebas y borra los PDFs acumulados en Render."""
@@ -1263,6 +1330,7 @@ def api_limpiar_datos():
         cursor = conn.cursor()
         cursor.execute("DELETE FROM messages;")
         cursor.execute("DELETE FROM chats;")
+        cursor.execute("DELETE FROM metricas_turno;")
         cursor.execute("VACUUM;")
         conn.commit()
 

@@ -83,6 +83,26 @@ def init_db():
         if "telefono" not in columnas:
             cursor.execute("ALTER TABLE chats ADD COLUMN telefono TEXT")
 
+        # 3b. Métricas por turno del bot (costo, latencia y herramientas usadas)
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS metricas_turno (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id TEXT,
+                timestamp TIMESTAMP,
+                tipo_respuesta TEXT,
+                llamadas_llm INTEGER,
+                tokens_entrada INTEGER,
+                tokens_salida INTEGER,
+                costo_usd REAL,
+                latencia_llm_ms REAL,
+                latencia_procesamiento_ms REAL,
+                latencia_total_ms REAL,
+                herramientas TEXT
+            )
+        """
+        )
+
         # 4. Migración segura para messages
         cursor.execute("PRAGMA table_info(messages)")
         cols_msg = [row["name"] for row in cursor.fetchall()]
@@ -409,6 +429,48 @@ def guardar_telefono(chat_id: str, telefono: str):
             "UPDATE chats SET telefono = ? WHERE chat_id = ?", (telefono, chat_id)
         )
         conn.commit()
+
+
+def registrar_metrica_turno(metrica: Dict):
+    """Guarda las métricas de un turno del bot (ver metricas.py)."""
+    init_db()
+    with get_connection() as conn:
+        conn.execute(
+            """
+            INSERT INTO metricas_turno (
+                chat_id, timestamp, tipo_respuesta, llamadas_llm, tokens_entrada,
+                tokens_salida, costo_usd, latencia_llm_ms, latencia_procesamiento_ms,
+                latencia_total_ms, herramientas
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                metrica["chat_id"],
+                datetime.now(),
+                metrica["tipo_respuesta"],
+                metrica["llamadas_llm"],
+                metrica["tokens_entrada"],
+                metrica["tokens_salida"],
+                metrica["costo_usd"],
+                metrica["latencia_llm_ms"],
+                metrica["latencia_procesamiento_ms"],
+                metrica["latencia_total_ms"],
+                metrica["herramientas"],
+            ),
+        )
+        conn.commit()
+
+
+def obtener_metricas(desde: Optional[datetime] = None) -> List[Dict]:
+    init_db()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        if desde:
+            cursor.execute(
+                "SELECT * FROM metricas_turno WHERE timestamp >= ? ORDER BY id", (desde,)
+            )
+        else:
+            cursor.execute("SELECT * FROM metricas_turno ORDER BY id")
+        return [dict(row) for row in cursor.fetchall()]
 
 
 def es_mensaje_duplicado(id_mensaje: str) -> bool:
