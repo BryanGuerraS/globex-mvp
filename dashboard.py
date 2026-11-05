@@ -434,7 +434,40 @@ def _cambiar_estado(chat_id: str, clave: str):
         st.toast("No se pudo cambiar el estado", icon=":material/error:")
 
 
+MOTIVOS_CORTOS = {
+    "asesor": "Pidió asesor",
+    "tope": "Compra de más de USD 1,200",
+    "seguimiento": "Seguimiento de paquete",
+    "viajero": "Modalidad viajero",
+    "restringido": "Mercancía restringida",
+}
+
+
+def avisar_casos_nuevos(chats: List[Dict]):
+    """Notificación en la consola cuando Globix deriva un caso nuevo."""
+    derivados = {c["chat_id"]: c for c in chats if c.get("estado") == "Listo para Asesor" and c.get("derivado_at")}
+    if "casos_vistos" not in st.session_state:
+        st.session_state.casos_vistos = set(derivados)  # al abrir la consola no se avisa lo que ya estaba
+        return
+    for chat_id in derivados.keys() - st.session_state.casos_vistos:
+        chat = derivados[chat_id]
+        motivo = MOTIVOS_CORTOS.get(chat.get("motivo_derivacion"), "Derivado por Globix")
+        st.toast(f"Nuevo caso: {nombre_mostrado(chat)} · {motivo}", icon=":material/notifications_active:")
+    st.session_state.casos_vistos |= set(derivados)
+
+
 def panel_detalle(chat: Dict):
+    if chat.get("resumen_caso"):
+        with st.container(border=True):
+            with st.container(horizontal=True, vertical_alignment="center"):
+                st.markdown("**Resumen del caso**")
+                st.badge(MOTIVOS_CORTOS.get(chat.get("motivo_derivacion"), "Derivado"),
+                         icon=":material/assignment_ind:", color="orange")
+            derivado = _fecha(chat.get("derivado_at"))
+            if derivado:
+                st.caption(f"Derivado por Globix a las {derivado.strftime('%H:%M')} del {derivado.strftime('%d/%m')}")
+            st.markdown(whatsapp_a_markdown(chat["resumen_caso"]))
+
     with st.container(border=True):
         st.markdown("**Lead**")
         st.metric("Cotización", usd(chat.get("cotizacion_total")))
@@ -512,6 +545,7 @@ def pagina_bandeja():
     def bandeja():
         chats = fetch_chats()
         fila_kpis(chats)
+        avisar_casos_nuevos(chats)
         visibles = filtrar(chats, filtros)
         if st.session_state.chat_seleccionado is None and visibles:
             st.session_state.chat_seleccionado = visibles[0]["chat_id"]

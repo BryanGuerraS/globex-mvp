@@ -106,6 +106,7 @@ Ejemplos verificados con el motor:
 - **Datos para cotizar:** pide en un solo mensaje producto, precio en USD y peso en kg, con un ejemplo ("Laptop Lenovo, USD 650, 2.5 kg"). Si el cliente no da el peso, se busca en el catálogo; si el producto no está, pregunta solo "¿Cuánto pesa aproximadamente en kg?" (nunca el modelo ni la marca) y explica que basta un estimado únicamente si el cliente duda. Las notas internas del LLM, como "(Esperando respuesta del cliente)", se filtran antes de enviar.
 - **Proforma como imagen:** la cotización llega como una imagen de proforma con el logo de Globex (número, fecha, producto, flete, trámite aduanero, tributos, total y vigencia de 24 h; generada por [`proforma_imagen.py`](proforma_imagen.py) con los montos del motor). Si el peso viene del catálogo se marca como *estimado*. La leyenda dice *"Te envío adjunto tu cotización **referencial**."* y luego llegan los botones con el total. Si la imagen no se puede enviar, se usa el mensaje de texto.
 - **Después de la proforma:** llega *"Total estimado: **USD 836.33**. ¿Qué deseas hacer ahora? 😊"* con los botones *Hablar con asesor*, *Cotizar otro* y *¿Cómo compro?*. Lo que entendió el bot (producto, precio y peso) queda registrado para el asesor en el dashboard.
+- **Derivación con resumen:** cada vez que Globix pasa un caso al asesor (pedido del cliente, compra de más de USD 1,200, seguimiento, viajero o mercancía restringida) guarda un **resumen del caso**: motivo, cliente, última cotización (producto, precio, peso y total) y últimos mensajes. Se arma con datos del sistema, sin LLM. El asesor lo ve arriba del detalle del chat en la consola, que además muestra un aviso cuando entra un caso nuevo. Si se configura Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`), el resumen llega al instante al grupo de asesores ([`notificaciones.py`](notificaciones.py) explica cómo crearlo).
 - **Recuperación:** si el bot falla dos veces seguidas, ofrece las opciones y el asesor en vez de repetir el error.
 - **Alcance limitado a Globex (dos capas):**
   1. *Herramienta `fuera_de_alcance`:* ante temas ajenos (matemáticas, programación, recetas, política…) el LLM no responde el tema; Globix envía un texto fijo y los botones del menú.
@@ -184,6 +185,9 @@ globex-mvp/
 ├── dashboard.py         # Consola de asesores (Streamlit)
 ├── validaciones.py      # Validación de valor y peso, nombre del cliente y revisión de salida
 ├── metricas.py          # Costo, latencia y herramientas por turno
+├── resumen_caso.py      # Resumen del caso para el asesor al derivar
+├── notificaciones.py    # Aviso a los asesores por Telegram (opcional)
+├── proforma_imagen.py   # Proforma en imagen para WhatsApp
 ├── tests/               # Pruebas automatizadas (pytest)
 ├── docs/                # Plan de evaluación y KPIs de calidad del modelo
 ├── evaluacion/          # Script de evaluación con el LLM real y casos de prueba
@@ -224,6 +228,8 @@ Copiar `.env.example` a `.env` y completar:
 | `DASHBOARD_API_KEY` | Clave compartida entre backend y dashboard |
 | `GROQ_PRECIO_ENTRADA_USD_M`, `GROQ_PRECIO_SALIDA_USD_M` | Opcionales: precio de Groq por millón de tokens (por defecto 0.15 y 0.60) |
 | `BACKEND_URL` | URL del backend que usa el dashboard |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Opcionales: aviso al grupo de asesores por Telegram al derivar |
+| `DASHBOARD_URL` | Opcional: enlace a la consola en ese aviso |
 
 Para generar `DASHBOARD_API_KEY`:
 
@@ -338,11 +344,11 @@ Casos funcionales de referencia por WhatsApp:
 - [x] Registrar en SQLite las herramientas llamadas y sus argumentos
 - [x] Medir costo y latencia por turno (`/api/metricas` y panel admin)
 - [x] Separar la conversación del envío por Meta (el flujo se evalúa sin WhatsApp)
+- [x] Resumen del caso al derivar, aviso en la consola y por Telegram (opcional)
 
 **Pendiente**
 
 - [ ] Set reservado de conversaciones escrito por el equipo y evaluación con doble revisión humana (kappa)
-- [ ] Resumen automático del caso y aviso al asesor al derivar
 - [ ] Registro de tiempos para medir el KPI de ≤ 60 min (primer mensaje, primera respuesta útil, bot o asesor)
 - [ ] Embudo de ventas Ganado/Perdido en el dashboard
 - [ ] TAX de tienda del 7 % (por definir con Globex)

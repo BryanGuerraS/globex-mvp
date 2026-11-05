@@ -16,6 +16,9 @@ os.environ["META_WABA_ID"] = "000"
 # Credenciales falsas de Meta: aunque exista un .env real, ninguna prueba debe usarlas.
 os.environ["META_ACCESS_TOKEN"] = "token_de_prueba"
 os.environ["META_PHONE_NUMBER_ID"] = "000"
+# Avisos a asesores desactivados: ninguna prueba envía mensajes reales por Telegram.
+os.environ["TELEGRAM_BOT_TOKEN"] = ""
+os.environ["TELEGRAM_CHAT_ID"] = ""
 
 # main.py y pdf_generator.py crean globex.db y cotizaciones_pdf/ en el cwd.
 _TMP = tempfile.mkdtemp(prefix="globex_tests_")

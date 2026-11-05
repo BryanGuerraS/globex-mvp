@@ -91,6 +91,13 @@ def init_db():
         # Teléfono solo si Meta lo envía; se usa como respaldo de envío, no se muestra
         if "telefono" not in columnas:
             cursor.execute("ALTER TABLE chats ADD COLUMN telefono TEXT")
+        # Derivación al asesor: motivo, momento y resumen del caso
+        if "motivo_derivacion" not in columnas:
+            cursor.execute("ALTER TABLE chats ADD COLUMN motivo_derivacion TEXT")
+        if "derivado_at" not in columnas:
+            cursor.execute("ALTER TABLE chats ADD COLUMN derivado_at TIMESTAMP")
+        if "resumen_caso" not in columnas:
+            cursor.execute("ALTER TABLE chats ADD COLUMN resumen_caso TEXT")
 
         # 3b. Métricas por turno del bot (costo, latencia y herramientas usadas)
         cursor.execute(
@@ -443,6 +450,27 @@ def guardar_telefono(chat_id: str, telefono: str):
             "UPDATE chats SET telefono = ? WHERE chat_id = ?", (telefono, chat_id)
         )
         conn.commit()
+
+
+def guardar_derivacion(chat_id: str, motivo: Optional[str], resumen: str, nueva: bool = True):
+    """Guarda el resumen del caso. Si es una derivación nueva, registra motivo y hora."""
+    with get_connection() as conn:
+        if nueva:
+            conn.execute(
+                "UPDATE chats SET motivo_derivacion = ?, derivado_at = ?, resumen_caso = ? WHERE chat_id = ?",
+                (motivo, ahora(), resumen, chat_id),
+            )
+        else:
+            conn.execute("UPDATE chats SET resumen_caso = ? WHERE chat_id = ?", (resumen, chat_id))
+        conn.commit()
+
+
+def obtener_metricas_chat(chat_id: str) -> List[Dict]:
+    init_db()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM metricas_turno WHERE chat_id = ? ORDER BY id", (chat_id,))
+        return [dict(row) for row in cursor.fetchall()]
 
 
 def registrar_metrica_turno(metrica: Dict):

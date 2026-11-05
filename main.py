@@ -24,6 +24,7 @@ from database import (
     es_mensaje_duplicado,
     esta_bot_activo,
     get_connection,
+    guardar_derivacion,
     guardar_nombre_cliente,
     guardar_telefono,
     marcar_esperando_nombre,
@@ -46,6 +47,8 @@ from proforma_imagen import generar_imagen_proforma
 from pricing_engine import GlobexPricingEngine
 from product_catalog import buscar_peso_producto
 from metricas import MedidorTurno, resumir as resumir_metricas
+from notificaciones import enviar_telegram, notificaciones_activas, texto_aviso
+from resumen_caso import construir_resumen
 from validaciones import (
     extraer_nombre,
     limpiar_respuesta_llm,
@@ -726,6 +729,7 @@ def ejecutar_herramienta(
                 chat_id, servicio="Cotización Courier (alto valor)", estado="Listo para Asesor", paso=4
             )
             actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+            registrar_derivacion(chat_id, "tope")
             return {"derivado": True}, con_pedido_de_nombre(
                 f"Como tu compra supera los USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}, "
                 "un asesor de Globex preparará tu cotización personalizada y te escribirá por este chat lo antes posible."
@@ -782,6 +786,7 @@ def ejecutar_herramienta(
             chat_id, servicio="Seguimiento Courier", estado="Listo para Asesor", paso=4
         )
         actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+        registrar_derivacion(chat_id, "seguimiento")
         return {"derivado": True}, con_pedido_de_nombre(
             "📦 Recibí tu consulta de seguimiento. Un asesor revisará el estado de tu paquete "
             "y te responderá por este chat lo antes posible.",
@@ -794,6 +799,7 @@ def ejecutar_herramienta(
             chat_id, servicio="Cotización Viajero", estado="Listo para Asesor", paso=4
         )
         actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+        registrar_derivacion(chat_id, "viajero")
         return {"derivado": True}, con_pedido_de_nombre(
             "🧳 La modalidad *Viajero* depende de los cupos y fechas de vuelo disponibles. "
             "Un asesor te escribirá por este chat para confirmarte la disponibilidad.",
@@ -807,6 +813,7 @@ def ejecutar_herramienta(
             f"(motivo: {args.get('motivo', '')})."
         )
         actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+        registrar_derivacion(chat_id, "asesor")
         return {"derivado": True}, con_pedido_de_nombre(texto_derivacion(nombre_confirmado(chat_id)), chat_id)
 
     print(f"⚠️ [Tool Calling] Herramienta desconocida: {nombre_funcion}")
@@ -905,6 +912,7 @@ async def _procesar_turno(
             actualizar_estado_chat(
                 chat_id, nuevo_estado="Listo para Asesor", bot_activo=0
             )
+            registrar_derivacion(chat_id, "restringido", entidad)
             bot_reply = con_pedido_de_nombre(bot_reply, chat_id)
 
         registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
@@ -1090,9 +1098,35 @@ def _en_segundo_plano(corrutina):
     return tarea
 
 
+def registrar_derivacion(chat_id: str, motivo: str, detalle: str = ""):
+    """Guarda el resumen del caso para el asesor y lo avisa por Telegram (si está configurado).
+
+    Nunca interrumpe la respuesta al cliente: cualquier error solo se registra.
+    """
+    try:
+        resumen = construir_resumen(chat_id, motivo, detalle)
+        guardar_derivacion(chat_id, motivo, resumen)
+        print(f"📋 [Derivación] [{chat_id}] {motivo}")
+        if notificaciones_activas():
+            _en_segundo_plano(enviar_telegram(texto_aviso(resumen)))
+    except Exception as e:
+        print(f"Error registrando la derivación: {e}")
+
+
+def actualizar_resumen(chat_id: str):
+    """Rehace el resumen (p. ej. cuando el cliente da su nombre), sin volver a avisar."""
+    try:
+        chat = obtener_chat(chat_id) or {}
+        if chat.get("motivo_derivacion"):
+            guardar_derivacion(chat_id, None, construir_resumen(chat_id, chat["motivo_derivacion"]), nueva=False)
+    except Exception as e:
+        print(f"Error actualizando el resumen: {e}")
+
+
 async def derivar_a_asesor(chat_id: str, sender_name: str):
     """Derivación directa (botón 'Hablar con asesor'): silencia el bot y avisa al cliente."""
     actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+    registrar_derivacion(chat_id, "asesor")
     respuesta = con_pedido_de_nombre(texto_derivacion(nombre_confirmado(chat_id)), chat_id)
     registrar_mensaje_saliente(chat_id, "bot", respuesta, None)
     await send_meta_whatsapp_message(chat_id, respuesta)
@@ -1266,6 +1300,7 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
                 nombre_dado = extraer_nombre(user_text)
                 if nombre_dado:
                     guardar_nombre_cliente(chat_id, nombre_dado)
+                    actualizar_resumen(chat_id)
                     gracias = f"¡Gracias, {nombre_dado.split()[0]}! Tu asesor te escribirá en breve por este chat. 🙌"
                     registrar_mensaje_saliente(chat_id, "bot", gracias, None)
                     await send_meta_whatsapp_message(chat_id, gracias)
