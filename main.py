@@ -4,9 +4,10 @@ import hmac
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
+import time
 from typing import Dict, List
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
@@ -24,8 +25,9 @@ from database import (
     init_db,
     marcar_recordatorio_enviado,
     obtener_chats_para_recordatorio,
-    obtener_mensajes_chat,  # <-- AGREGAR
-    obtener_todos_los_chats,  # <-- AGREGAR
+    obtener_mensajes_chat,
+    obtener_mensajes_recientes,
+    obtener_todos_los_chats,
     registrar_mensaje_entrante,
     registrar_mensaje_saliente,
 )
@@ -237,25 +239,39 @@ sessions: Dict[str, Dict] = {}
 message_buffer: Dict[str, List[str]] = {}
 buffer_tasks: Dict[str, asyncio.Task] = {}
 
+# Ventana de contexto: solo se recuerdan las últimas 12 h de conversación.
+HORAS_CONTEXTO = 12
+MAX_MENSAJES_CONTEXTO = 40
+
+
 def get_or_create_history(chat_id: str) -> List[Dict[str, str]]:
-    now = datetime.now()
-    if chat_id in sessions:
-        ultima_vez = sessions[chat_id].get("last_active", now)
-        horas_inactivo = (now - ultima_vez).total_seconds() / 3600
-        if horas_inactivo > 12:
-            print(f"🔄 [TTL Expirado] Reiniciando contexto para [{chat_id}]")
-            sessions[chat_id] = {
-                "history": [{"role": "system", "content": SYSTEM_PROMPT}],
-                "last_active": now,
-            }
-        else:
-            sessions[chat_id]["last_active"] = now
-    else:
-        sessions[chat_id] = {
-            "history": [{"role": "system", "content": SYSTEM_PROMPT}],
-            "last_active": now,
-        }
-    return sessions[chat_id]["history"]
+    """Reconstruye el historial del LLM desde SQLite en cada turno.
+
+    Así sobrevive a reinicios de Render e incluye lo que escribió el asesor
+    desde el dashboard. Se omiten los mensajes finales del cliente que aún no
+    tienen respuesta: son los del turno actual y llegan consolidados aparte.
+    """
+    desde = datetime.now() - timedelta(hours=HORAS_CONTEXTO)
+    mensajes = obtener_mensajes_recientes(chat_id, desde, MAX_MENSAJES_CONTEXTO)
+    while mensajes and mensajes[-1]["emisor"] == "cliente":
+        mensajes.pop()
+
+    history: List[Dict] = [{"role": "system", "content": SYSTEM_PROMPT}]
+    for m in mensajes:
+        texto = m.get("texto") or ""
+        emisor = m.get("emisor") or ""
+        if emisor == "cliente":
+            history.append({"role": "user", "content": texto})
+        elif emisor.startswith("bot"):
+            history.append({"role": "assistant", "content": texto})
+        else:  # mensaje de un asesor humano enviado desde el dashboard
+            history.append(
+                {"role": "assistant", "content": f"[Mensaje del asesor {emisor}]: {texto}"}
+            )
+
+    # Copia del último historial construido (útil para depurar y en pruebas).
+    sessions[chat_id] = {"history": history, "last_active": datetime.now()}
+    return history
 
 
 # 📤 FUNCIÓN OFICIAL PARA ENVIAR MENSAJES VÍA META CLOUD API
@@ -612,17 +628,18 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
             "timestamp"
         )  # Marca de tiempo original de WhatsApp
 
-        # ⏰ 1. FILTRO DE FRESCURA TEMPORAL: DESCARTAR REINTENTOS FANTASMA VIEJOS
-        # Si el mensaje fue enviado por el cliente hace más de 10 minutos (600s), se descarta de inmediato
+        # ⏰ 1. MENSAJES ATRASADOS: se responden igual (un cliente sin respuesta
+        # es peor que una respuesta tardía). Solo se registra la demora en el log;
+        # los reintentos repetidos los frena la deduplicación por wamid.
         if msg_timestamp:
-            import time
-
-            segundos_antiguedad = time.time() - float(msg_timestamp)
+            try:
+                segundos_antiguedad = time.time() - float(msg_timestamp)
+            except (TypeError, ValueError):
+                segundos_antiguedad = 0
             if segundos_antiguedad > 600:
                 print(
-                    f"⏰ [Reintento Fantasma Descartado] Mensaje [{id_message}] tiene {segundos_antiguedad/60:.1f} min de antigüedad. Se ignora."
+                    f"⏰ [Mensaje Atrasado] [{id_message}] llegó con {segundos_antiguedad/60:.1f} min de demora. Se responde igual."
                 )
-                return {"status": "stale_message_ignored"}
 
         # 🛡️ 2. PASO HP01: DEDUPLICACIÓN DE MENSAJES POR ID (Regla T28 del Manual)
         if id_message and es_mensaje_duplicado(id_message):

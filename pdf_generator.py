@@ -172,7 +172,7 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
         "1. Esta proforma es un cálculo preliminar referencial y no constituye una liquidación definitiva ni factura comercial.<br/>"
         "2. El peso facturable final será ratificado con el pesaje oficial en balanza a la llegada al almacén de Miami.<br/>"
         "3. Mercancías con baterías, cosméticos o restricciones sanitarias están sujetas a validación previa por el asesor asignado.<br/>"
-        "4. Vigencia de esta cotización referencial: 48 horas a partir de su emisión."
+        "4. Vigencia de esta cotización referencial: 24 horas a partir de su emisión."
     )
     elementos.append(Paragraph(disclaimer_text, disclaimer_style))
 

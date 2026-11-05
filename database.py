@@ -307,6 +307,27 @@ def obtener_mensajes_chat(chat_id: str) -> List[Dict]:
         )
         return [dict(row) for row in cursor.fetchall()]
 
+def obtener_mensajes_recientes(
+    chat_id: str, desde: datetime, limite: int = 40
+) -> List[Dict]:
+    """Últimos mensajes del chat desde una fecha, en orden cronológico."""
+    init_db()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT emisor, texto, timestamp FROM (
+                SELECT emisor, texto, timestamp, id FROM messages
+                WHERE chat_id = ? AND timestamp >= ?
+                ORDER BY timestamp DESC, id DESC
+                LIMIT ?
+            ) ORDER BY timestamp ASC, id ASC
+            """,
+            (chat_id, desde, limite),
+        )
+        return [dict(row) for row in cursor.fetchall()]
+
+
 def esta_bot_activo(chat_id: str) -> bool:
     """Verifica si el bot tiene autorización para responder automáticamente."""
     init_db()

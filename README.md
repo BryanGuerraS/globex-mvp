@@ -90,7 +90,7 @@ Ejemplos verificados con el motor:
 | USD 150 | 1.2 kg | USD 19.80 | USD 0.00 | **USD 169.80** |
 | USD 1 000 | 2.5 kg | USD 31.50 | USD 234.35 | **USD 1 265.85** |
 
-> ⚠️ **Reglas en revisión con Globex.** Están pendientes de confirmar el TAX de tienda (7 %), la tasa de tributos y la vigencia de la cotización. No se cambian sin la confirmación de Globex.
+> La tasa de 22.72 % coincide con el simulador de la web de Globex. La cotización tiene vigencia de 24 h. Queda pendiente de confirmar el TAX de tienda (7 %).
 
 ---
 
@@ -102,7 +102,8 @@ Ejemplos verificados con el motor:
 - **Montos en palabras:** el cliente puede escribir "mil dólares" o "medio kilo"; el LLM lo convierte a número y la validación lo reconoce.
 - **Interruptor de silencio:** mientras un asesor atiende desde la consola, el bot no responde encima.
 - **Guardrail de mercancía:** perfumes, cosméticos o vitaminas (DIGEMID) y vapes, armas o pirotecnia (prohibidos) no se cotizan automáticamente; se derivan.
-- **Deduplicación:** los reintentos de Meta con el mismo `wamid` se ignoran.
+- **Deduplicación:** los reintentos de Meta con el mismo `wamid` se ignoran. Los mensajes que llegan con retraso (por ejemplo, tras un reinicio) se responden igual.
+- **Memoria de la conversación:** el contexto del LLM se reconstruye desde SQLite en cada turno (últimas 12 h, hasta 40 mensajes), así que sobrevive a reinicios e incluye lo que escribió el asesor.
 - **Recordatorio a los 20 min:** si una cotización queda sin respuesta, se envía un mensaje de seguimiento.
 
 ---
@@ -132,7 +133,9 @@ globex-mvp/
 ├── pdf_generator.py     # Proforma PDF (ReportLab)
 ├── database.py          # SQLite: chats, mensajes, estados, deduplicación
 ├── dashboard.py         # Consola de asesores (Streamlit)
+├── validaciones.py      # Validación de valor y peso antes del motor (dígitos o palabras)
 ├── tests/               # Pruebas automatizadas (pytest)
+├── docs/                # Plan de evaluación y KPIs de calidad del modelo
 ├── requirements.txt
 ├── Procfile             # Comando de arranque en Render
 └── .env.example         # Plantilla de variables de entorno (sin secretos)
@@ -196,7 +199,9 @@ Para que Meta alcance un backend local hace falta exponerlo con un túnel HTTPS 
 
 ---
 
-## 8. Pruebas
+## 8. Pruebas y evaluación
+
+El plan para medir la calidad del modelo está en [`docs/plan_evaluacion.md`](docs/plan_evaluacion.md). Propone 11 KPIs basados en τ-bench, BFCL, RAGAS y OWASP, entre ellos exactitud de herramienta y de argumentos, cotización indebida, exactitud de derivación y consistencia pass^3. El KPI de tiempo (≤ 60 min) queda como métrica de negocio.
 
 Pruebas automatizadas (corren en una carpeta temporal y no tocan `globex.db`):
 
@@ -229,9 +234,12 @@ Casos funcionales de referencia por WhatsApp:
 - [x] Seguridad: firma de webhooks, API key del dashboard, PDFs sin teléfono
 - [x] Manejar todas las llamadas a herramientas del LLM y validar valor y peso antes del motor
 - [x] Peso mínimo de 1 kg y tope de USD 1 200 para la cotización automática
-- [ ] Responder también los mensajes que llegan con más de 10 min de retraso
-- [ ] Reconstruir el historial de conversación desde SQLite tras un reinicio
+- [x] Responder también los mensajes que llegan con más de 10 min de retraso
+- [x] Reconstruir el historial de conversación desde SQLite tras un reinicio
 - [ ] Resumen automático del caso al derivar al asesor
+- [x] Plan de evaluación con KPIs de calidad del modelo ([docs/plan_evaluacion.md](docs/plan_evaluacion.md))
+- [ ] Script de evaluación con el LLM real sobre un set reservado (3 repeticiones por caso)
+- [ ] Registrar en SQLite las herramientas llamadas y sus argumentos
 - [ ] Registro de tiempos para medir el KPI de ≤ 60 min
-- [ ] 36 casos sintéticos de verificación del motor y evaluación conversacional del LLM
-- [ ] Credenciales del dashboard fuera del código
+- [ ] 36 casos sintéticos de verificación del motor
+- [ ] Credenciales del dashboard fuera del código (después de la fase de pruebas)
