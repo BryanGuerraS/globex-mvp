@@ -456,6 +456,23 @@ def avisar_casos_nuevos(chats: List[Dict]):
     st.session_state.casos_vistos |= set(derivados)
 
 
+TIPOS_ATENCION = {"cotizacion": "cotización", "faq": "consulta", "guardrail": "mercancía restringida",
+                  "mensaje_asesor": "mensaje"}
+
+
+def texto_primera_atencion(chat: Dict) -> str:
+    """'4 min · Globix (cotización)' o 'Pendiente', para el KPI de primera atención útil."""
+    inicio, util = _fecha(chat.get("primer_mensaje_at")), _fecha(chat.get("primera_util_at"))
+    if not inicio:
+        return "—"
+    if not util:
+        return "Pendiente"
+    minutos = max(0, round((util - inicio).total_seconds() / 60))
+    quien = "Globix" if chat.get("primera_util_actor") == "bot" else "Asesor"
+    tipo = TIPOS_ATENCION.get(chat.get("primera_util_tipo"), chat.get("primera_util_tipo") or "")
+    return f"{minutos} min · {quien} ({tipo})"
+
+
 def panel_detalle(chat: Dict):
     if chat.get("resumen_caso"):
         with st.container(border=True):
@@ -476,7 +493,8 @@ def panel_detalle(chat: Dict):
         st.markdown(
             f":material/category: {chat.get('servicio') or '—'}  \n"
             f":material/badge: {tipo_contacto(chat)}  \n"
-            f":material/schedule: Último mensaje: {texto_espera(minutos_desde(chat.get('ultimo_mensaje_cliente_at')))}"
+            f":material/schedule: Último mensaje: {texto_espera(minutos_desde(chat.get('ultimo_mensaje_cliente_at')))}  \n"
+            f":material/task_alt: Primera atención útil: {texto_primera_atencion(chat)}"
         )
 
     with st.container(border=True):
@@ -612,6 +630,34 @@ def _seg(ms) -> str:
     return f"{ms / 1000:.1f} s" if ms is not None else "—"
 
 
+def panel_kpi_atencion(kpi: Dict):
+    """KPI de impacto: % de leads con primera atención útil en <= 60 min."""
+    plazo = kpi.get("plazo_min", 60)
+    with st.container(border=True):
+        st.markdown(f"**Primera atención útil en ≤ {plazo} min**")
+        if not kpi.get("leads_evaluables"):
+            en_curso = kpi.get("en_curso", 0)
+            st.caption("Aún no hay leads evaluables en este periodo"
+                       + (f" ({en_curso} dentro del plazo)." if en_curso else "."))
+            return
+        li, ls = kpi["ic95"]
+        actores = kpi.get("por_actor", {})
+        bot, asesor = actores.get("bot", {}), actores.get("asesor", {})
+        with st.container(horizontal=True):
+            st.metric("Leads a tiempo", f"{kpi['porcentaje']:.0%}", border=True, icon=":material/task_alt:",
+                      help=f"{kpi['a_tiempo']} de {kpi['leads_evaluables']} leads · IC 95 % {li:.0%}–{ls:.0%} "
+                           "(Clopper-Pearson). Un saludo o el menú no cuentan como atención útil.")
+            st.metric("Tiempo hasta atención útil · p50",
+                      f"{kpi['minutos_p50']:.1f} min" if kpi.get("minutos_p50") is not None else "—",
+                      border=True, icon=":material/timer:")
+            st.metric("Atendidos por Globix / asesor",
+                      f"{bot.get('atendidos', 0)} / {asesor.get('atendidos', 0)}", border=True,
+                      icon=":material/smart_toy:")
+            st.metric("Sin atención útil", kpi.get("sin_atencion_util", 0), border=True,
+                      icon=":material/report:", help=f"{kpi.get('en_curso', 0)} leads siguen dentro del plazo")
+        st.caption(f"IC 95 %: {li:.0%}–{ls:.0%} sobre {kpi['leads_evaluables']} leads.")
+
+
 def pagina_metricas():
     with st.sidebar:
         st.markdown(f"**{st.session_state.usuario_actual['nombre']}**")
@@ -621,13 +667,14 @@ def pagina_metricas():
             st.rerun()
 
     with st.container(horizontal=True, vertical_alignment="bottom"):
-        st.caption("Costo, latencia y comportamiento de Globix por turno.", width="stretch")
+        st.caption("KPI de primera atención, costo, latencia y comportamiento de Globix.", width="stretch")
         horas = st.segmented_control(
             "Periodo", [1, 24, 168, 0], default=24, required=True, label_visibility="collapsed",
             format_func=lambda h: {1: "1 h", 24: "24 h", 168: "7 días", 0: "Todo"}[h],
         )
 
     datos = fetch_metricas(horas)
+    panel_kpi_atencion(datos.get("kpi_atencion") or {})
     res = datos.get("resumen", {})
     if not res.get("turnos"):
         st.caption("Aún no hay turnos registrados en este periodo.")

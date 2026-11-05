@@ -98,6 +98,15 @@ def init_db():
             cursor.execute("ALTER TABLE chats ADD COLUMN derivado_at TIMESTAMP")
         if "resumen_caso" not in columnas:
             cursor.execute("ALTER TABLE chats ADD COLUMN resumen_caso TEXT")
+        # KPI de primera atención útil en <= 60 min
+        for columna, tipo in (
+            ("primer_mensaje_at", "TIMESTAMP"),
+            ("primera_util_at", "TIMESTAMP"),
+            ("primera_util_actor", "TEXT"),
+            ("primera_util_tipo", "TEXT"),
+        ):
+            if columna not in columnas:
+                cursor.execute(f"ALTER TABLE chats ADD COLUMN {columna} {tipo}")
 
         # 3b. Métricas por turno del bot (costo, latencia y herramientas usadas)
         cursor.execute(
@@ -205,14 +214,15 @@ def registrar_mensaje_entrante(chat_id: str, nombre: str, texto: str):
 
         cursor.execute(
             """
-            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at, primer_mensaje_at)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(chat_id) DO UPDATE SET 
                 nombre = excluded.nombre,
                 updated_at = excluded.updated_at,
-                ultimo_mensaje_cliente_at = excluded.ultimo_mensaje_cliente_at
+                ultimo_mensaje_cliente_at = excluded.ultimo_mensaje_cliente_at,
+                primer_mensaje_at = COALESCE(chats.primer_mensaje_at, excluded.primer_mensaje_at)
         """,
-            (chat_id, nombre, now, now),
+            (chat_id, nombre, now, now, now),
         )
 
         cursor.execute(
@@ -465,6 +475,22 @@ def guardar_derivacion(chat_id: str, motivo: Optional[str], resumen: str, nueva:
         conn.commit()
 
 
+def marcar_atencion_util(chat_id: str, actor: str, tipo: str) -> bool:
+    """Registra la primera atención útil del lead (actor: 'bot' o 'asesor').
+
+    Solo cuenta la primera; las siguientes no cambian nada. Devuelve True si
+    esta fue la primera.
+    """
+    with get_connection() as conn:
+        cur = conn.execute(
+            """UPDATE chats SET primera_util_at = ?, primera_util_actor = ?, primera_util_tipo = ?
+               WHERE chat_id = ? AND primera_util_at IS NULL""",
+            (ahora(), actor, tipo, chat_id),
+        )
+        conn.commit()
+        return cur.rowcount > 0
+
+
 def obtener_metricas_chat(chat_id: str) -> List[Dict]:
     init_db()
     with get_connection() as conn:
@@ -542,14 +568,15 @@ def registrar_mensaje_entrante(
 
         cursor.execute(
             """
-            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at, primer_mensaje_at)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(chat_id) DO UPDATE SET 
                 nombre = excluded.nombre,
                 updated_at = excluded.updated_at,
-                ultimo_mensaje_cliente_at = excluded.ultimo_mensaje_cliente_at
+                ultimo_mensaje_cliente_at = excluded.ultimo_mensaje_cliente_at,
+                primer_mensaje_at = COALESCE(chats.primer_mensaje_at, excluded.primer_mensaje_at)
         """,
-            (chat_id, nombre, now, now),
+            (chat_id, nombre, now, now, now),
         )
 
         cursor.execute(

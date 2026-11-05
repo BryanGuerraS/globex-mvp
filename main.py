@@ -25,6 +25,7 @@ from database import (
     esta_bot_activo,
     get_connection,
     guardar_derivacion,
+    marcar_atencion_util,
     guardar_nombre_cliente,
     guardar_telefono,
     marcar_esperando_nombre,
@@ -46,7 +47,7 @@ from pdf_generator import buscar_ultimo_pdf, generar_pdf_cotizacion
 from proforma_imagen import generar_imagen_proforma
 from pricing_engine import GlobexPricingEngine
 from product_catalog import buscar_peso_producto
-from metricas import MedidorTurno, resumir as resumir_metricas
+from metricas import MedidorTurno, kpi_primera_atencion, resumir as resumir_metricas
 from notificaciones import enviar_telegram, notificaciones_activas, texto_aviso
 from resumen_caso import construir_resumen
 from validaciones import (
@@ -856,6 +857,11 @@ _TIPO_POR_RESULTADO = {
     "redirigido": "fuera_de_alcance",
 }
 
+# KPI de impacto: respuestas del bot que cuentan como "primera atención útil".
+# Saludo, menú, pedir datos, derivar, fuera de alcance y errores NO cuentan.
+# (El primer mensaje de un asesor humano siempre cuenta.)
+TIPOS_ATENCION_UTIL = frozenset({"cotizacion", "faq", "guardrail"})
+
 
 async def procesar_mensaje_consolidado(
     chat_id: str, sender_name: str, texto_consolidado: str
@@ -878,6 +884,12 @@ async def procesar_mensaje_consolidado(
             )
         except Exception as e:
             print(f"Error registrando métricas: {e}")
+        try:
+            util = [t for t in medidor.tipo_respuesta.split("+") if t in TIPOS_ATENCION_UTIL]
+            if util and marcar_atencion_util(chat_id, "bot", util[0]):
+                print(f"✅ [KPI] [{chat_id}] primera atención útil: Globix ({util[0]})")
+        except Exception as e:
+            print(f"Error registrando atención útil: {e}")
 
 
 async def _procesar_turno(
@@ -1461,6 +1473,7 @@ async def api_enviar_mensaje_asesor(payload: MensajeAsesorPayload):
         nuevo_asesor=None if chat.get("asesor_asignado") else payload.nombre_asesor,
         bot_activo=0,
     )
+    marcar_atencion_util(payload.chat_id, "asesor", "mensaje_asesor")
     return {"status": "sent"}
 
 
@@ -1491,10 +1504,15 @@ def api_descargar_pdf(chat_id: str):
 
 @app.get("/api/metricas", dependencies=[Depends(verificar_api_key)])
 def api_metricas(horas: float = 24, ultimos: int = 20):
-    """Costo y latencia de los turnos del bot en las últimas `horas` (0 = todo)."""
-    desde = ahora() - timedelta(hours=horas) if horas > 0 else None
+    """Costo, latencia y KPI de primera atención útil en las últimas `horas` (0 = todo)."""
+    momento = ahora()
+    desde = momento - timedelta(hours=horas) if horas > 0 else None
     filas = obtener_metricas(desde)
-    return {"resumen": resumir_metricas(filas), "ultimos": filas[-max(0, ultimos):]}
+    return {
+        "resumen": resumir_metricas(filas),
+        "ultimos": filas[-max(0, ultimos):],
+        "kpi_atencion": kpi_primera_atencion(obtener_todos_los_chats(), momento, desde),
+    }
 
 
 @app.post("/api/admin/clean-data", dependencies=[Depends(verificar_api_key)])

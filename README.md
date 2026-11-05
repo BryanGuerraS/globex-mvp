@@ -138,11 +138,23 @@ Diseñada con las guías oficiales de Streamlit (skill *developing-with-streamli
 - **Usuarios de prueba:** asesores Bryan, Juan y Anyela, y el usuario Admin. Los chats nuevos quedan *sin asignar*; el primer asesor que responde queda asignado y también se puede asignar desde el detalle.
 - **Indicador de Globix:** punto verde cuando el bot responde en ese chat y gris cuando está pausado.
 - **Bandeja en tres paneles:** lista de chats (ordenada por los que requieren asesor y llevan más tiempo esperando, con badges de estado y semáforo de espera) · conversación con el formato de WhatsApp y respuesta directa · detalle del lead (cotización, avance, estado y acciones).
+- **Detalle del lead:** muestra cuánto tardó la primera atención útil y quién la dio (p. ej. *4 min · Globix (cotización)*).
 - **KPIs** en tarjetas: conversaciones, requieren asesor, esperan más de 45 min y monto cotizado.
 - **Filtros** en la barra lateral (búsqueda, estado, asesor —incluye *sin asignar*— y servicio). Actualización automática: mensajes del chat abierto cada 5 s; bandeja, KPIs y detalle cada 15 s, para no cerrar los desplegables mientras se usan.
-- **Métricas:** costo y latencia de Globix, gráfico de tipos de respuesta, últimos turnos y una zona de administración con confirmación antes de borrar datos.
+- **Métricas:** KPI de primera atención útil en ≤ 60 min, costo y latencia de Globix, gráfico de tipos de respuesta, últimos turnos y una zona de administración con confirmación antes de borrar datos.
 
-## 5. Costo y latencia
+## 5. KPI de impacto, costo y latencia
+
+### Primera atención útil en ≤ 60 min
+
+Por cada lead, la tabla `chats` guarda `primer_mensaje_at` (primer mensaje del cliente, se fija una sola vez) y la **primera atención útil**: `primera_util_at`, `primera_util_actor` (`bot` o `asesor`) y `primera_util_tipo`.
+
+- **Cuenta como atención útil:** una cotización, una respuesta de FAQ, la explicación de mercancía restringida o prohibida, o el primer mensaje de un asesor humano. La lista está en `TIPOS_ATENCION_UTIL` (`main.py`).
+- **No cuenta:** saludo o menú, pedir datos que faltan, derivar, mensajes fuera de alcance, errores y recordatorios automáticos.
+
+El KPI (`kpi_primera_atencion` en [`metricas.py`](metricas.py)) es el % de leads atendidos en ≤ 60 min, con IC 95 % de Clopper-Pearson. Solo evalúa los leads cuya ventana de 60 min ya cerró o que ya fueron atendidos; los demás se muestran como *en curso*. También reporta la mediana del tiempo, cuántos atendió Globix y cuántos un asesor, y los leads sin atención útil. Está en `GET /api/metricas` (campo `kpi_atencion`) y en la página **Métricas** de la consola.
+
+### Costo y latencia
 
 Cada turno de Globix se registra en la tabla `metricas_turno` (ver [`metricas.py`](metricas.py)):
 
@@ -156,7 +168,7 @@ Cada turno de Globix se registra en la tabla `metricas_turno` (ver [`metricas.py
 | `tipo_respuesta` | `cotizacion`, `faq`, `derivacion`, `menu`, `fuera_de_alcance`, `libre`, `bloqueado:<motivo>`, `guardrail`, `error`, `recuperacion` |
 | `herramientas` | Herramientas que llamó el LLM, con sus argumentos y resultado (JSON) |
 
-El resumen (p50/p95 de latencia, costo por conversación y por 1 000 conversaciones, tipos de respuesta) está en `GET /api/metricas?horas=24` y en el panel **⏱️ Costo y latencia del bot** del dashboard (rol admin).
+El resumen (p50/p95 de latencia, costo por conversación y por 1 000 conversaciones, tipos de respuesta) está en `GET /api/metricas?horas=24` y en la página **Métricas** de la consola (rol admin).
 
 ## 6. Seguridad
 
@@ -345,11 +357,11 @@ Casos funcionales de referencia por WhatsApp:
 - [x] Medir costo y latencia por turno (`/api/metricas` y panel admin)
 - [x] Separar la conversación del envío por Meta (el flujo se evalúa sin WhatsApp)
 - [x] Resumen del caso al derivar, aviso en la consola y por Telegram (opcional)
+- [x] KPI de primera atención útil en ≤ 60 min (bot o asesor) con IC 95 %
 
 **Pendiente**
 
 - [ ] Set reservado de conversaciones escrito por el equipo y evaluación con doble revisión humana (kappa)
-- [ ] Registro de tiempos para medir el KPI de ≤ 60 min (primer mensaje, primera respuesta útil, bot o asesor)
 - [ ] Embudo de ventas Ganado/Perdido en el dashboard
 - [ ] TAX de tienda del 7 % (por definir con Globex)
 - [ ] Transcripción de notas de voz

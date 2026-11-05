@@ -31,6 +31,7 @@ from datetime import datetime
 if __package__ in (None, ""):  # ejecutado como script: python evaluacion/evaluar.py
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from evaluacion.reporte_pdf import generar_reporte_pdf  # noqa: E402
+from metricas import clopper_pearson  # noqa: E402,F401
 from typing import Dict, List, Optional, Tuple
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,40 +41,7 @@ NOMBRE_CLIENTE = "Cliente Evaluación"  # no parece un nombre real: no personali
 
 # ---------------------------------------------------------------- Estadística
 
-def _binom_cdf(k: int, n: int, p: float) -> float:
-    if k < 0:
-        return 0.0
-    if k >= n:
-        return 1.0
-    return sum(math.comb(n, i) * p**i * (1 - p) ** (n - i) for i in range(k + 1))
-
-
-def clopper_pearson(exitos: int, n: int, confianza: float = 0.95) -> Tuple[float, float]:
-    """IC exacto de Clopper-Pearson para una proporción (por bisección)."""
-    if n == 0:
-        return (0.0, 1.0)
-    alfa = 1 - confianza
-    inferior = 0.0
-    if exitos > 0:
-        lo, hi = 0.0, 1.0
-        for _ in range(100):  # P(X >= exitos | p) = alfa/2
-            mid = (lo + hi) / 2
-            if 1 - _binom_cdf(exitos - 1, n, mid) < alfa / 2:
-                lo = mid
-            else:
-                hi = mid
-        inferior = (lo + hi) / 2
-    superior = 1.0
-    if exitos < n:
-        lo, hi = 0.0, 1.0
-        for _ in range(100):  # P(X <= exitos | p) = alfa/2
-            mid = (lo + hi) / 2
-            if _binom_cdf(exitos, n, mid) > alfa / 2:
-                lo = mid
-            else:
-                hi = mid
-        superior = (lo + hi) / 2
-    return (inferior, superior)
+# clopper_pearson vive en metricas.py (lo usa también el KPI de atención)
 
 
 def proporcion(exitos: int, n: int) -> Dict:

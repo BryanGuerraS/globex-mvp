@@ -12,9 +12,11 @@ Las funciones de resumen son puras para reutilizarlas en el script de evaluació
 """
 
 import json
+import math
 import os
 import statistics
-from typing import Dict, Iterable, List, Optional
+from datetime import datetime
+from typing import Dict, Iterable, List, Optional, Tuple
 
 # Precio de Groq para openai/gpt-oss-120b (USD por millón de tokens).
 # Fuente: groq.com/pricing (oct. 2026). Configurable si cambia.
@@ -113,4 +115,107 @@ def resumir(filas: Iterable[Dict]) -> Dict:
         "latencia_total_cliente": _resumen_latencia([f["latencia_total_ms"] for f in filas]),
         "tipos_respuesta": tipos,
         "precio_usd_por_millon": {"entrada": PRECIO_ENTRADA_USD_M, "salida": PRECIO_SALIDA_USD_M},
+    }
+
+
+# ---------------------------------------------------------------- Estadística
+
+def _binom_cdf(k: int, n: int, p: float) -> float:
+    if k < 0:
+        return 0.0
+    if k >= n:
+        return 1.0
+    return sum(math.comb(n, i) * p**i * (1 - p) ** (n - i) for i in range(k + 1))
+
+
+def clopper_pearson(exitos: int, n: int, confianza: float = 0.95) -> Tuple[float, float]:
+    """IC exacto de Clopper-Pearson para una proporción (por bisección)."""
+    if n == 0:
+        return (0.0, 1.0)
+    alfa = 1 - confianza
+    inferior = 0.0
+    if exitos > 0:
+        lo, hi = 0.0, 1.0
+        for _ in range(100):  # P(X >= exitos | p) = alfa/2
+            mid = (lo + hi) / 2
+            if 1 - _binom_cdf(exitos - 1, n, mid) < alfa / 2:
+                lo = mid
+            else:
+                hi = mid
+        inferior = (lo + hi) / 2
+    superior = 1.0
+    if exitos < n:
+        lo, hi = 0.0, 1.0
+        for _ in range(100):  # P(X <= exitos | p) = alfa/2
+            mid = (lo + hi) / 2
+            if _binom_cdf(exitos, n, mid) > alfa / 2:
+                lo = mid
+            else:
+                hi = mid
+        superior = (lo + hi) / 2
+    return (inferior, superior)
+
+
+# ------------------------------------------- KPI: primera atención útil <= 60 min
+
+# Plazo del KPI de impacto (minutos). Un saludo automático no cuenta como atención útil:
+# qué respuestas cuentan lo define TIPOS_ATENCION_UTIL en main.py.
+PLAZO_ATENCION_MIN = 60
+
+
+def _fecha(valor) -> Optional[datetime]:
+    if valor is None or isinstance(valor, datetime):
+        return valor
+    try:
+        return datetime.fromisoformat(str(valor))
+    except ValueError:
+        return None
+
+
+def kpi_primera_atencion(
+    chats: Iterable[Dict], momento: datetime, desde: Optional[datetime] = None,
+    plazo_min: int = PLAZO_ATENCION_MIN,
+) -> Dict:
+    """% de leads con primera atención útil en <= plazo_min, con IC 95 % (Clopper-Pearson).
+
+    Lead = chat con primer mensaje registrado (desde `desde`, si se indica).
+    Se evalúan los leads cuya ventana ya cerró o que ya recibieron atención útil;
+    los que aún están dentro del plazo sin atención quedan como "en curso".
+    """
+    evaluables, a_tiempo, en_curso, sin_atencion = 0, 0, 0, 0
+    minutos: List[float] = []
+    por_actor: Dict[str, Dict[str, int]] = {}
+    for chat in chats:
+        inicio = _fecha(chat.get("primer_mensaje_at"))
+        if inicio is None or (desde is not None and inicio < desde):
+            continue
+        util = _fecha(chat.get("primera_util_at"))
+        if util is None:
+            if (momento - inicio).total_seconds() / 60 <= plazo_min:
+                en_curso += 1
+                continue
+            evaluables += 1
+            sin_atencion += 1
+            continue
+        evaluables += 1
+        espera = max(0.0, (util - inicio).total_seconds() / 60)
+        minutos.append(espera)
+        actor = chat.get("primera_util_actor") or "bot"
+        cuenta = por_actor.setdefault(actor, {"atendidos": 0, "a_tiempo": 0})
+        cuenta["atendidos"] += 1
+        if espera <= plazo_min:
+            a_tiempo += 1
+            cuenta["a_tiempo"] += 1
+    li, ls = clopper_pearson(a_tiempo, evaluables)
+    return {
+        "plazo_min": plazo_min,
+        "leads_evaluables": evaluables,
+        "a_tiempo": a_tiempo,
+        "porcentaje": a_tiempo / evaluables if evaluables else None,
+        "ic95": [li, ls] if evaluables else None,
+        "sin_atencion_util": sin_atencion,
+        "en_curso": en_curso,
+        "minutos_p50": _percentil(minutos, 50),
+        "minutos_p95": _percentil(minutos, 95),
+        "por_actor": por_actor,
     }
