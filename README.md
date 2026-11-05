@@ -103,9 +103,9 @@ Ejemplos verificados con el motor:
 - **ID único del cliente:** cada chat se identifica con el ID de usuario de Meta (BSUID, por ejemplo `PE.2347…`), que llega siempre, aunque el cliente oculte su número. El teléfono, cuando Meta lo comparte, se guarda aparte solo como respaldo de envío y no se muestra.
 - **Botones de WhatsApp:** la bienvenida ofrece *Cotizar envío*, *Rastrear paquete* y *Otras consultas*. Esta última abre una lista con dirección en Miami, plazos, provincias, cómo funciona, pagos, modalidad viajero y asesor. El cliente también puede escribir libremente; si ya dijo qué necesita, no se le muestra el menú.
 - **"Escribiendo…":** al recibir un mensaje, el bot lo marca como leído y muestra el indicador mientras prepara la respuesta.
-- **Datos para cotizar:** pide en un solo mensaje producto, precio en USD y peso en kg, con un ejemplo ("Laptop Lenovo, $650, 2.5 kg"). Si el cliente no da el peso, se busca en el catálogo; si el producto no está, pregunta solo "¿Cuánto pesa aproximadamente en kg?" (nunca el modelo ni la marca) y explica que basta un estimado únicamente si el cliente duda. Las notas internas del LLM, como "(Esperando respuesta del cliente)", se filtran antes de enviar.
+- **Datos para cotizar:** pide en un solo mensaje producto, precio en USD y peso en kg, con un ejemplo ("Laptop Lenovo, USD 650, 2.5 kg"). Si el cliente no da el peso, se busca en el catálogo; si el producto no está, pregunta solo "¿Cuánto pesa aproximadamente en kg?" (nunca el modelo ni la marca) y explica que basta un estimado únicamente si el cliente duda. Las notas internas del LLM, como "(Esperando respuesta del cliente)", se filtran antes de enviar.
 - **Proforma como imagen:** la cotización llega como una imagen de proforma con el logo de Globex (número, fecha, producto, flete, trámite aduanero, tributos, total y vigencia de 24 h; generada por [`proforma_imagen.py`](proforma_imagen.py) con los montos del motor). Si el peso viene del catálogo se marca como *estimado*. La leyenda dice *"Te envío adjunto tu cotización **referencial**."* y luego llegan los botones con el total. Si la imagen no se puede enviar, se usa el mensaje de texto.
-- **Confirmación:** la cotización empieza con lo que entendió el bot, por ejemplo *"Entendí: laptop Lenovo, USD 650, 2.5 kg"*, y termina con los botones *Hablar con asesor*, *Cotizar otro* y *¿Cómo compro?*.
+- **Después de la proforma:** llega *"Total estimado: **USD 836.33**. ¿Qué deseas hacer ahora? 😊"* con los botones *Hablar con asesor*, *Cotizar otro* y *¿Cómo compro?*. Lo que entendió el bot (producto, precio y peso) queda registrado para el asesor en el dashboard.
 - **Recuperación:** si el bot falla dos veces seguidas, ofrece las opciones y el asesor en vez de repetir el error.
 - **Alcance limitado a Globex (dos capas):**
   1. *Herramienta `fuera_de_alcance`:* ante temas ajenos (matemáticas, programación, recetas, política…) el LLM no responde el tema; Globix envía un texto fijo y los botones del menú.
@@ -113,6 +113,8 @@ Ejemplos verificados con el motor:
 
 **Reglas internas**
 
+- **Formato:** todos los montos se muestran como *USD 62.70* (proforma, mensajes, dashboard y reportes), también en los ejemplos que da el bot.
+- **Hora de Lima:** el sistema usa siempre la hora de Perú (`America/Lima`) aunque Render y Streamlit Cloud corran en UTC; así coinciden las horas de la proforma, el dashboard y WhatsApp.
 - **Debounce de 5 s:** si el cliente escribe en varios mensajes seguidos, el bot los une y responde una sola vez.
 - **Mensajes no textuales:** ante audios, fotos, documentos o videos, el bot avisa que atiende por texto y deja el registro para el asesor.
 - **Escape a humano:** el LLM decide si el cliente realmente pide hablar con una persona (herramienta `derivar_a_asesor`), en lugar de buscar palabras sueltas: "quiero hablar con un asesor" deriva, "es para uso personal" no. Al derivar, el bot se silencia (`bot_activo = 0`) y marca el chat como *Listo para Asesor*.
@@ -316,19 +318,34 @@ Casos funcionales de referencia por WhatsApp:
 
 ## 10. Hoja de ruta
 
+**Hecho**
+
 - [x] Migración de GREEN-API a Meta WhatsApp Cloud API
 - [x] Seguridad: firma de webhooks, API key del dashboard, PDFs sin teléfono
 - [x] Manejar todas las llamadas a herramientas del LLM y validar valor y peso antes del motor
 - [x] Peso mínimo de 1 kg y tope de USD 1 200 para la cotización automática
 - [x] Responder también los mensajes que llegan con más de 10 min de retraso
 - [x] Reconstruir el historial de conversación desde SQLite tras un reinicio
-- [x] Experiencia de usuario: Globix, botones y listas de WhatsApp, "escribiendo…", confirmación de datos
-- [ ] Resumen automático del caso al derivar al asesor
+- [x] Experiencia de usuario: Globix, botones y listas de WhatsApp, "escribiendo…"
+- [x] ID único del cliente (BSUID) y nombre pedido al derivar
+- [x] Alcance limitado a Globex (herramienta `fuera_de_alcance` + revisión de salida)
+- [x] Cotización enviada como imagen de proforma con la marca Globex
+- [x] Textos de Globix revisados y aprobados por el equipo (un emoji como máximo, montos en USD)
+- [x] Recordatorios sin ofrecer casillero (cierre de venta fuera de alcance)
+- [x] Consola de asesores con la marca Globex, asignación de asesor y estado sincronizado con el bot
 - [x] Plan de evaluación con KPIs de calidad del modelo ([docs/plan_evaluacion.md](docs/plan_evaluacion.md))
-- [x] Script de evaluación con el LLM real y reporte de depuración (`evaluacion/evaluar.py`)
-- [ ] Set reservado de conversaciones escrito por el equipo
+- [x] Script de evaluación con el LLM real y reporte en PDF (`evaluacion/evaluar.py`)
 - [x] Registrar en SQLite las herramientas llamadas y sus argumentos
 - [x] Medir costo y latencia por turno (`/api/metricas` y panel admin)
-- [ ] Registro de tiempos para medir el KPI de ≤ 60 min
+- [x] Separar la conversación del envío por Meta (el flujo se evalúa sin WhatsApp)
+
+**Pendiente**
+
+- [ ] Set reservado de conversaciones escrito por el equipo y evaluación con doble revisión humana (kappa)
+- [ ] Resumen automático del caso y aviso al asesor al derivar
+- [ ] Registro de tiempos para medir el KPI de ≤ 60 min (primer mensaje, primera respuesta útil, bot o asesor)
+- [ ] Embudo de ventas Ganado/Perdido en el dashboard
+- [ ] TAX de tienda del 7 % (por definir con Globex)
+- [ ] Transcripción de notas de voz
 - [ ] 36 casos sintéticos de verificación del motor
 - [ ] Credenciales del dashboard fuera del código (después de la fase de pruebas)

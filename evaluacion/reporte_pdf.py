@@ -193,9 +193,9 @@ def generar_reporte_pdf(meta: Dict, casos: List[Dict], resultados: Dict[str, Lis
             filas.append([f"Espera estimada del cliente (+{debounce_s:.0f} s de agrupación)",
                           f"{_seg(lat['p50_ms'] + debounce_s * 1000)} · {_seg(lat['p95_ms'] + debounce_s * 1000)}"])
         filas += [
-            ["Costo total de la evaluación", f"US$ {resumen_costo['costo_total_usd']:.4f}"],
-            ["Costo por conversación", f"US$ {resumen_costo['costo_por_conversacion_usd']:.5f}"],
-            ["Costo por 1 000 conversaciones", f"US$ {resumen_costo['costo_por_1000_conversaciones_usd']:.2f}"],
+            ["Costo total de la evaluación", f"USD {resumen_costo['costo_total_usd']:.4f}"],
+            ["Costo por conversación", f"USD {resumen_costo['costo_por_conversacion_usd']:.5f}"],
+            ["Costo por 1 000 conversaciones", f"USD {resumen_costo['costo_por_1000_conversaciones_usd']:.2f}"],
         ]
         h.append(_tabla(filas, [110 * mm, 70 * mm]))
         tipos = ", ".join(f"{k}: {v}" for k, v in resumen_costo["tipos_respuesta"].items())

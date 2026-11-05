@@ -10,7 +10,7 @@ class GlobexPricingEngine:
     FLETE_POR_KG: float = 9.0  # $9 por kilo
     TRAMITE_ADUANERO: float = 9.0  # $9 tarifa fija de trámite
     TASA_IMPUESTO_SUNAT: float = 0.2271957  # ~22.72% (Ad-Valorem 4% + IGV/IPM 18%)
-    UMBRAL_EXONERACION_SUNAT: float = 200.0  # Menores a $200 no pagan tributos
+    UMBRAL_EXONERACION_SUNAT: float = 200.0  # Hasta USD 200 no pagan tributos
     PESO_MINIMO_KG: float = 1.0  # Bajo 1 kg se cobra 1 kg; desde ahí, proporcional
     LIMITE_COTIZACION_AUTOMATICA: float = 1200.0  # Por encima, cotiza un asesor
 
@@ -68,22 +68,22 @@ class GlobexPricingEngine:
         msg = (
             f"📦 *COTIZACIÓN ESTIMADA GLOBEX*\n"
             f"────────────────────────\n"
-            f"• *Costo del Producto:* ${calculo['valor_producto']:,.2f} USD\n"
-            f"• *Flete aéreo:* ${flete:,.2f} USD ({detalle_peso})\n"
-            f"• *Trámite aduanero:* ${tramite:,.2f} USD\n"
+            f"• *Costo del Producto:* USD {calculo['valor_producto']:,.2f}\n"
+            f"• *Flete aéreo:* USD {flete:,.2f} ({detalle_peso})\n"
+            f"• *Trámite aduanero:* USD {tramite:,.2f}\n"
         )
 
         if calculo["aplica_impuesto"]:
             msg += (
-                f"• *Tributos SUNAT Aprox:* ${calculo['tributos_aprox']:,.2f} USD (Aplica por superar $200)\n"
+                f"• *Tributos SUNAT aprox.:* USD {calculo['tributos_aprox']:,.2f} (aplica por superar USD 200)\n"
                 f"────────────────────────\n"
-                f"💰 *TOTAL ESTIMADO:* ${calculo['costo_total']:,.2f} USD\n\n"
+                f"💰 *TOTAL ESTIMADO:* USD {calculo['costo_total']:,.2f}\n\n"
             )
         else:
             msg += (
-                f"• *Tributos SUNAT:* $0.00 USD (Exonerado por ser ≤ $200)\n"
+                f"• *Tributos SUNAT:* USD 0.00 (exonerado hasta USD 200)\n"
                 f"────────────────────────\n"
-                f"💰 *TOTAL ESTIMADO:* ${calculo['costo_total']:,.2f} USD\n\n"
+                f"💰 *TOTAL ESTIMADO:* USD {calculo['costo_total']:,.2f}\n\n"
             )
 
         msg += (

@@ -17,6 +17,7 @@ from openai import OpenAI
 
 # ✅ AHORA (Con todos los métodos necesarios):
 from database import (
+    ahora,
     actualizar_clasificacion_chat,
     actualizar_estado_chat,
     calcular_tiempo_relativo,
@@ -120,7 +121,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 
    - CUADRANTE 1 [COTIZACIÓN COURIER (Happy Path)]:
      a) Si el cliente quiere cotizar pero no dio datos, pide los tres en un solo mensaje, con este texto:
-        "¡Claro! Cuéntame qué producto quieres traer, su precio en USD y cuánto pesa en kg. Por ejemplo: _Laptop Lenovo, $650, 2.5 kg_."
+        "¡Claro! Cuéntame qué producto quieres traer, su precio en USD y cuánto pesa en kg. Por ejemplo: _Laptop Lenovo, USD 650, 2.5 kg_."
      b) Con producto, precio y peso: llama de inmediato a 'calcular_cotizacion' e incluye el nombre del producto.
      c) Si dio producto y precio pero NO el peso: llama a 'consultar_peso_producto'.
         - Si el catálogo encuentra el producto, cotiza con ese peso.
@@ -308,7 +309,7 @@ def get_or_create_history(chat_id: str) -> List[Dict[str, str]]:
     desde el dashboard. Se omiten los mensajes finales del cliente que aún no
     tienen respuesta: son los del turno actual y llegan consolidados aparte.
     """
-    desde = datetime.now() - timedelta(hours=HORAS_CONTEXTO)
+    desde = ahora() - timedelta(hours=HORAS_CONTEXTO)
     mensajes = obtener_mensajes_recientes(chat_id, desde, MAX_MENSAJES_CONTEXTO)
     while mensajes and mensajes[-1]["emisor"] == "cliente":
         mensajes.pop()
@@ -327,7 +328,7 @@ def get_or_create_history(chat_id: str) -> List[Dict[str, str]]:
             )
 
     # Copia del último historial construido (útil para depurar y en pruebas).
-    sessions[chat_id] = {"history": history, "last_active": datetime.now()}
+    sessions[chat_id] = {"history": history, "last_active": ahora()}
     return history
 
 
@@ -599,7 +600,7 @@ def texto_bienvenida(nombre: Optional[str], primer_contacto: bool) -> str:
         "¡Hola! 👋 Soy *Globix*, el asistente virtual de Globex Courier. Cotizo tus compras en EE. UU. "
         "al instante y resuelvo tus dudas. Si prefieres hablar con una persona, solo dímelo.\n\n"
         "¿En qué te ayudo?\n\n"
-        '_También puedes escribirme directo: "iPhone 15, $900, 0.5 kg"._'
+        '_También puedes escribirme directo: "iPhone 15, USD 900, 0.5 kg"._'
     )
 
 
@@ -667,7 +668,7 @@ def nombre_para_saludo(chat_id: str, nombre_perfil: str) -> Optional[str]:
 
 RESPUESTA_ERROR = "Disculpa, tuve un problema para leer tu mensaje. ¿Me lo escribes de nuevo?"
 LEYENDA_PROFORMA = "Te envío adjunto tu cotización *referencial*."
-# Montos que aparecen en los ejemplos que da el propio bot ("$650", "$900", "$120")
+# Montos que aparecen en los ejemplos que da el propio bot ("USD 650", "USD 900", "USD 120")
 MONTOS_EJEMPLO = (650, 900, 120)
 TEXTO_RECUPERACION = "Disculpa, no logré entenderte 😅. Elige una opción o, si prefieres, te paso con un asesor:"
 TEXTO_FUERA_DE_ALCANCE = (
@@ -1226,7 +1227,7 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
 
             bot_reply = (
                 f"Recibí tu {tipo_adjunto.split()[0]}, pero por ahora solo leo mensajes de texto. "
-                f"¿Me escribes tu consulta? Por ejemplo: _Zapatillas Nike, $120, 1 kg_."
+                f"¿Me escribes tu consulta? Por ejemplo: _Zapatillas Nike, USD 120, 1 kg_."
             )
             registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
             await send_meta_whatsapp_message(chat_id, bot_reply)
@@ -1456,7 +1457,7 @@ def api_descargar_pdf(chat_id: str):
 @app.get("/api/metricas", dependencies=[Depends(verificar_api_key)])
 def api_metricas(horas: float = 24, ultimos: int = 20):
     """Costo y latencia de los turnos del bot en las últimas `horas` (0 = todo)."""
-    desde = datetime.now() - timedelta(hours=horas) if horas > 0 else None
+    desde = ahora() - timedelta(hours=horas) if horas > 0 else None
     filas = obtener_metricas(desde)
     return {"resumen": resumir_metricas(filas), "ultimos": filas[-max(0, ultimos):]}
 

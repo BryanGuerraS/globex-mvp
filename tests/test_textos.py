@@ -60,3 +60,18 @@ def test_no_pide_nombre_dos_veces():
     main.registrar_mensaje_entrante("PE.txt-2", "Cliente", "hola")
     main.con_pedido_de_nombre("¡Listo! 🙌", "PE.txt-2")
     assert main.con_pedido_de_nombre("¡Listo! 🙌", "PE.txt-2") == "¡Listo! 🙌"
+
+
+def test_hora_de_lima_aunque_el_servidor_este_en_utc():
+    from datetime import datetime, timedelta, timezone
+    import database
+
+    utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    diferencia = utc - database.ahora()
+    assert abs(diferencia - timedelta(hours=5)) < timedelta(seconds=5)  # Perú: UTC-5 todo el año
+
+
+def test_proforma_usa_formato_usd():
+    from pricing_engine import GlobexPricingEngine
+    texto = GlobexPricingEngine.formatear_mensaje_whatsapp(GlobexPricingEngine.calcular(650, 2.5))
+    assert "USD 836.33" in texto and "US$" not in texto and "$" not in texto.replace("USD", "")

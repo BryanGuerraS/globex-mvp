@@ -1,6 +1,15 @@
 from datetime import datetime
 import sqlite3
 from typing import Dict, List, Optional
+from zoneinfo import ZoneInfo
+
+# Hora de Perú en todo el sistema: Render y Streamlit Cloud corren en UTC.
+ZONA_HORARIA = ZoneInfo("America/Lima")
+
+
+def ahora() -> datetime:
+    """Fecha y hora actual de Lima (sin zona, como se guarda en SQLite)."""
+    return datetime.now(ZONA_HORARIA).replace(tzinfo=None)
 
 DB_FILE = "globex.db"
 
@@ -155,7 +164,7 @@ def calcular_tiempo_relativo(dt_str: Optional[str]) -> Dict[str, str]:
         else:
             dt = dt_str
 
-        diferencia = datetime.now() - dt
+        diferencia = ahora() - dt
         minutos = int(diferencia.total_seconds() / 60)
 
         if minutos < 1:
@@ -185,7 +194,7 @@ def registrar_mensaje_entrante(chat_id: str, nombre: str, texto: str):
     init_db()
     with get_connection() as conn:
         cursor = conn.cursor()
-        now = datetime.now()
+        now = ahora()
 
         cursor.execute(
             """
@@ -216,7 +225,7 @@ def registrar_mensaje_saliente(
     init_db()
     with get_connection() as conn:
         cursor = conn.cursor()
-        now = datetime.now()
+        now = ahora()
 
         cursor.execute(
             """
@@ -274,7 +283,7 @@ def actualizar_clasificacion_chat(
         if updates:
             params.append(chat_id)
             query = f"UPDATE chats SET {', '.join(updates)}, updated_at = ? WHERE chat_id = ?"
-            params.insert(len(params) - 1, datetime.now())
+            params.insert(len(params) - 1, ahora())
             cursor.execute(query, params)
             conn.commit()
 
@@ -450,7 +459,7 @@ def registrar_metrica_turno(metrica: Dict):
             """,
             (
                 metrica["chat_id"],
-                datetime.now(),
+                ahora(),
                 metrica["tipo_respuesta"],
                 metrica["llamadas_llm"],
                 metrica["tokens_entrada"],
@@ -501,7 +510,7 @@ def registrar_mensaje_entrante(
 
     with get_connection() as conn:
         cursor = conn.cursor()
-        now = datetime.now()
+        now = ahora()
 
         cursor.execute(
             """

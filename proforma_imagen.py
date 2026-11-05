@@ -9,6 +9,8 @@ instalar fuentes y con tildes y ñ.
 import io
 import os
 from datetime import datetime
+
+from database import ahora as ahora_lima
 from typing import Dict, Optional
 
 from PIL import Image, ImageDraw, ImageFont
@@ -22,6 +24,8 @@ MARGEN = 72
 MORADO = (46, 26, 71)         # #2E1A47, morado del logo de Globex
 MORADO_SUAVE = (243, 239, 250)
 NARANJA = (255, 105, 0)       # #FF6900, naranja del logo
+TOTAL = (67, 56, 202)         # #4338CA, morado del recuadro del total (preferido por el equipo)
+TOTAL_FONDO = (238, 242, 255)
 TEXTO = (24, 24, 27)
 TEXTO_SUAVE = (113, 113, 122)
 BORDE = (228, 228, 231)
@@ -40,7 +44,7 @@ def _fuente(tamano: int, negrita: bool = False) -> ImageFont.FreeTypeFont:
 
 
 def _usd(valor: float) -> str:
-    return f"US$ {valor:,.2f}"
+    return f"USD {valor:,.2f}"
 
 
 def _kg(valor: float) -> str:
@@ -62,7 +66,7 @@ def _envolver(draw: ImageDraw.ImageDraw, texto: str, fuente, ancho_max: int):
 
 
 def codigo_proforma(chat_id: str, ahora: Optional[datetime] = None) -> str:
-    ahora = ahora or datetime.now()
+    ahora = ahora or ahora_lima()
     sufijo = "".join(c for c in str(chat_id) if c.isalnum())[-4:].upper()
     return f"GX-{ahora.strftime('%y%m')}-{sufijo}"
 
@@ -76,7 +80,7 @@ def generar_imagen_proforma(
     peso_estimado: bool = False,
 ) -> bytes:
     """Devuelve la proforma como PNG (bytes)."""
-    ahora = ahora or datetime.now()
+    ahora = ahora or ahora_lima()
     valor = float(calculo["valor_producto"])
     peso = float(calculo["peso_kg"])
     peso_fact = float(calculo.get("peso_facturable_kg", peso))
@@ -88,11 +92,11 @@ def generar_imagen_proforma(
 
     filas = [
         ("Valor del producto", "Precio declarado", _usd(valor)),
-        ("Flete aéreo", f"{_kg(peso_fact)} × US$ 9.00/kg"
+        ("Flete aéreo", f"{_kg(peso_fact)} × USD 9.00/kg"
          + (f" (mínimo 1 kg; peso {_kg(peso)})" if peso_fact != peso else ""), _usd(flete)),
         ("Trámite aduanero", "Tarifa fija", _usd(tramite)),
         ("Tributos SUNAT",
-         "Aprox. 22.72 % del valor CIF" if calculo.get("aplica_impuesto") else "Exonerado: valor hasta US$ 200",
+         "Aprox. 22.72 % del valor CIF" if calculo.get("aplica_impuesto") else "Exonerado: valor hasta USD 200",
          _usd(tributos)),
     ]
 
@@ -141,6 +145,7 @@ def generar_imagen_proforma(
     d.rounded_rectangle([x0, y, x1, y + 120], radius=18, fill=(250, 250, 250), outline=BORDE, width=2)
     d.text((x0 + 32, y + 22), "PRODUCTO", font=f_etiqueta, fill=TEXTO_SUAVE)
     nombre_producto = (producto or "Producto declarado").strip()
+    nombre_producto = nombre_producto[:1].upper() + nombre_producto[1:]
     peso_txt = f"~{_kg(peso)} (estimado)" if peso_estimado else _kg(peso)
     ancho_producto = (x1 - 32) - (x0 + 32) - d.textlength(peso_txt, font=f_texto) - 40
     while d.textlength(nombre_producto, font=f_texto_neg) > ancho_producto and len(nombre_producto) > 4:
@@ -159,9 +164,9 @@ def generar_imagen_proforma(
 
     # Total
     y += 10
-    d.rounded_rectangle([x0, y, x1, y + 140], radius=22, fill=MORADO_SUAVE)
-    d.text((x0 + 36, y + 70), "TOTAL ESTIMADO", font=f_total_et, fill=MORADO, anchor="lm")
-    d.text((x1 - 36, y + 70), _usd(total), font=f_total, fill=MORADO, anchor="rm")
+    d.rounded_rectangle([x0, y, x1, y + 140], radius=22, fill=TOTAL_FONDO)
+    d.text((x0 + 36, y + 70), "TOTAL ESTIMADO", font=f_total_et, fill=TOTAL, anchor="lm")
+    d.text((x1 - 36, y + 70), _usd(total), font=f_total, fill=TOTAL, anchor="rm")
 
     # Nota
     y += 186

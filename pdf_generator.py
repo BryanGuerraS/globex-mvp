@@ -1,6 +1,8 @@
 """Generador oficial de Proformas y Cotizaciones en PDF para Globex Courier."""
 
 from datetime import datetime
+
+from database import ahora
 import hashlib
 import os
 import re
@@ -39,7 +41,7 @@ def buscar_ultimo_pdf(chat_id: str) -> Optional[str]:
 def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str, float]) -> str:
     """Genera un archivo PDF corporativo con el desglose oficial de Globex y devuelve la ruta."""
     numero_limpio = chat_id.replace("@c.us", "")
-    fecha_hoy = datetime.now().strftime("%Y%m%d_%H%M%S")
+    fecha_hoy = ahora().strftime("%Y%m%d_%H%M%S")
     nombre_archivo = f"Proforma_Globex_{id_archivo_chat(chat_id)}_{fecha_hoy}.pdf"
     ruta_completa = os.path.join(PDF_DIR, nombre_archivo)
 
@@ -77,8 +79,8 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
     elementos.append(Spacer(1, 15))
 
     # 2. Datos del Documento y Cliente
-    codigo_proforma = f"GX-{datetime.now().strftime('%y%m')}-{numero_limpio[-4:]}"
-    fecha_emision = datetime.now().strftime("%d/%m/%Y %H:%M")
+    codigo_proforma = f"GX-{ahora().strftime('%y%m')}-{numero_limpio[-4:]}"
+    fecha_emision = ahora().strftime("%d/%m/%Y %H:%M")
 
     datos_cliente = [
         [
@@ -118,28 +120,28 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
 
     tabla_cotizacion = [
         ["CONCEPTO", "DETALLE / TASA", "IMPORTE (USD)"],
-        ["Valor Declarado del Producto (FOB)", f"Mercancía declarada ({peso} kg)", f"$ {val_prod:,.2f}"],
-        ["Flete Aéreo Internacional", f"{peso_facturable:g} kg × $9.00 USD/kg", f"$ {flete:,.2f}"],
-        ["Trámite aduanero", "Tarifa fija", f"$ {tramite:,.2f}"],
+        ["Valor Declarado del Producto (FOB)", f"Mercancía declarada ({peso} kg)", f"USD {val_prod:,.2f}"],
+        ["Flete Aéreo Internacional", f"{peso_facturable:g} kg × USD 9.00/kg", f"USD {flete:,.2f}"],
+        ["Trámite aduanero", "Tarifa fija", f"USD {tramite:,.2f}"],
     ]
 
     if calculo.get("aplica_impuesto", False):
         tabla_cotizacion.append([
             "Tributos de Importación SUNAT",
-            "Aplica ~22.72% CIF (Valor > $200 USD)",
-            f"$ {tributos:,.2f}"
+            "Aplica ~22.72% CIF (valor > USD 200)",
+            f"USD {tributos:,.2f}"
         ])
     else:
         tabla_cotizacion.append([
             "Tributos de Importación SUNAT",
-            "Exonerado por Ley (Valor ≤ $200 USD)",
+            "Exonerado por ley (valor hasta USD 200)",
             "$ 0.00"
         ])
 
     tabla_cotizacion.append([
         "TOTAL ESTIMADO DE LA OPERACIÓN",
         "Producto + Flete + Trámite + Impuestos",
-        f"$ {total:,.2f}"
+        f"USD {total:,.2f}"
     ])
 
     t_calculo = Table(tabla_cotizacion, colWidths=[240, 180, 120])

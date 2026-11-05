@@ -278,7 +278,7 @@ def revisar_respuesta_libre(
     "monto_no_dado") o None si la respuesta puede enviarse. No aplica a los
     textos armados por código (cotización, FAQ, derivaciones).
     `montos_permitidos` son montos que el propio sistema usa en ejemplos
-    (p. ej. "Laptop Lenovo, $650, 2.5 kg"), que no cuentan como inventados.
+    (p. ej. "Laptop Lenovo, USD 650, 2.5 kg"), que no cuentan como inventados.
     """
     if not texto:
         return None

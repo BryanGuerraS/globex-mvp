@@ -13,6 +13,15 @@ from datetime import datetime
 import os
 import re
 from typing import Dict, List, Optional
+from zoneinfo import ZoneInfo
+
+# Hora de Perú en todo el sistema: Render y Streamlit Cloud corren en UTC.
+ZONA_HORARIA = ZoneInfo("America/Lima")
+
+
+def ahora() -> datetime:
+    """Fecha y hora actual de Lima (sin zona, como se guarda en SQLite)."""
+    return datetime.now(ZONA_HORARIA).replace(tzinfo=None)
 
 from dotenv import load_dotenv
 import httpx
@@ -140,7 +149,7 @@ def _fecha(valor) -> Optional[datetime]:
 
 def minutos_desde(valor) -> Optional[int]:
     dt = _fecha(valor)
-    return None if dt is None else max(0, int((datetime.now() - dt).total_seconds() // 60))
+    return None if dt is None else max(0, int((ahora() - dt).total_seconds() // 60))
 
 
 def texto_espera(minutos: Optional[int]) -> str:
@@ -191,7 +200,7 @@ def badge_espera(minutos: Optional[int]) -> str:
 
 
 def usd(valor) -> str:
-    return f"US$ {valor:,.2f}" if valor else "—"
+    return f"USD {valor:,.2f}" if valor else "—"
 
 
 _OPCIONES = re.compile(r"\n\[Opciones: (.+)\]\s*$")
@@ -596,8 +605,8 @@ def pagina_metricas():
             st.metric("Respuesta al cliente · p50", _seg(espera["p50_ms"]), border=True, icon=":material/timer:",
                       help="Desde el primer mensaje del cliente hasta la respuesta (incluye 5 s de espera para agrupar mensajes).")
             st.metric("Respuesta al cliente · p95", _seg(espera["p95_ms"]), border=True, icon=":material/hourglass_bottom:")
-            st.metric("Costo por conversación", f"US$ {res['costo_por_conversacion_usd']:.4f}", border=True,
-                      icon=":material/payments:", help=f"US$ {res['costo_por_1000_conversaciones_usd']:.2f} por 1 000 conversaciones")
+            st.metric("Costo por conversación", f"USD {res['costo_por_conversacion_usd']:.4f}", border=True,
+                      icon=":material/payments:", help=f"USD {res['costo_por_1000_conversaciones_usd']:.2f} por 1 000 conversaciones")
 
         col_tipos, col_llm = st.columns([1.2, 1], gap="medium")
         with col_tipos:
@@ -616,9 +625,9 @@ def pagina_metricas():
                           f"{_seg(res['latencia_llm']['p50_ms'])} / {_seg(res['latencia_llm']['p95_ms'])}")
                 st.metric("Tokens por turno", f"{res['tokens_entrada_promedio']:.0f} + {res['tokens_salida_promedio']:.0f}",
                           help="Entrada + salida, promedio por turno")
-                st.metric("Costo total del periodo", f"US$ {res['costo_total_usd']:.4f}")
-                st.caption(f"Precio Groq: US\\$ {res['precio_usd_por_millon']['entrada']} / M entrada · "
-                           f"US\\$ {res['precio_usd_por_millon']['salida']} / M salida")
+                st.metric("Costo total del periodo", f"USD {res['costo_total_usd']:.4f}")
+                st.caption(f"Precio Groq: USD {res['precio_usd_por_millon']['entrada']} / M entrada · "
+                           f"USD {res['precio_usd_por_millon']['salida']} / M salida")
 
         with st.container(border=True):
             st.markdown("**Últimos turnos**")
@@ -639,7 +648,7 @@ def pagina_metricas():
                         "latencia_total_ms": st.column_config.NumberColumn("Espera (ms)", format="%d"),
                         "tokens_entrada": st.column_config.NumberColumn("Tokens entrada"),
                         "tokens_salida": st.column_config.NumberColumn("Tokens salida"),
-                        "costo_usd": st.column_config.NumberColumn("Costo (US$)", format="%.5f"),
+                        "costo_usd": st.column_config.NumberColumn("Costo (USD)", format="%.5f"),
                     },
                 )
 

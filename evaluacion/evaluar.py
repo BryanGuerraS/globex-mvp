@@ -325,9 +325,9 @@ def generar_reporte(meta: Dict, casos: List[Dict], resultados: Dict[str, List[Di
         if lat["p50_ms"] is not None:
             L.append(f"| **Espera estimada del cliente** (+{DEBOUNCE_S:.0f} s de debounce, p50 · p95) | "
                      f"{_s(lat['p50_ms'] + DEBOUNCE_S * 1000)} · {_s(lat['p95_ms'] + DEBOUNCE_S * 1000)} |")
-        L.append(f"| Costo total de la evaluación | US$ {resumen_costo['costo_total_usd']:.4f} |")
-        L.append(f"| Costo por conversación | US$ {resumen_costo['costo_por_conversacion_usd']:.5f} |")
-        L.append(f"| Costo por 1 000 conversaciones | US$ {resumen_costo['costo_por_1000_conversaciones_usd']:.2f} |")
+        L.append(f"| Costo total de la evaluación | USD {resumen_costo['costo_total_usd']:.4f} |")
+        L.append(f"| Costo por conversación | USD {resumen_costo['costo_por_conversacion_usd']:.5f} |")
+        L.append(f"| Costo por 1 000 conversaciones | USD {resumen_costo['costo_por_1000_conversaciones_usd']:.2f} |")
         L.append("\nTipos de respuesta: " + ", ".join(f"`{k}` {v}" for k, v in resumen_costo["tipos_respuesta"].items()))
 
     L.append("\n## Resultado por caso\n")

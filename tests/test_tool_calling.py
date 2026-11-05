@@ -247,7 +247,7 @@ def test_peso_bajo_1kg_cobra_minimo(entorno):
         "unos audífonos de 150 dólares que pesan 300 gramos",
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 150, "peso_kg": 0.3})])],
     )
-    assert "$9.00 USD (0.3 kg, se cobra el mínimo de 1 kg)" in texto_bot_registrado("chat_min")
+    assert "USD 9.00 (0.3 kg, se cobra el mínimo de 1 kg)" in texto_bot_registrado("chat_min")
 
 
 def test_nota_interna_no_llega_al_cliente(entorno):
