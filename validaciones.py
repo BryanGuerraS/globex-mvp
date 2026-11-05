@@ -191,8 +191,10 @@ def validar_argumentos_cotizacion(
 
 # ---------------- Nombre que da el cliente ----------------
 
+# Respuestas como "Sí, llamo Rashan", "Claro, me llamo Ana", "Ok, soy José", "Mi nombre: Luis"
 _PREFIJOS_NOMBRE = re.compile(
-    r"^(hola[,!.\s]*)?(me llamo|mi nombre es|soy|es|claro[,\s]+soy|claro[,\s]+me llamo)\s+",
+    r"^((hola|s[ií]|claro|ok|okay|bueno|listo|dale|perfecto|vale)[,!.:\s]+)*"
+    r"(me llamo|llamo|mi nombre es|mi nombre|nombre|soy|es)?[,:\s]*",
     re.IGNORECASE,
 )
 # Palabras que delatan que el mensaje no es un nombre.
@@ -202,6 +204,7 @@ _NO_NOMBRES = {
     "envio", "paquete", "precio", "cuanto", "cuando", "donde", "como", "que", "por",
     "para", "con", "un", "una", "el", "mi", "tu",
     "asesor", "ayuda", "favor", "espero", "esperando", "tracking", "dolares", "kg",
+    "claro", "exacto", "correcto", "entendido", "genial", "excelente", "super", "okey",
 }
 _PALABRA_NOMBRE = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ'-]{2,25}$")
 
@@ -222,7 +225,11 @@ def extraer_nombre(texto: str) -> Optional[str]:
         return None
     if any(_sin_tildes(p.lower()) in _NO_NOMBRES for p in palabras):
         return None
-    return " ".join(p[:1].upper() + p[1:].lower() for p in palabras)
+    particulas = {"de", "del", "la", "las", "los", "y"}
+    return " ".join(
+        p.lower() if i > 0 and p.lower() in particulas else p[:1].upper() + p[1:].lower()
+        for i, p in enumerate(palabras)
+    )
 
 
 # ---------------- Limpieza de respuestas libres del LLM ----------------

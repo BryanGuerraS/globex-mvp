@@ -22,7 +22,7 @@ def init_db():
             CREATE TABLE IF NOT EXISTS chats (
                 chat_id TEXT PRIMARY KEY,
                 nombre TEXT,
-                tipo_contacto TEXT DEFAULT '🌱 Prospecto Nuevo',
+                tipo_contacto TEXT DEFAULT 'Nuevo prospecto',
                 servicio TEXT DEFAULT 'Cotización Courier',
                 producto TEXT,
                 cotizacion_total REAL,
@@ -58,7 +58,7 @@ def init_db():
 
         if "tipo_contacto" not in columnas:
             cursor.execute(
-                "ALTER TABLE chats ADD COLUMN tipo_contacto TEXT DEFAULT '🌱 Prospecto Nuevo'"
+                "ALTER TABLE chats ADD COLUMN tipo_contacto TEXT DEFAULT 'Nuevo prospecto'"
             )
         if "servicio" not in columnas:
             cursor.execute(
@@ -102,6 +102,11 @@ def init_db():
             )
         """
         )
+
+        # 3c. Valores antiguos: nombres de tipo de contacto y asesor de ejemplo
+        cursor.execute("UPDATE chats SET tipo_contacto = 'Nuevo prospecto' WHERE tipo_contacto LIKE '%Prospecto Nuevo%'")
+        cursor.execute("UPDATE chats SET tipo_contacto = 'Cliente recurrente' WHERE tipo_contacto LIKE '%Cliente Frecuente%'")
+        cursor.execute("UPDATE chats SET asesor_asignado = NULL WHERE asesor_asignado LIKE '%(Asesor %'")
 
         # 4. Migración segura para messages
         cursor.execute("PRAGMA table_info(messages)")
@@ -184,8 +189,8 @@ def registrar_mensaje_entrante(chat_id: str, nombre: str, texto: str):
 
         cursor.execute(
             """
-            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at, asesor_asignado)
-            VALUES (?, ?, ?, ?, 'Carlos (Asesor 1)')
+            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at)
+            VALUES (?, ?, ?, ?)
             ON CONFLICT(chat_id) DO UPDATE SET 
                 nombre = excluded.nombre,
                 updated_at = excluded.updated_at,
@@ -275,7 +280,7 @@ def actualizar_clasificacion_chat(
 
 
 def alternar_tipo_cliente(chat_id: str):
-    """Cambia entre Prospecto y Cliente Frecuente."""
+    """Cambia entre Nuevo prospecto y Cliente recurrente."""
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -285,9 +290,9 @@ def alternar_tipo_cliente(chat_id: str):
         if row:
             actual = row["tipo_contacto"]
             nuevo = (
-                "⭐ Cliente Frecuente"
-                if "Prospecto" in actual
-                else "🌱 Prospecto Nuevo"
+                "Cliente recurrente"
+                if "prospecto" in (actual or "").lower()
+                else "Nuevo prospecto"
             )
             cursor.execute(
                 "UPDATE chats SET tipo_contacto = ? WHERE chat_id = ?",
@@ -500,8 +505,8 @@ def registrar_mensaje_entrante(
 
         cursor.execute(
             """
-            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at, asesor_asignado)
-            VALUES (?, ?, ?, ?, 'Carlos (Asesor 1)')
+            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at)
+            VALUES (?, ?, ?, ?)
             ON CONFLICT(chat_id) DO UPDATE SET 
                 nombre = excluded.nombre,
                 updated_at = excluded.updated_at,

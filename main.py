@@ -41,6 +41,7 @@ from database import (
 from guardrails import verificar_mercancia_restringida
 from knowledge_base import buscar_faq_comercial
 from pdf_generator import buscar_ultimo_pdf, generar_pdf_cotizacion
+from proforma_imagen import generar_imagen_proforma
 from pricing_engine import GlobexPricingEngine
 from product_catalog import buscar_peso_producto
 from metricas import MedidorTurno, resumir as resumir_metricas
@@ -390,6 +391,69 @@ async def send_meta_interactive(to_recipient: str, interactive: Dict):
     await _enviar(to_recipient, {"type": "interactive", "interactive": interactive})
 
 
+async def _subir_media_meta(contenido: bytes, mime: str, nombre_archivo: str) -> Optional[str]:
+    """Sube un archivo a Meta y devuelve su media_id (o None si falla)."""
+    if not META_PHONE_NUMBER_ID or not META_ACCESS_TOKEN:
+        print("⚠️ [Meta Cloud API] Faltan credenciales; no se sube la imagen.")
+        return None
+    url = f"https://graph.facebook.com/v21.0/{META_PHONE_NUMBER_ID}/media"
+    async with httpx.AsyncClient() as http_client:
+        try:
+            res = await http_client.post(
+                url,
+                headers={"Authorization": f"Bearer {META_ACCESS_TOKEN}"},
+                data={"messaging_product": "whatsapp", "type": mime},
+                files={"file": (nombre_archivo, contenido, mime)},
+                timeout=20.0,
+            )
+            if res.status_code == 200:
+                return res.json().get("id")
+            print(f"⚠️ Error subiendo imagen a Meta ({res.status_code}): {res.text}")
+        except Exception as e:
+            print(f"❌ Error de conexión subiendo imagen a Meta: {e}")
+    return None
+
+
+async def send_meta_image(to_recipient: str, media_id: str, caption: str) -> bool:
+    """Envía una imagen ya subida a Meta, con leyenda."""
+    return await _enviar(to_recipient, {"type": "image", "image": {"id": media_id, "caption": caption}})
+
+
+async def enviar_proforma_imagen(chat_id: str, resultado: Dict, estado: Dict) -> bool:
+    """Envía la cotización como imagen de proforma + botones de siguiente paso.
+
+    Devuelve False si algo falla (sin enviar nada), para que el turno use el
+    mensaje de texto de siempre.
+    """
+    try:
+        imagen = generar_imagen_proforma(
+            resultado, estado.get("producto"), nombre_cliente_completo(chat_id), chat_id
+        )
+        media_id = await _subir_media_meta(imagen, "image/png", "proforma_globex.png")
+        if not media_id:
+            return False
+        confirmacion = estado.get("confirmacion") or "Aquí tienes tu cotización"
+        leyenda = f"{confirmacion} 👇\nTu proforma referencial (válida por 24 horas)."
+        if not await send_meta_image(chat_id, media_id, leyenda):
+            return False
+    except Exception as e:
+        print(f"Error enviando la proforma como imagen: {e}")
+        return False
+
+    # En la BD queda el desglose en texto (dashboard, historial del LLM y auditoría)
+    texto_registro = (
+        f"{leyenda}\n[Proforma enviada como imagen]\n\n"
+        + GlobexPricingEngine.formatear_mensaje_whatsapp(resultado)
+    )
+    registrar_mensaje_saliente(chat_id, "bot", texto_registro, resultado)
+    await enviar_y_registrar_menu(
+        chat_id,
+        f"💰 *Total estimado: US$ {resultado['costo_total']:,.2f}*\n\n¿Qué deseas hacer ahora?",
+        BOTONES_POST_COTIZACION,
+    )
+    return True
+
+
 async def marcar_leido_y_escribiendo(id_mensaje: str):
     """Marca el mensaje como leído y muestra "escribiendo…" (hasta ~25 s o hasta responder)."""
     if not id_mensaje:
@@ -562,6 +626,17 @@ def pedir_nombre_si_falta(chat_id: str) -> str:
     return "\n\n" + PREGUNTA_NOMBRE
 
 
+def nombre_cliente_completo(chat_id: str) -> Optional[str]:
+    chat = obtener_chat(chat_id) or {}
+    return chat.get("nombre_cliente") or None
+
+
+def nombre_confirmado(chat_id: str) -> Optional[str]:
+    """Primer nombre que el cliente nos dio (no el del perfil de WhatsApp)."""
+    chat = obtener_chat(chat_id) or {}
+    return chat["nombre_cliente"].split()[0] if chat.get("nombre_cliente") else None
+
+
 def nombre_para_saludo(chat_id: str, nombre_perfil: str) -> Optional[str]:
     """Primer nombre: el que dio el cliente si existe; si no, el del perfil."""
     chat = obtener_chat(chat_id) or {}
@@ -649,6 +724,8 @@ def ejecutar_herramienta(
             + GlobexPricingEngine.formatear_mensaje_whatsapp(resultado)
         )
         estado["menu"] = BOTONES_POST_COTIZACION
+        estado["confirmacion"] = f"Entendí: *{', '.join(partes)}*"
+        estado["producto"] = producto or None
         return {"cotizacion_emitida": True}, respuesta
 
     # FUERA DE ALCANCE (texto fijo + botones; el LLM no responde el tema ajeno)
@@ -705,7 +782,7 @@ def ejecutar_herramienta(
             f"(motivo: {args.get('motivo', '')})."
         )
         actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
-        return {"derivado": True}, texto_derivacion(estado.get("nombre")) + pedir_nombre_si_falta(chat_id)
+        return {"derivado": True}, texto_derivacion(nombre_confirmado(chat_id)) + pedir_nombre_si_falta(chat_id)
 
     print(f"⚠️ [Tool Calling] Herramienta desconocida: {nombre_funcion}")
     return {"error": f"La herramienta '{nombre_funcion}' no existe."}, None
@@ -952,6 +1029,16 @@ async def _procesar_turno(
     # Botones solo si el bot sigue atendiendo (si derivó, el asesor toma el control)
     menu = estado["menu"] if esta_bot_activo(chat_id) else None
 
+    # 🖼️ Cotización sola: se envía la proforma como imagen (si falla, sigue en texto)
+    if (
+        resultado_calculo
+        and menu == BOTONES_POST_COTIZACION
+        and medidor.tipo_respuesta == "cotizacion"
+        and await enviar_proforma_imagen(chat_id, resultado_calculo, estado)
+    ):
+        medidor.tipo_respuesta = "cotizacion"
+        return
+
     if not menu:
         registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
         await send_meta_whatsapp_message(chat_id, bot_reply)
@@ -981,7 +1068,7 @@ def _en_segundo_plano(corrutina):
 async def derivar_a_asesor(chat_id: str, sender_name: str):
     """Derivación directa (botón 'Hablar con asesor'): silencia el bot y avisa al cliente."""
     actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
-    respuesta = texto_derivacion(nombre_para_saludo(chat_id, sender_name)) + pedir_nombre_si_falta(chat_id)
+    respuesta = texto_derivacion(nombre_confirmado(chat_id)) + pedir_nombre_si_falta(chat_id)
     registrar_mensaje_saliente(chat_id, "bot", respuesta, None)
     await send_meta_whatsapp_message(chat_id, respuesta)
 
@@ -1154,7 +1241,7 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
                 nombre_dado = extraer_nombre(user_text)
                 if nombre_dado:
                     guardar_nombre_cliente(chat_id, nombre_dado)
-                    gracias = f"¡Gracias, {nombre_dado.split()[0]}! Ya se lo pasé a tu asesor. 🙌"
+                    gracias = f"¡Gracias, {nombre_dado.split()[0]}! Tu asesor te escribirá en breve por este chat. 🙌"
                     registrar_mensaje_saliente(chat_id, "bot", gracias, None)
                     await send_meta_whatsapp_message(chat_id, gracias)
                     return {"status": "name_saved"}
@@ -1302,8 +1389,13 @@ async def api_enviar_mensaje_asesor(payload: MensajeAsesorPayload):
     registrar_mensaje_saliente(
         payload.chat_id, payload.nombre_asesor, payload.texto
     )
+    # El primer asesor que responde queda asignado (si el chat no tenía asesor)
+    chat = obtener_chat(payload.chat_id) or {}
     actualizar_estado_chat(
-        payload.chat_id, "Listo para Asesor", bot_activo=0
+        payload.chat_id,
+        "Listo para Asesor",
+        nuevo_asesor=None if chat.get("asesor_asignado") else payload.nombre_asesor,
+        bot_activo=0,
     )
     return {"status": "sent"}
 

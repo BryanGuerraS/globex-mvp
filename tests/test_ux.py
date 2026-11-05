@@ -120,12 +120,49 @@ def test_cotizacion_confirma_datos_y_ofrece_botones(turno):
         "laptop Lenovo de 650 dólares, pesa 2.5 kg",
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 650, "peso_kg": 2.5, "producto": "laptop Lenovo"})])],
     )
+    # 1) Se sube la proforma como PNG, 2) se envía como imagen con la confirmación, 3) botones
+    subida = [p for p in enviados if "subida_media" in p]
+    assert subida and subida[0]["mime"] == "image/png" and subida[0]["bytes"] > 10_000
+    (imagen,) = [p for p in enviados if p.get("type") == "image"]
+    assert imagen["image"]["id"] == "media-de-prueba"
+    assert imagen["image"]["caption"].startswith("Entendí: *laptop Lenovo, USD 650, 2.5 kg* 👇")
     (msg,) = _interactivos(enviados)
-    assert msg["interactive"]["body"]["text"].startswith("Entendí: *laptop Lenovo, USD 650, 2.5 kg* 👇")
+    assert msg["interactive"]["body"]["text"].startswith("💰 *Total estimado: US$ 836.33*")
     assert _ids_botones(msg) == ["asesor", "cotizar_otro", "como_compro"]
-    # En la BD queda el texto con las opciones (para el dashboard y el historial)
-    ultimo = main.obtener_mensajes_chat("ux_cot")[-1]["texto"]
-    assert "[Opciones: Hablar con asesor | Cotizar otro | ¿Cómo compro?]" in ultimo
+    # No se manda el desglose en texto (va en la imagen)
+    assert _textos(enviados) == []
+    # En la BD queda el desglose (dashboard, historial del LLM) y el chat con su cotización
+    textos = [m["texto"] for m in main.obtener_mensajes_chat("ux_cot") if m["emisor"] == "bot"]
+    assert "[Proforma enviada como imagen]" in textos[-2] and "COTIZACIÓN ESTIMADA" in textos[-2]
+    assert "[Opciones: Hablar con asesor | Cotizar otro | ¿Cómo compro?]" in textos[-1]
+    assert main.obtener_chat("ux_cot")["cotizacion_total"] == pytest.approx(836.33)
+
+
+def test_si_falla_la_imagen_se_envia_en_texto(turno, monkeypatch):
+    async def subida_fallida(*args):
+        return None
+
+    monkeypatch.setattr(main, "_subir_media_meta", subida_fallida)
+    _, enviados = turno(
+        "ux_cot_texto",
+        "laptop de 650 dólares, pesa 2.5 kg",
+        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 650, "peso_kg": 2.5})])],
+    )
+    assert [p for p in enviados if p.get("type") == "image"] == []
+    (msg,) = _interactivos(enviados)
+    assert "COTIZACIÓN ESTIMADA" in msg["interactive"]["body"]["text"]
+
+
+def test_proforma_png_valida():
+    import io
+    from PIL import Image
+    from pricing_engine import GlobexPricingEngine
+    from proforma_imagen import codigo_proforma, generar_imagen_proforma
+
+    png = generar_imagen_proforma(GlobexPricingEngine.calcular(45, 0.4), "Zapatillas", "Rashan Pérez", "PE.2347274009375408")
+    img = Image.open(io.BytesIO(png))
+    assert img.format == "PNG" and img.width == 1080 and img.height > 1200
+    assert codigo_proforma("PE.2347274009375408").endswith("-5408")
 
 
 def test_derivacion_por_llm_sin_botones_y_con_nombre(turno):
@@ -136,7 +173,7 @@ def test_derivacion_por_llm_sin_botones_y_con_nombre(turno):
         nombre="Ana Pérez",
     )
     assert _interactivos(enviados) == []
-    assert _textos(enviados) == [main.texto_derivacion("Ana") + "\n\n" + main.PREGUNTA_NOMBRE]
+    assert _textos(enviados) == [main.texto_derivacion(None) + "\n\n" + main.PREGUNTA_NOMBRE]
 
 
 def test_dos_fallos_seguidos_ofrecen_opciones(turno):
@@ -229,7 +266,7 @@ def test_boton_asesor_deriva_al_instante(webhook):
     r = _post_firmado(cliente, _payload("51900000205", "wamid.b3", _boton("asesor", "Hablar con asesor")))
     assert r.json() == {"status": "derived_to_advisor"}
     assert encolados == []
-    assert _textos(enviados) == [main.texto_derivacion("Ana") + "\n\n" + main.PREGUNTA_NOMBRE]
+    assert _textos(enviados) == [main.texto_derivacion(None) + "\n\n" + main.PREGUNTA_NOMBRE]
     assert main.esta_bot_activo("51900000205") is False
 
 

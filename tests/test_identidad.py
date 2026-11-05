@@ -48,7 +48,10 @@ def test_sin_identificador():
         ("Ana", "Ana"),
         ("ana pérez", "Ana Pérez"),
         ("Me llamo José Luis", "José Luis"),
-        ("mi nombre es María de la Cruz", "María De La Cruz"),
+        ("mi nombre es María de la Cruz", "María de la Cruz"),
+        ("Sí, llamo Rashan", "Rashan"),
+        ("Ok, José", "José"),
+        ("Mi nombre: Luis Torres", "Luis Torres"),
         ("Soy Rocío.", "Rocío"),
         ("Claro, soy Pedro Gómez", "Pedro Gómez"),
     ],
@@ -59,7 +62,7 @@ def test_extrae_nombre(texto, esperado):
 
 @pytest.mark.parametrize(
     "texto",
-    ["ok", "gracias", "Sí", "¿Cuánto demora?", "quiero cotizar un envío", "ya", "123", "", "hola",
+    ["ok", "gracias", "Sí", "Sí, claro", "¿Cuánto demora?", "quiero cotizar un envío", "ya", "123", "", "hola",
      "esperando al asesor por favor ya"],
 )
 def test_no_confunde_con_nombre(texto):
@@ -125,7 +128,7 @@ def test_pide_nombre_al_derivar_y_lo_guarda(webhook):
     assert r.json() == {"status": "name_saved"}
     chat = main.obtener_chat("PE.5002")
     assert chat["nombre_cliente"] == "Ana Pérez" and chat["esperando_nombre"] == 0
-    assert _textos(enviados)[-1] == "¡Gracias, Ana! Ya se lo pasé a tu asesor. 🙌"
+    assert _textos(enviados)[-1] == "¡Gracias, Ana! Tu asesor te escribirá en breve por este chat. 🙌"
     assert chat["bot_activo"] == 0  # sigue con el asesor
 
 

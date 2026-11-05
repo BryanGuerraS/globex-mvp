@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 import main
-from tests.utilidades import mensajes_enviados
+from tests.utilidades import mensajes_enviados, texto_bot_registrado
 
 
 def _tool_call(id_, nombre, args):
@@ -113,8 +113,8 @@ def test_peso_de_catalogo_y_luego_cotizacion(entorno):
             _respuesta(tool_calls=[_tool_call("t2", "calcular_cotizacion", {"valor_producto_usd": 1100, "peso_kg": peso_catalogo})]),
         ],
     )
-    assert "peso estimado con caja" in enviado
-    assert "COTIZACIÓN ESTIMADA" in enviado
+    assert "peso estimado con caja" in texto_bot_registrado("chat_rag")
+    assert "COTIZACIÓN ESTIMADA" in texto_bot_registrado("chat_rag")
     _historial_valido(main.sessions["chat_rag"]["history"])
 
 
@@ -238,7 +238,7 @@ def test_valor_en_palabras_cotiza(entorno):
         "una laptop de mil dólares que pesa dos kilos",
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 1000, "peso_kg": 2})])],
     )
-    assert "COTIZACIÓN ESTIMADA" in enviado
+    assert "COTIZACIÓN ESTIMADA" in texto_bot_registrado("chat_mil")
 
 
 def test_peso_bajo_1kg_cobra_minimo(entorno):
@@ -247,7 +247,7 @@ def test_peso_bajo_1kg_cobra_minimo(entorno):
         "unos audífonos de 150 dólares que pesan 300 gramos",
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 150, "peso_kg": 0.3})])],
     )
-    assert "$18.00 USD (0.3 kg, se cobra el mínimo de 1 kg)" in enviado
+    assert "$18.00 USD (0.3 kg, se cobra el mínimo de 1 kg)" in texto_bot_registrado("chat_min")
 
 
 def test_nota_interna_no_llega_al_cliente(entorno):

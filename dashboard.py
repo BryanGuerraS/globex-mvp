@@ -43,13 +43,16 @@ api = _cliente_api()
 
 # Entorno de prueba: credenciales fijas a propósito (ver CLAUDE.md)
 USUARIOS = {
-    "diego": {"nombre": "Diego (Director)", "password": "123", "rol": "admin"},
-    "carlos": {"nombre": "Carlos (Asesor 1)", "password": "123", "rol": "asesor"},
-    "maria": {"nombre": "María (Asesor 2)", "password": "123", "rol": "asesor"},
-    "juan": {"nombre": "Juan (Asesor 3)", "password": "123", "rol": "asesor"},
-    "bryan": {"nombre": "Bryan (Asesor 4)", "password": "123", "rol": "asesor"},
+    "admin": {"nombre": "Admin", "password": "123", "rol": "admin"},
+    "bryan": {"nombre": "Bryan", "password": "123", "rol": "asesor"},
+    "juan": {"nombre": "Juan", "password": "123", "rol": "asesor"},
+    "anyela": {"nombre": "Anyela", "password": "123", "rol": "asesor"},
 }
 ASESORES = [u["nombre"] for u in USUARIOS.values() if u["rol"] == "asesor"]
+SIN_ASIGNAR = "Sin asignar"
+
+# Nombres profesionales del tipo de contacto (incluye los valores antiguos con emoji)
+TIPOS_CONTACTO = {"🌱 Prospecto Nuevo": "Nuevo prospecto", "⭐ Cliente Frecuente": "Cliente recurrente"}
 
 ESTADOS = {
     "Atendido por Bot": {"corto": "Globix", "color": "blue", "icono": ":material/smart_toy:"},
@@ -157,6 +160,25 @@ def badge_estado(estado: str) -> str:
     return f":{e['color']}-badge[{e['corto']}]"
 
 
+def badge_globix(chat: Dict) -> str:
+    """Punto verde: Globix responde en este chat. Punto gris: Globix pausado."""
+    color = "green" if chat.get("bot_activo", 1) else "gray"
+    return f":{color}-badge[:material/fiber_manual_record: Globix]"
+
+
+def badges_chat(chat: Dict) -> str:
+    """Globix (activo/pausado) + estado del lead si no lo atiende el bot."""
+    badges = [badge_globix(chat)]
+    if chat.get("estado") != "Atendido por Bot":
+        badges.append(badge_estado(chat.get("estado")))
+    return " ".join(badges)
+
+
+def tipo_contacto(chat: Dict) -> str:
+    valor = chat.get("tipo_contacto") or "Nuevo prospecto"
+    return TIPOS_CONTACTO.get(valor, valor)
+
+
 def badge_espera(minutos: Optional[int]) -> str:
     return f":{color_espera(minutos)}-badge[:material/schedule: {texto_espera(minutos)}]"
 
@@ -201,7 +223,7 @@ def pagina_login():
             st.title("Globex Courier", icon=":material/local_shipping:", text_alignment="center")
             st.caption("Consola de asesores comerciales", text_alignment="center")
         with st.form("login", border=True):
-            usuario = st.text_input("Usuario", placeholder="carlos").strip().lower()
+            usuario = st.text_input("Usuario", placeholder="bryan").strip().lower()
             password = st.text_input("Contraseña", type="password")
             if st.form_submit_button("Ingresar", type="primary", width="stretch", icon=":material/login:"):
                 if usuario in USUARIOS and USUARIOS[usuario]["password"] == password:
@@ -232,14 +254,14 @@ def barra_lateral() -> Dict:
         estado = st.segmented_control(
             "Estado", ["Todos", "Requiere asesor", "Globix", "Cerrado"], default="Todos", required=True
         )
-        asesor = st.selectbox("Asesor", ["Todos"] + ASESORES)
+        asesor = st.selectbox("Asesor", ["Todos", SIN_ASIGNAR] + ASESORES)
         servicio = st.selectbox(
             "Servicio",
             ["Todos", "Cotización Courier", "Cotización Courier (alto valor)", "Seguimiento Courier",
              "Cotización Viajero", "Restringido (DIGEMID)", "Mercancía Prohibida"],
         )
         st.space("small")
-        auto = st.toggle("Actualizar automáticamente", value=True, help="Refresca la bandeja cada 5 segundos.")
+        auto = st.toggle("Actualizar automáticamente", value=True, help="Mensajes del chat abierto cada 5 s; bandeja, KPIs y detalle cada 15 s.")
         st.caption(f"Backend: {BACKEND_URL.replace('https://', '')}")
     return {"busqueda": busqueda, "estado": estado, "asesor": asesor, "servicio": servicio, "auto": auto}
 
@@ -249,7 +271,9 @@ def filtrar(chats: List[Dict], f: Dict) -> List[Dict]:
     res = chats
     if f["estado"] != "Todos":
         res = [c for c in res if c.get("estado") == estado_por_corto[f["estado"]]]
-    if f["asesor"] != "Todos":
+    if f["asesor"] == SIN_ASIGNAR:
+        res = [c for c in res if not c.get("asesor_asignado")]
+    elif f["asesor"] != "Todos":
         res = [c for c in res if c.get("asesor_asignado") == f["asesor"]]
     if f["servicio"] != "Todos":
         res = [c for c in res if c.get("servicio") == f["servicio"]]
@@ -295,7 +319,7 @@ def lista_chats(chats: List[Dict]):
                 ):
                     st.session_state.chat_seleccionado = chat["chat_id"]
                     st.rerun(scope="app")
-                st.markdown(f"{badge_estado(chat.get('estado'))} {badge_espera(minutos)}")
+                st.markdown(f"{badges_chat(chat)} {badge_espera(minutos)}")
                 st.caption(f"{chat.get('servicio') or '—'} · {usd(chat.get('cotizacion_total'))}")
 
 
@@ -323,7 +347,7 @@ def panel_conversacion(chat: Dict, auto: bool):
     nombre = nombre_mostrado(chat)
     with st.container(horizontal=True, vertical_alignment="center"):
         st.subheader(nombre)
-        st.markdown(badge_estado(chat.get("estado")))
+        st.markdown(badges_chat(chat))
     st.caption(f"ID {chat['chat_id']}")
 
     @st.fragment(run_every=5 if auto else None)
@@ -349,6 +373,38 @@ def panel_conversacion(chat: Dict, auto: bool):
         st.rerun(scope="app")
 
 
+def _asignar_asesor(chat_id: str, estado: str, clave: str):
+    """Callback del selector de asesor: solo corre cuando el usuario elige uno."""
+    asesor = st.session_state[clave]
+    if not asesor or asesor == st.session_state.get(f"{clave}_backend"):
+        return
+    try:
+        r = api.post(
+            f"{BACKEND_URL}/api/update-chat-status",
+            json={"chat_id": chat_id, "nuevo_estado": estado or "Atendido por Bot", "nuevo_asesor": asesor},
+        )
+        ok = r.status_code == 200
+    except Exception:
+        ok = False
+    if ok:
+        st.session_state[f"{clave}_backend"] = asesor
+        st.toast(f"Asignado a {asesor}", icon=":material/check_circle:")
+    else:
+        st.toast("No se pudo asignar el asesor", icon=":material/error:")
+
+
+def _cambiar_estado(chat_id: str, clave: str):
+    """Callback del selector de estado: solo corre cuando el asesor hace clic."""
+    nuevo = st.session_state[clave]
+    if nuevo == st.session_state.get(f"{clave}_backend"):
+        return  # solo se sincronizó con el backend; no es un cambio del asesor
+    if actualizar_estado(chat_id, nuevo):
+        st.session_state[f"{clave}_backend"] = nuevo
+        st.toast(f"Estado: {ESTADOS[nuevo]['corto']}", icon=":material/check_circle:")
+    else:
+        st.toast("No se pudo cambiar el estado", icon=":material/error:")
+
+
 def panel_detalle(chat: Dict):
     with st.container(border=True):
         st.markdown("**Lead**")
@@ -357,24 +413,41 @@ def panel_detalle(chat: Dict):
         st.progress(paso / len(PASOS_HAPPY_PATH), text=f"Paso {paso} de {len(PASOS_HAPPY_PATH)} · {PASOS_HAPPY_PATH[paso - 1]}")
         st.markdown(
             f":material/category: {chat.get('servicio') or '—'}  \n"
-            f":material/badge: {chat.get('tipo_contacto') or '—'}  \n"
-            f":material/support_agent: {chat.get('asesor_asignado') or '—'}  \n"
+            f":material/badge: {tipo_contacto(chat)}  \n"
             f":material/schedule: Último mensaje: {texto_espera(minutos_desde(chat.get('ultimo_mensaje_cliente_at')))}"
         )
+
+    with st.container(border=True):
+        st.markdown("**Asesor asignado**")
+        clave_asesor = f"asesor_{chat['chat_id']}"
+        asesor_backend = chat.get("asesor_asignado") if chat.get("asesor_asignado") in ASESORES else None
+        if st.session_state.get(f"{clave_asesor}_backend", "∅") != asesor_backend:
+            st.session_state[clave_asesor] = asesor_backend
+            st.session_state[f"{clave_asesor}_backend"] = asesor_backend
+        st.selectbox(
+            "Asesor asignado", ASESORES, index=None, placeholder=SIN_ASIGNAR, label_visibility="collapsed",
+            key=clave_asesor, on_change=_asignar_asesor, args=(chat["chat_id"], chat.get("estado"), clave_asesor),
+        )
+        st.caption("Al responder por primera vez, el chat se asigna a quien responde.")
 
     with st.container(border=True):
         st.markdown("**Estado**")
         opciones = list(ESTADOS)
         actual = chat.get("estado") if chat.get("estado") in opciones else opciones[0]
-        nuevo = st.segmented_control(
-            "Estado del lead", opciones, default=actual, required=True, label_visibility="collapsed",
+        clave = f"estado_{chat['chat_id']}"
+        # El widget refleja SIEMPRE el estado del backend: si cambió allá (p. ej.
+        # Globix derivó al asesor), se sincroniza aquí. Solo un clic del asesor
+        # (on_change) escribe en el backend; nunca se compara al refrescar, porque
+        # eso revertía las derivaciones hechas por el bot.
+        if st.session_state.get(f"{clave}_backend") != actual:
+            st.session_state[clave] = actual
+            st.session_state[f"{clave}_backend"] = actual
+        st.segmented_control(
+            "Estado del lead", opciones, required=True, label_visibility="collapsed",
             format_func=lambda e: {"Listo para Asesor": "Asesor"}.get(e, ESTADOS[e]["corto"]),
-            key=f"estado_{chat['chat_id']}", wrap=False, width="stretch",
+            key=clave, wrap=False, width="stretch",
+            on_change=_cambiar_estado, args=(chat["chat_id"], clave),
         )
-        if nuevo != actual:
-            if actualizar_estado(chat["chat_id"], nuevo):
-                st.toast(f"Estado: {ESTADOS[nuevo]['corto']}", icon=":material/check_circle:")
-            st.rerun()
         st.caption("Globix solo responde cuando el estado es *Globix*.")
 
     with st.container(border=True):
@@ -403,7 +476,7 @@ def panel_detalle(chat: Dict):
 def pagina_bandeja():
     filtros = barra_lateral()
 
-    @st.fragment(run_every=5 if filtros["auto"] else None)
+    @st.fragment(run_every=15 if filtros["auto"] else None)
     def bandeja():
         chats = fetch_chats()
         fila_kpis(chats)

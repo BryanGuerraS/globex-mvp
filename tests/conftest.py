@@ -35,6 +35,12 @@ def bloquear_meta(monkeypatch):
         enviados.append(payload)
         return True
 
+    async def subir_falso(contenido, mime, nombre_archivo):
+        # La subida de imágenes tampoco sale: se registra como un "envío" más.
+        enviados.append({"subida_media": nombre_archivo, "mime": mime, "bytes": len(contenido)})
+        return "media-de-prueba"
+
     monkeypatch.setattr(main, "_post_meta", post_falso)
+    monkeypatch.setattr(main, "_subir_media_meta", subir_falso)
     return enviados
 

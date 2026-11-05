@@ -99,11 +99,12 @@ Ejemplos verificados con el motor:
 **Experiencia del cliente**
 
 - **Globix:** el asistente se presenta por nombre y aclara que es virtual en la bienvenida. Saluda con el nombre del perfil de WhatsApp si parece un nombre real.
-- **Nombre del cliente:** al derivar al asesor, Globix pide el nombre completo (una sola vez) y lo guarda en la base asociado al ID del cliente. Si la respuesta no parece un nombre, no insiste y el asesor ve el mensaje. Desde ahí, el dashboard y la proforma usan ese nombre.
+- **Nombre del cliente:** al derivar al asesor, Globix no usa el nombre del perfil: pide el nombre completo (una sola vez; entiende respuestas como "Sí, llamo Ana") y lo guarda en la base asociado al ID del cliente. Si la respuesta no parece un nombre, no insiste y el asesor ve el mensaje. Desde ahí, el dashboard y la proforma usan ese nombre.
 - **ID único del cliente:** cada chat se identifica con el ID de usuario de Meta (BSUID, por ejemplo `PE.2347…`), que llega siempre, aunque el cliente oculte su número. El teléfono, cuando Meta lo comparte, se guarda aparte solo como respaldo de envío y no se muestra.
 - **Botones de WhatsApp:** la bienvenida ofrece *Cotizar envío*, *Rastrear paquete* y *Otras consultas*. Esta última abre una lista con dirección en Miami, plazos, provincias, cómo funciona, pagos, modalidad viajero y asesor. El cliente también puede escribir libremente; si ya dijo qué necesita, no se le muestra el menú.
 - **"Escribiendo…":** al recibir un mensaje, el bot lo marca como leído y muestra el indicador mientras prepara la respuesta.
 - **Datos para cotizar:** pide en un solo mensaje producto, precio en USD y peso en kg, con un ejemplo ("Laptop Lenovo, $650, 2.5 kg"). Si el cliente no da el peso, se busca en el catálogo; si el producto no está, pregunta solo "¿Cuánto pesa aproximadamente en kg?" (nunca el modelo ni la marca) y explica que basta un estimado únicamente si el cliente duda. Las notas internas del LLM, como "(Esperando respuesta del cliente)", se filtran antes de enviar.
+- **Proforma como imagen:** la cotización llega como una imagen de proforma (número, fecha, producto, desglose, total y vigencia de 24 h, generada por [`proforma_imagen.py`](proforma_imagen.py) con los montos del motor). La leyenda confirma lo entendido y luego llegan los botones con el total. Si la imagen no se puede enviar, se usa el mensaje de texto.
 - **Confirmación:** la cotización empieza con lo que entendió el bot, por ejemplo *"Entendí: laptop Lenovo, USD 650, 2.5 kg"*, y termina con los botones *Hablar con asesor*, *Cotizar otro* y *¿Cómo compro?*.
 - **Recuperación:** si el bot falla dos veces seguidas, ofrece las opciones y el asesor en vez de repetir el error.
 - **Alcance limitado a Globex (dos capas):**
@@ -130,9 +131,11 @@ Diseñada con las guías oficiales de Streamlit (skill *developing-with-streamli
 
 - **Tema** en [`.streamlit/config.toml`](.streamlit/config.toml): fuente Inter, base neutra con acento índigo, modo claro y oscuro, sin CSS inyectado.
 - **Navegación superior:** *Bandeja* para todos y *Métricas* solo para el admin.
+- **Usuarios de prueba:** asesores Bryan, Juan y Anyela, y el usuario Admin. Los chats nuevos quedan *sin asignar*; el primer asesor que responde queda asignado y también se puede asignar desde el detalle.
+- **Indicador de Globix:** punto verde cuando el bot responde en ese chat y gris cuando está pausado.
 - **Bandeja en tres paneles:** lista de chats (ordenada por los que requieren asesor y llevan más tiempo esperando, con badges de estado y semáforo de espera) · conversación con el formato de WhatsApp y respuesta directa · detalle del lead (cotización, avance, estado y acciones).
 - **KPIs** en tarjetas: conversaciones, requieren asesor, esperan más de 45 min y monto cotizado.
-- **Filtros** en la barra lateral (búsqueda, estado, asesor y servicio) y actualización automática cada 5 s.
+- **Filtros** en la barra lateral (búsqueda, estado, asesor —incluye *sin asignar*— y servicio). Actualización automática: mensajes del chat abierto cada 5 s; bandeja, KPIs y detalle cada 15 s, para no cerrar los desplegables mientras se usan.
 - **Métricas:** costo y latencia de Globix, gráfico de tipos de respuesta, últimos turnos y una zona de administración con confirmación antes de borrar datos.
 
 ## 5. Costo y latencia

@@ -12,7 +12,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 import main
-from tests.utilidades import mensajes_enviados
+from tests.utilidades import mensajes_enviados, texto_bot_registrado
 from tests.test_tool_calling import LLMFalso, _respuesta, _tool_call
 
 
@@ -64,7 +64,7 @@ def test_cotiza_con_datos_dados_antes_del_reinicio(turno):
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 800, "peso_kg": 9})])],
     )
     # El valor 800 viene de un mensaje anterior al reinicio y aun así se valida.
-    assert "COTIZACIÓN ESTIMADA" in enviado
+    assert "COTIZACIÓN ESTIMADA" in texto_bot_registrado("h_cot")
 
 
 def test_mensaje_del_turno_no_se_duplica(turno):
@@ -75,10 +75,10 @@ def test_mensaje_del_turno_no_se_duplica(turno):
 
 def test_incluye_mensajes_del_asesor(turno):
     turno("h_asesor", ["hola"], [_respuesta(content="¿En qué te ayudo?")])
-    main.registrar_mensaje_saliente("h_asesor", "Carlos (Asesor 1)", "Te confirmo que sí enviamos a Cusco")
+    main.registrar_mensaje_saliente("h_asesor", "Bryan", "Te confirmo que sí enviamos a Cusco")
     llm, _ = turno("h_asesor", ["perfecto, gracias"], [_respuesta(content="¡A ti!")])
     asistente = _contenidos(llm.llamadas[0], "assistant")
-    assert "[Mensaje del asesor Carlos (Asesor 1)]: Te confirmo que sí enviamos a Cusco" in asistente
+    assert "[Mensaje del asesor Bryan]: Te confirmo que sí enviamos a Cusco" in asistente
 
 
 def test_olvida_mensajes_de_mas_de_12_horas(turno):

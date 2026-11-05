@@ -128,8 +128,9 @@ def test_reintenta_si_groq_rechaza_la_llamada_a_herramienta(turno):
         [error, _respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
                                                   {"valor_producto_usd": 650, "peso_kg": 2.5})])],
     )
-    cuerpos = [p["interactive"]["body"]["text"] for p in enviados if p.get("type") == "interactive"]
-    assert cuerpos and "COTIZACIÓN ESTIMADA" in cuerpos[0]
+    assert any(p.get("type") == "image" for p in enviados)
+    assert "COTIZACIÓN ESTIMADA" in "\n".join(
+        m["texto"] for m in main.obtener_mensajes_chat("al_reintento") if m["emisor"] == "bot")
 
 
 def test_otros_errores_no_se_reintentan(turno):
