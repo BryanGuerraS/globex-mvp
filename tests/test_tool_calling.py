@@ -248,3 +248,19 @@ def test_peso_bajo_1kg_cobra_minimo(entorno):
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 150, "peso_kg": 0.3})])],
     )
     assert "$18.00 USD (0.3 kg, se cobra el mínimo de 1 kg)" in enviado
+
+
+def test_nota_interna_no_llega_al_cliente(entorno):
+    llm, enviado = entorno(
+        "chat_nota",
+        "set de cuchillos de $640",
+        [_respuesta(content="¿Cuánto pesa aproximadamente en kg?\n(Esperando respuesta del cliente)")],
+    )
+    assert enviado == "¿Cuánto pesa aproximadamente en kg?"
+
+
+def test_prompt_pide_producto_precio_y_peso_juntos():
+    prompt = main.SYSTEM_PROMPT
+    assert "¿Qué producto quieres traer, cuál es su precio en USD y cuánto pesa en kg?" in prompt
+    assert "Nunca pidas el modelo" in prompt
+    assert "modelo exacto" not in prompt

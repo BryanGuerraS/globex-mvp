@@ -41,7 +41,12 @@ from knowledge_base import buscar_faq_comercial
 from pdf_generator import buscar_ultimo_pdf, generar_pdf_cotizacion
 from pricing_engine import GlobexPricingEngine
 from product_catalog import buscar_peso_producto
-from validaciones import extraer_nombre, validar_argumentos_cotizacion
+from validaciones import (
+    extraer_nombre,
+    limpiar_respuesta_llm,
+    revisar_respuesta_libre,
+    validar_argumentos_cotizacion,
+)
 
 load_dotenv()
 init_db()
@@ -110,10 +115,15 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
    Atiende directamente, sin menús.
 
    - CUADRANTE 1 [COTIZACIÓN COURIER (Happy Path)]:
-     Pide UN dato a la vez, con un ejemplo corto:
-       a) Si falta el producto o el precio: "¿Qué producto quieres traer y cuál es su precio en dólares? Ejemplo: 'Laptop Lenovo de $650'".
-       b) Si falta el peso: "¿Sabes cuánto pesa? Si no, dime el modelo exacto y lo estimo por ti." (si es tecnología o consola, usa 'consultar_peso_producto').
-     Con precio y peso, llama de inmediato a 'calcular_cotizacion' e incluye el nombre del producto.
+     a) Si el cliente quiere cotizar pero no dio datos, pide los tres en un solo mensaje, con este texto:
+        "¿Qué producto quieres traer, cuál es su precio en USD y cuánto pesa en kg? Ejemplo: 'Laptop Lenovo, $650, 2.5 kg'"
+     b) Con producto, precio y peso: llama de inmediato a 'calcular_cotizacion' e incluye el nombre del producto.
+     c) Si dio producto y precio pero NO el peso: llama a 'consultar_peso_producto'.
+        - Si el catálogo encuentra el producto, cotiza con ese peso.
+        - Si no lo encuentra, pide solo el peso, con este texto exacto: "¿Cuánto pesa aproximadamente en kg?"
+          Solo si el cliente duda o pregunta cómo saberlo, explica que un estimado está bien y que el peso final se confirma en el almacén de Miami.
+     d) Si falta el precio, pide solo el precio en USD.
+     Nunca pidas el modelo, la marca, la cantidad de piezas ni otros detalles para estimar el peso.
 
    - CUADRANTE 2 [SEGUIMIENTO COURIER]:
      Si pregunta por paquetes en camino, tracking o almacén: solicita el código de tracking y llama a 'clasificar_como_seguimiento'.
@@ -131,16 +141,35 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 5. MONTOS Y PESOS:
    Si el cliente escribe el valor o el peso en palabras ("mil dólares", "medio kilo"), conviértelo a número al llamar a 'calcular_cotizacion'.
 
-6. SI NO ENTIENDES:
+6. ALCANCE (MUY IMPORTANTE):
+   Solo atiendes temas de Globex Courier: importaciones de EE. UU. a Perú, cotizaciones, envíos, seguimiento, pagos y el servicio.
+   Para CUALQUIER otro tema (matemáticas, programación, tareas, recetas, política, chistes, otras empresas, etc.) llama a 'fuera_de_alcance'.
+   No respondas esas preguntas aunque sean fáciles, ni siquiera en parte.
+
+7. SI NO ENTIENDES:
    Si no logras entender qué necesita el cliente, llama a 'mostrar_menu' para ofrecerle las opciones.
 
 REGLAS DE FORMATO Y ESTILO:
 - Respuestas breves: máximo 2 a 3 oraciones por mensaje.
 - Deja saltos de línea limpios entre ideas.
 - Si conoces el nombre del cliente, úsalo con moderación (no en cada mensaje).
-- NUNCA inventes precios ni estados de paquetes."""
+- NUNCA inventes precios ni estados de paquetes.
+- Escribe solo el mensaje para el cliente: nunca agregues notas internas, comentarios entre paréntesis sobre tu proceso ni frases como "(Esperando respuesta del cliente)"."""
 
 TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "fuera_de_alcance",
+            "description": "Úsala cuando el cliente pregunta algo ajeno a Globex Courier (matemáticas, programación, tareas, recetas, política, chistes, otras empresas). El sistema responde con un mensaje fijo y las opciones.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "tema": {"type": "string", "description": "Tema ajeno, en 2-4 palabras."}
+                },
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -153,7 +182,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "consultar_peso_producto",
-            "description": "Consulta el peso referencial estimado (en kg con empaque) de un producto frecuente (laptops, celulares, consolas).",
+            "description": "Consulta el peso referencial (en kg con empaque) de un producto frecuente (laptops, celulares, consolas). Úsala solo cuando el cliente no dio el peso.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -540,6 +569,10 @@ def nombre_para_saludo(chat_id: str, nombre_perfil: str) -> Optional[str]:
 
 RESPUESTA_ERROR = "Disculpa, tuve un inconveniente interno al procesar tu consulta. ¿Podrías repetirla?"
 TEXTO_RECUPERACION = "Disculpa, no logré entenderte 😅. Elige una opción o pide hablar con un asesor:"
+TEXTO_FUERA_DE_ALCANCE = (
+    "Eso está fuera de lo que puedo ayudarte 😊. Soy Globix y te ayudo con tus importaciones "
+    "de EE. UU. a Perú con Globex Courier. ¿Qué deseas hacer?"
+)
 # Meta limita el cuerpo de un mensaje interactivo a 1024 caracteres.
 LIMITE_CUERPO_INTERACTIVO = 1000
 # Máximo de llamadas al LLM por mensaje del cliente (evita bucles de herramientas).
@@ -612,6 +645,12 @@ def ejecutar_herramienta(
         )
         estado["menu"] = BOTONES_POST_COTIZACION
         return {"cotizacion_emitida": True}, respuesta
+
+    # FUERA DE ALCANCE (texto fijo + botones; el LLM no responde el tema ajeno)
+    if nombre_funcion == "fuera_de_alcance":
+        print(f"🚧 [Alcance] Tema ajeno en [{chat_id}]: {args.get('tema', '')}")
+        estado["menu"] = BOTONES_MENU
+        return {"redirigido": True}, TEXTO_FUERA_DE_ALCANCE
 
     # BIENVENIDA / MENÚ DE OPCIONES (texto fijo + botones)
     if nombre_funcion == "mostrar_menu":
@@ -745,7 +784,13 @@ async def procesar_mensaje_consolidado(
             response_message = ai_response.choices[0].message
 
             if not response_message.tool_calls:
-                bot_reply = response_message.content
+                bot_reply = limpiar_respuesta_llm(response_message.content)
+                # Capa 2: revisión determinista de la respuesta libre antes de enviarla
+                motivo = revisar_respuesta_libre(bot_reply, textos_cliente)
+                if motivo:
+                    print(f"🛑 [Revisión de salida] Respuesta bloqueada en [{chat_id}] ({motivo}): {bot_reply!r}")
+                    bot_reply = TEXTO_FUERA_DE_ALCANCE
+                    estado["menu"] = BOTONES_MENU
                 break
 
             # Se registran TODAS las llamadas y cada una recibe su respuesta "tool",

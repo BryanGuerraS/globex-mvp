@@ -223,3 +223,63 @@ def extraer_nombre(texto: str) -> Optional[str]:
     if any(_sin_tildes(p.lower()) in _NO_NOMBRES for p in palabras):
         return None
     return " ".join(p[:1].upper() + p[1:].lower() for p in palabras)
+
+
+# ---------------- Limpieza de respuestas libres del LLM ----------------
+
+# Líneas completas entre paréntesis o corchetes: "(Esperando respuesta del cliente)"
+_LINEA_NOTA = re.compile(r"^\s*[\(\[][^\n]*[\)\]]\s*$", re.MULTILINE)
+# Notas internas dentro de una línea: "... (nota: falta el peso)"
+_NOTA_EN_LINEA = re.compile(
+    r"\s*[\(\[]\s*(esperando|esperar|nota|interno|pendiente|accion|acción|"
+    r"llamar a|herramienta|sistema)[^\)\]]*[\)\]]",
+    re.IGNORECASE,
+)
+
+
+def limpiar_respuesta_llm(texto: Optional[str]) -> Optional[str]:
+    """Quita notas internas que el LLM a veces escribe para sí mismo."""
+    if not texto:
+        return texto
+    limpio = _LINEA_NOTA.sub("", texto)
+    limpio = _NOTA_EN_LINEA.sub("", limpio)
+    limpio = re.sub(r"\n{3,}", "\n\n", limpio)
+    return limpio.strip() or None
+
+
+# ---------------- Revisión de salida (capa 2) ----------------
+
+# Las respuestas libres deben ser cortas (el prompt pide 2-3 oraciones).
+LARGO_MAXIMO_RESPUESTA = 700
+_CODIGO = re.compile(
+    r"```|`[^`\n]+`|^\s*(def |import |from \w+ import|print\(|for \w+ in |class \w+)",
+    re.MULTILINE,
+)
+_ENLACE = re.compile(r"https?://|www\.", re.IGNORECASE)
+# Montos en dólares: "$640", "640 USD", "640 dólares"
+_MONTO = re.compile(
+    r"\$\s?(\d+(?:[.,]\d+)*)|(\d+(?:[.,]\d+)*)\s?(?:usd|d[oó]lares)\b", re.IGNORECASE
+)
+
+
+def revisar_respuesta_libre(texto: Optional[str], textos_cliente: Iterable[str]) -> Optional[str]:
+    """Revisa una respuesta libre del LLM antes de enviarla.
+
+    Devuelve el motivo del bloqueo ("codigo", "enlace", "muy_larga",
+    "monto_no_dado") o None si la respuesta puede enviarse. No aplica a los
+    textos armados por código (cotización, FAQ, derivaciones).
+    """
+    if not texto:
+        return None
+    if _CODIGO.search(texto):
+        return "codigo"
+    if _ENLACE.search(texto):
+        return "enlace"
+    if len(texto) > LARGO_MAXIMO_RESPUESTA:
+        return "muy_larga"
+    numeros_cliente = numeros_en_texto(textos_cliente)
+    for m in _MONTO.finditer(texto):
+        token = m.group(1) or m.group(2)
+        if not any(_cerca(v, n) for v in _interpretar_numero(token) for n in numeros_cliente):
+            return "monto_no_dado"
+    return None

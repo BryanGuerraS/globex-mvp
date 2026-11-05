@@ -104,3 +104,31 @@ def test_valor_en_palabras_es_valido():
 def test_valor_en_palabras_no_inventa_otro():
     r = _validar(1500, 2, ["una laptop de mil dólares que pesa 2 kg"])
     assert isinstance(r, str) and "valor" in r
+
+
+# ---------- Limpieza de notas internas del LLM ----------
+
+from validaciones import limpiar_respuesta_llm  # noqa: E402
+
+
+@pytest.mark.parametrize(
+    "texto, esperado",
+    [
+        (
+            "¿Podrías indicarme el peso aproximado en kg?\n(Esperando respuesta del cliente)",
+            "¿Podrías indicarme el peso aproximado en kg?",
+        ),
+        ("¿Cuánto pesa en kg? (esperando respuesta)", "¿Cuánto pesa en kg?"),
+        ("Perfecto. [Nota: falta el precio]\n¿Cuál es el precio en USD?", "Perfecto.\n¿Cuál es el precio en USD?"),
+        # Paréntesis legítimos dentro de una frase se conservan
+        ("El envío es de USD 18 (incluye trámite).", "El envío es de USD 18 (incluye trámite)."),
+        ("Pesa 2 kg (aprox.) y cuesta $640", "Pesa 2 kg (aprox.) y cuesta $640"),
+    ],
+)
+def test_limpia_notas_internas(texto, esperado):
+    assert limpiar_respuesta_llm(texto) == esperado
+
+
+def test_limpieza_que_deja_vacio_devuelve_none():
+    assert limpiar_respuesta_llm("(Esperando respuesta del cliente)") is None
+    assert limpiar_respuesta_llm(None) is None

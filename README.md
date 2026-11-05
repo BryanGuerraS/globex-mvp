@@ -103,9 +103,12 @@ Ejemplos verificados con el motor:
 - **ID único del cliente:** cada chat se identifica con el ID de usuario de Meta (BSUID, por ejemplo `PE.2347…`), que llega siempre, aunque el cliente oculte su número. El teléfono, cuando Meta lo comparte, se guarda aparte solo como respaldo de envío y no se muestra.
 - **Botones de WhatsApp:** la bienvenida ofrece *Cotizar envío*, *Rastrear paquete* y *Otras consultas*. Esta última abre una lista con dirección en Miami, plazos, provincias, cómo funciona, pagos, modalidad viajero y asesor. El cliente también puede escribir libremente; si ya dijo qué necesita, no se le muestra el menú.
 - **"Escribiendo…":** al recibir un mensaje, el bot lo marca como leído y muestra el indicador mientras prepara la respuesta.
-- **Un dato a la vez:** para cotizar pide primero producto y precio, luego el peso (o el modelo para estimarlo), siempre con un ejemplo.
+- **Datos para cotizar:** pide en un solo mensaje producto, precio en USD y peso en kg, con un ejemplo ("Laptop Lenovo, $650, 2.5 kg"). Si el cliente no da el peso, se busca en el catálogo; si el producto no está, pregunta solo "¿Cuánto pesa aproximadamente en kg?" (nunca el modelo ni la marca) y explica que basta un estimado únicamente si el cliente duda. Las notas internas del LLM, como "(Esperando respuesta del cliente)", se filtran antes de enviar.
 - **Confirmación:** la cotización empieza con lo que entendió el bot, por ejemplo *"Entendí: laptop Lenovo, USD 650, 2.5 kg"*, y termina con los botones *Hablar con asesor*, *Cotizar otro* y *¿Cómo compro?*.
 - **Recuperación:** si el bot falla dos veces seguidas, ofrece las opciones y el asesor en vez de repetir el error.
+- **Alcance limitado a Globex (dos capas):**
+  1. *Herramienta `fuera_de_alcance`:* ante temas ajenos (matemáticas, programación, recetas, política…) el LLM no responde el tema; Globix envía un texto fijo y los botones del menú.
+  2. *Revisión de salida en código:* antes de enviar una respuesta libre del LLM se bloquea si trae código, enlaces, más de 700 caracteres o montos en dólares que el cliente no dijo; en su lugar se envía el mismo texto fijo con botones. Los bloqueos quedan en el log de Render.
 
 **Reglas internas**
 
@@ -239,6 +242,7 @@ Casos funcionales de referencia por WhatsApp:
 | CP12 | Bienvenida | *"Hola"* | Globix se presenta como asistente virtual y muestra 3 botones |
 | CP13 | Botón *Otras consultas* | Tocar el botón | Llega una lista con 7 temas; al elegir uno, responde la ficha aprobada |
 | CP14 | Botón *Hablar con asesor* | Tocar el botón tras una cotización | Deriva al instante y silencia el bot |
+| CP16 | Tema ajeno | *"¿Cómo se ordena una lista en Python?"* | No responde el tema; envía el mensaje de alcance con los botones |
 | CP15 | Nombre al derivar | Tras derivar, responder *"Me llamo Ana Pérez"* | Guarda el nombre, agradece y el dashboard muestra *Ana Pérez* |
 | CP08 | Respuesta del asesor | Enviar un mensaje desde la consola | El cliente lo recibe en WhatsApp y el bot sigue en silencio |
 | CP09 | Descarga de proforma | *Descargar Proforma PDF* en la consola | Se descarga la última proforma del chat |
