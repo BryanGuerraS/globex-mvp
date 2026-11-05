@@ -8,6 +8,16 @@ load_dotenv()
 
 # URL base del Backend en Render
 BACKEND_URL = os.getenv("BACKEND_URL", "https://globex-mvp.onrender.com")
+# Misma key que DASHBOARD_API_KEY en el backend (Streamlit Cloud: Secrets)
+DASHBOARD_API_KEY = os.getenv("DASHBOARD_API_KEY", "")
+
+
+@st.cache_resource
+def _cliente_api() -> httpx.Client:
+    return httpx.Client(headers={"X-API-Key": DASHBOARD_API_KEY})
+
+
+api = _cliente_api()
 
 st.set_page_config(
     page_title="Globex | Panel de Asesores Pro",
@@ -67,7 +77,7 @@ usuario = st.session_state.usuario_actual
 # Funciones de consulta a la API de Render
 def fetch_chats():
     try:
-        r = httpx.get(f"{BACKEND_URL}/api/chats", timeout=10.0)
+        r = api.get(f"{BACKEND_URL}/api/chats", timeout=10.0)
         return r.json() if r.status_code == 200 else []
     except Exception:
         return []
@@ -75,7 +85,7 @@ def fetch_chats():
 
 def fetch_messages(chat_id):
     try:
-        r = httpx.get(f"{BACKEND_URL}/api/messages/{chat_id}", timeout=10.0)
+        r = api.get(f"{BACKEND_URL}/api/messages/{chat_id}", timeout=10.0)
         return r.json() if r.status_code == 200 else []
     except Exception:
         return []
@@ -128,7 +138,7 @@ with st.sidebar:
         st.markdown("### Administración")
         if st.button("🗑️ Limpiar Base de Datos y PDFs"):
             try:
-                res = httpx.post(f"{BACKEND_URL}/api/admin/clean-data", timeout=10.0)
+                res = api.post(f"{BACKEND_URL}/api/admin/clean-data", timeout=10.0)
                 if res.status_code == 200:
                     info = res.json()
                     st.success(
@@ -295,7 +305,7 @@ if (
             with col_b1:
                 if st.button("💾 Guardar Estado"):
                     activo = 1 if nuevo_est == "Atendido por Bot" else 0
-                    httpx.post(
+                    api.post(
                         f"{BACKEND_URL}/api/update-chat-status",
                         json={
                             "chat_id": sel_id,
@@ -310,7 +320,7 @@ if (
                 bot_actualmente_activo = bool(info_chat.get("bot_activo", 1))
                 if bot_actualmente_activo:
                     if st.button("🤫 Silenciar Bot"):
-                        httpx.post(
+                        api.post(
                             f"{BACKEND_URL}/api/update-chat-status",
                             json={
                                 "chat_id": sel_id,
@@ -321,7 +331,7 @@ if (
                         st.rerun()
                 else:
                     if st.button("🤖 Reactivar Bot", type="primary"):
-                        httpx.post(
+                        api.post(
                             f"{BACKEND_URL}/api/update-chat-status",
                             json={
                                 "chat_id": sel_id,
@@ -347,7 +357,7 @@ if (
                     f"¿Deseas que te asigne tu casillero en Miami para proceder con tu compra?"
                 )
                 try:
-                    res = httpx.post(
+                    res = api.post(
                         f"{BACKEND_URL}/api/send-advisor-message",
                         json={
                             "chat_id": sel_id,
@@ -366,7 +376,7 @@ if (
             if info_chat.get("cotizacion_total"):
                 pdf_url = f"{BACKEND_URL}/api/download-pdf/{sel_id}"
                 try:
-                    pdf_res = httpx.get(pdf_url, timeout=10.0)
+                    pdf_res = api.get(pdf_url, timeout=10.0)
                     if pdf_res.status_code == 200:
                         st.download_button(
                             label="📄 Descargar Proforma PDF",
@@ -387,7 +397,7 @@ if (
         if st.button("📤 Enviar Mensaje a WhatsApp"):
             if respuesta_asesor.strip():
                 try:
-                    res = httpx.post(
+                    res = api.post(
                         f"{BACKEND_URL}/api/send-advisor-message",
                         json={
                             "chat_id": sel_id,

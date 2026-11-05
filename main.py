@@ -1,4 +1,6 @@
 import glob
+import hashlib
+import hmac
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import asyncio
@@ -7,7 +9,7 @@ import json
 import os
 from typing import Dict, List
 from dotenv import load_dotenv
-from fastapi import BackgroundTasks, FastAPI, Request, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 import httpx
 from openai import OpenAI
 
@@ -29,7 +31,7 @@ from database import (
 )
 from guardrails import verificar_mercancia_restringida
 from knowledge_base import buscar_faq_comercial
-from pdf_generator import generar_pdf_cotizacion
+from pdf_generator import buscar_ultimo_pdf, generar_pdf_cotizacion
 from pricing_engine import GlobexPricingEngine
 from product_catalog import buscar_peso_producto
 
@@ -46,9 +48,48 @@ MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 # 2. Configuración de Meta Cloud API
 META_PHONE_NUMBER_ID = os.getenv("META_PHONE_NUMBER_ID")
-META_WABA_ID = os.getenv("META_WABA_ID", "1827849438216727")
+META_WABA_ID = os.getenv("META_WABA_ID")
 META_ACCESS_TOKEN = os.getenv("META_ACCESS_TOKEN")
-META_VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN", "globex_token_secreto_2026")
+META_VERIFY_TOKEN = os.getenv("META_VERIFY_TOKEN")
+# App Secret de Meta (App settings > Basic): firma los webhooks en X-Hub-Signature-256
+META_APP_SECRET = os.getenv("META_APP_SECRET")
+
+# 3. API key compartida con el dashboard (header X-API-Key en /api/*)
+DASHBOARD_API_KEY = os.getenv("DASHBOARD_API_KEY")
+
+_faltantes = [
+    nombre
+    for nombre, valor in {
+        "META_VERIFY_TOKEN": META_VERIFY_TOKEN,
+        "META_APP_SECRET": META_APP_SECRET,
+        "DASHBOARD_API_KEY": DASHBOARD_API_KEY,
+        "META_WABA_ID": META_WABA_ID,
+    }.items()
+    if not valor
+]
+if _faltantes:
+    print(
+        f"⚠️ [Config] Faltan variables de entorno: {', '.join(_faltantes)}. "
+        "Los endpoints que dependen de ellas rechazarán las peticiones."
+    )
+
+
+def verificar_api_key(x_api_key: str = Header(None, alias="X-API-Key")):
+    """Autentica las llamadas del dashboard. Falla cerrado si no hay key configurada."""
+    if not DASHBOARD_API_KEY:
+        raise HTTPException(status_code=503, detail="API no configurada")
+    if not x_api_key or not hmac.compare_digest(x_api_key, DASHBOARD_API_KEY):
+        raise HTTPException(status_code=401, detail="API key inválida")
+
+
+def firma_meta_valida(cuerpo: bytes, firma_header: str) -> bool:
+    """Valida X-Hub-Signature-256 = 'sha256=' + HMAC-SHA256(app_secret, cuerpo crudo)."""
+    if not META_APP_SECRET or not firma_header or not firma_header.startswith("sha256="):
+        return False
+    esperada = hmac.new(
+        META_APP_SECRET.encode(), cuerpo, hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(firma_header[len("sha256="):], esperada)
 
 SYSTEM_PROMPT = """Eres el asistente virtual oficial de Globex Courier (importaciones USA a Perú).
 
@@ -171,14 +212,6 @@ TOOLS = [
 sessions: Dict[str, Dict] = {}
 message_buffer: Dict[str, List[str]] = {}
 buffer_tasks: Dict[str, asyncio.Task] = {}
-
-@app.post("/test-chiquito")
-async def test_chiquito(request: Request):
-    body = await request.json()
-    print(
-        "\n⚡ [DIAGNÓSTICO] ¡Llegó un POST exitoso al servidor local!", body
-    )
-    return {"status": "recibido_ok"}
 
 def get_or_create_history(chat_id: str) -> List[Dict[str, str]]:
     now = datetime.now()
@@ -471,7 +504,12 @@ async def verify_meta_webhook(request: Request):
     token = params.get("hub.verify_token")
     challenge = params.get("hub.challenge")
 
-    if mode == "subscribe" and token == META_VERIFY_TOKEN:
+    if (
+        META_VERIFY_TOKEN
+        and mode == "subscribe"
+        and token
+        and hmac.compare_digest(token, META_VERIFY_TOKEN)
+    ):
         print("✅ [Meta Webhook] Handshake verificado exitosamente.")
         return Response(content=challenge, media_type="text/plain")
     return Response(
@@ -483,7 +521,13 @@ async def verify_meta_webhook(request: Request):
 @app.post("/meta-webhook")
 async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
     """Endpoint oficial que recibe y procesa todos los eventos de WhatsApp Cloud API."""
-    data = await request.json()
+    cuerpo = await request.body()
+    if not firma_meta_valida(
+        cuerpo, request.headers.get("X-Hub-Signature-256", "")
+    ):
+        print("🚫 [Meta Webhook] Firma X-Hub-Signature-256 inválida o ausente.")
+        return Response(content="Firma inválida", status_code=403)
+    data = json.loads(cuerpo)
 
     try:
         entry = data.get("entry", [])[0]
@@ -647,6 +691,9 @@ async def tarea_fondo_recordatorios():
 # 🔗 FUNCIÓN DE AUTO-SUSCRIPCIÓN DE LA WABA A LA APP (Solución del Shadow Delivery)
 async def auto_suscribir_waba_a_la_app():
     """Suscribe automáticamente la WABA de Meta a los eventos de la App para que lleguen los mensajes reales."""
+    if not META_WABA_ID or not META_ACCESS_TOKEN:
+        print("⚠️ [Meta WABA Sync] Sin META_WABA_ID/META_ACCESS_TOKEN; se omite la suscripción.")
+        return
     url = f"https://graph.facebook.com/v21.0/{META_WABA_ID}/subscribed_apps"
     headers = {"Authorization": f"Bearer {META_ACCESS_TOKEN}"}
     async with httpx.AsyncClient() as client_http:
@@ -693,19 +740,19 @@ class ActualizarEstadoPayload(BaseModel):
     bot_activo: int = None
 
 
-@app.get("/api/chats")
+@app.get("/api/chats", dependencies=[Depends(verificar_api_key)])
 def api_obtener_chats():
     """Devuelve la lista completa de chats y sus estados para el Dashboard."""
     return obtener_todos_los_chats()
 
 
-@app.get("/api/messages/{chat_id}")
+@app.get("/api/messages/{chat_id}", dependencies=[Depends(verificar_api_key)])
 def api_obtener_mensajes(chat_id: str):
     """Devuelve el historial de mensajes de un chat específico."""
     return obtener_mensajes_chat(chat_id)
 
 
-@app.post("/api/send-advisor-message")
+@app.post("/api/send-advisor-message", dependencies=[Depends(verificar_api_key)])
 async def api_enviar_mensaje_asesor(payload: MensajeAsesorPayload):
     """Permite al asesor humano enviar un mensaje a WhatsApp desde el Dashboard."""
     clean_phone = payload.chat_id.replace("@c.us", "").strip()
@@ -719,7 +766,7 @@ async def api_enviar_mensaje_asesor(payload: MensajeAsesorPayload):
     return {"status": "sent"}
 
 
-@app.post("/api/update-chat-status")
+@app.post("/api/update-chat-status", dependencies=[Depends(verificar_api_key)])
 def api_actualizar_estado(payload: ActualizarEstadoPayload):
     """Permite al asesor cambiar el estado de un lead o reactivar el bot."""
     actualizar_estado_chat(
@@ -731,27 +778,20 @@ def api_actualizar_estado(payload: ActualizarEstadoPayload):
     return {"status": "updated"}
 
 
-@app.get("/api/download-pdf/{chat_id}")
+@app.get("/api/download-pdf/{chat_id}", dependencies=[Depends(verificar_api_key)])
 def api_descargar_pdf(chat_id: str):
     """Permite al asesor descargar el PDF oficial generado en el servidor."""
-    numero_limpio = chat_id.replace("@c.us", "")
-    carpeta_pdf = "cotizaciones_pdf"
-    if os.path.exists(carpeta_pdf):
-        pdfs = [
-            f
-            for f in os.listdir(carpeta_pdf)
-            if f.startswith(f"Proforma_Globex_{numero_limpio}")
-        ]
-        if pdfs:
-            pdfs.sort(reverse=True)
-            ruta_pdf = os.path.join(carpeta_pdf, pdfs[0])
-            return FileResponse(
-                ruta_pdf, media_type="application/pdf", filename=pdfs[0]
-            )
+    ruta_pdf = buscar_ultimo_pdf(chat_id)
+    if ruta_pdf:
+        return FileResponse(
+            ruta_pdf,
+            media_type="application/pdf",
+            filename=os.path.basename(ruta_pdf),
+        )
     return Response(content="PDF no encontrado", status_code=404)
 
 
-@app.post("/api/admin/clean-data")
+@app.post("/api/admin/clean-data", dependencies=[Depends(verificar_api_key)])
 def api_limpiar_datos():
     """Limpia la base de datos de pruebas y borra los PDFs acumulados en Render."""
     # 1. Limpiar SQLite

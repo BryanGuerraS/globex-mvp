@@ -1,8 +1,10 @@
 """Generador oficial de Proformas y Cotizaciones en PDF para Globex Courier."""
 
 from datetime import datetime
+import hashlib
 import os
-from typing import Dict
+import re
+from typing import Dict, Optional
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -13,11 +15,32 @@ PDF_DIR = "cotizaciones_pdf"
 os.makedirs(PDF_DIR, exist_ok=True)
 
 
+def id_archivo_chat(chat_id: str) -> str:
+    """Identificador opaco del chat para nombres de archivo (no expone el teléfono)."""
+    numero_limpio = chat_id.replace("@c.us", "").strip()
+    return hashlib.sha256(numero_limpio.encode()).hexdigest()[:16]
+
+
+def _patron_pdf_chat(chat_id: str) -> "re.Pattern[str]":
+    return re.compile(
+        rf"Proforma_Globex_{id_archivo_chat(chat_id)}_\d{{8}}_\d{{6}}\.pdf"
+    )
+
+
+def buscar_ultimo_pdf(chat_id: str) -> Optional[str]:
+    """Devuelve la ruta de la proforma más reciente del chat, o None."""
+    if not os.path.isdir(PDF_DIR):
+        return None
+    patron = _patron_pdf_chat(chat_id)
+    pdfs = sorted(f for f in os.listdir(PDF_DIR) if patron.fullmatch(f))
+    return os.path.join(PDF_DIR, pdfs[-1]) if pdfs else None
+
+
 def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str, float]) -> str:
     """Genera un archivo PDF corporativo con el desglose oficial de Globex y devuelve la ruta."""
     numero_limpio = chat_id.replace("@c.us", "")
     fecha_hoy = datetime.now().strftime("%Y%m%d_%H%M%S")
-    nombre_archivo = f"Proforma_Globex_{numero_limpio}_{fecha_hoy}.pdf"
+    nombre_archivo = f"Proforma_Globex_{id_archivo_chat(chat_id)}_{fecha_hoy}.pdf"
     ruta_completa = os.path.join(PDF_DIR, nombre_archivo)
 
     doc = SimpleDocTemplate(
