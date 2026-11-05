@@ -13,6 +13,28 @@ os.environ["DASHBOARD_API_KEY"] = "key_de_prueba"
 os.environ["META_VERIFY_TOKEN"] = "verify_de_prueba"
 os.environ["META_WABA_ID"] = "000"
 
+# Credenciales falsas de Meta: aunque exista un .env real, ninguna prueba debe usarlas.
+os.environ["META_ACCESS_TOKEN"] = "token_de_prueba"
+os.environ["META_PHONE_NUMBER_ID"] = "000"
+
 # main.py y pdf_generator.py crean globex.db y cotizaciones_pdf/ en el cwd.
 _TMP = tempfile.mkdtemp(prefix="globex_tests_")
 os.chdir(_TMP)
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def bloquear_meta(monkeypatch):
+    """Ninguna prueba sale a la Graph API: todo envío queda registrado en memoria."""
+    import main
+
+    enviados = []
+
+    async def post_falso(payload):
+        enviados.append(payload)
+        return True
+
+    monkeypatch.setattr(main, "_post_meta", post_falso)
+    return enviados
+

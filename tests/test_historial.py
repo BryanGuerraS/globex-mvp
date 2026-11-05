@@ -12,18 +12,13 @@ import pytest
 from fastapi.testclient import TestClient
 
 import main
+from tests.utilidades import mensajes_enviados
 from tests.test_tool_calling import LLMFalso, _respuesta, _tool_call
 
 
 @pytest.fixture
-def turno(monkeypatch):
+def turno(monkeypatch, bloquear_meta):
     """Simula un turno completo: el webhook registra el/los mensajes y luego se procesa."""
-    enviados = []
-
-    async def enviar_falso(destino, texto):
-        enviados.append(texto)
-
-    monkeypatch.setattr(main, "send_meta_whatsapp_message", enviar_falso)
 
     def correr(chat_id, mensajes_cliente, respuestas):
         for texto in mensajes_cliente:
@@ -33,7 +28,7 @@ def turno(monkeypatch):
         asyncio.run(
             main.procesar_mensaje_consolidado(chat_id, "Cliente", " ".join(mensajes_cliente))
         )
-        return llm, enviados[-1]
+        return llm, mensajes_enviados(bloquear_meta)[-1]
 
     return correr
 

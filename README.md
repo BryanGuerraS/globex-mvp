@@ -5,7 +5,7 @@ Chatbot de **primera atención comercial por WhatsApp** para Globex Courier (imp
 > Proyecto Integrador (Capstone Project I) · Maestría en Ciencia de Datos e Inteligencia Artificial · UTEC
 > Equipo 1: Juan Carlos Vasquez, Anyela Rosado, Bryan Guerra · 2026
 
-El bot responde con información comercial autorizada, pide los datos que faltan, emite una **cotización preliminar calculada por reglas (no por IA)** y deriva el caso al asesor. Negociación, cierre de venta, pagos, embarques y liquidación quedan **fuera de alcance**: son trabajo del asesor.
+El bot, **Globix**, se presenta como asistente virtual, responde con información comercial autorizada, pide los datos que faltan, emite una **cotización preliminar calculada por reglas (no por IA)** y deriva el caso al asesor. Negociación, cierre de venta, pagos, embarques y liquidación quedan **fuera de alcance**: son trabajo del asesor.
 
 ---
 
@@ -95,6 +95,19 @@ Ejemplos verificados con el motor:
 ---
 
 ## 4. Comportamiento conversacional
+
+**Experiencia del cliente**
+
+- **Globix:** el asistente se presenta por nombre y aclara que es virtual en la bienvenida. Saluda con el nombre del perfil de WhatsApp si parece un nombre real.
+- **Nombre del cliente:** al derivar al asesor, Globix pide el nombre completo (una sola vez) y lo guarda en la base asociado al ID del cliente. Si la respuesta no parece un nombre, no insiste y el asesor ve el mensaje. Desde ahí, el dashboard y la proforma usan ese nombre.
+- **ID único del cliente:** cada chat se identifica con el ID de usuario de Meta (BSUID, por ejemplo `PE.2347…`), que llega siempre, aunque el cliente oculte su número. El teléfono, cuando Meta lo comparte, se guarda aparte solo como respaldo de envío y no se muestra.
+- **Botones de WhatsApp:** la bienvenida ofrece *Cotizar envío*, *Rastrear paquete* y *Otras consultas*. Esta última abre una lista con dirección en Miami, plazos, provincias, cómo funciona, pagos, modalidad viajero y asesor. El cliente también puede escribir libremente; si ya dijo qué necesita, no se le muestra el menú.
+- **"Escribiendo…":** al recibir un mensaje, el bot lo marca como leído y muestra el indicador mientras prepara la respuesta.
+- **Un dato a la vez:** para cotizar pide primero producto y precio, luego el peso (o el modelo para estimarlo), siempre con un ejemplo.
+- **Confirmación:** la cotización empieza con lo que entendió el bot, por ejemplo *"Entendí: laptop Lenovo, USD 650, 2.5 kg"*, y termina con los botones *Hablar con asesor*, *Cotizar otro* y *¿Cómo compro?*.
+- **Recuperación:** si el bot falla dos veces seguidas, ofrece las opciones y el asesor en vez de repetir el error.
+
+**Reglas internas**
 
 - **Debounce de 5 s:** si el cliente escribe en varios mensajes seguidos, el bot los une y responde una sola vez.
 - **Mensajes no textuales:** ante audios, fotos, documentos o videos, el bot avisa que atiende por texto y deja el registro para el asesor.
@@ -223,6 +236,10 @@ Casos funcionales de referencia por WhatsApp:
 | CP07 | Escape a humano | *"Quiero hablar con un asesor"* | Silencia el bot y marca el chat como *Listo para Asesor* |
 | CP10 | Tope de USD 1 200 | *"Una laptop de 1500 dólares que pesa 2 kg"* | No cotiza; deriva al asesor |
 | CP11 | Monto en palabras | *"Un celular de mil dólares que pesa medio kilo"* | Cotiza con valor USD 1 000 y cobra el mínimo de 1 kg |
+| CP12 | Bienvenida | *"Hola"* | Globix se presenta como asistente virtual y muestra 3 botones |
+| CP13 | Botón *Otras consultas* | Tocar el botón | Llega una lista con 7 temas; al elegir uno, responde la ficha aprobada |
+| CP14 | Botón *Hablar con asesor* | Tocar el botón tras una cotización | Deriva al instante y silencia el bot |
+| CP15 | Nombre al derivar | Tras derivar, responder *"Me llamo Ana Pérez"* | Guarda el nombre, agradece y el dashboard muestra *Ana Pérez* |
 | CP08 | Respuesta del asesor | Enviar un mensaje desde la consola | El cliente lo recibe en WhatsApp y el bot sigue en silencio |
 | CP09 | Descarga de proforma | *Descargar Proforma PDF* en la consola | Se descarga la última proforma del chat |
 
@@ -236,6 +253,7 @@ Casos funcionales de referencia por WhatsApp:
 - [x] Peso mínimo de 1 kg y tope de USD 1 200 para la cotización automática
 - [x] Responder también los mensajes que llegan con más de 10 min de retraso
 - [x] Reconstruir el historial de conversación desde SQLite tras un reinicio
+- [x] Experiencia de usuario: Globix, botones y listas de WhatsApp, "escribiendo…", confirmación de datos
 - [ ] Resumen automático del caso al derivar al asesor
 - [x] Plan de evaluación con KPIs de calidad del modelo ([docs/plan_evaluacion.md](docs/plan_evaluacion.md))
 - [ ] Script de evaluación con el LLM real sobre un set reservado (3 repeticiones por caso)

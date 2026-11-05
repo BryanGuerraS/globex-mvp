@@ -87,7 +87,7 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
         ],
         [
             Paragraph(f"<b>Cliente:</b> {nombre_cliente}", styles['Normal']),
-            Paragraph(f"<b>Teléfono:</b> +{numero_limpio}", styles['Normal'])
+            Paragraph(f"<b>ID cliente:</b> {numero_limpio}", styles['Normal'])
         ],
         [
             Paragraph("<b>Ruta:</b> Miami (Doral) ➔ Lima, Perú", styles['Normal']),

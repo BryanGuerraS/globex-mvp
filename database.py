@@ -72,6 +72,16 @@ def init_db():
             cursor.execute(
                 "ALTER TABLE chats ADD COLUMN recordatorio_enviado INTEGER DEFAULT 0"
             )
+        # Nombre que el cliente nos dio (distinto del nombre de perfil de WhatsApp)
+        if "nombre_cliente" not in columnas:
+            cursor.execute("ALTER TABLE chats ADD COLUMN nombre_cliente TEXT")
+        if "esperando_nombre" not in columnas:
+            cursor.execute(
+                "ALTER TABLE chats ADD COLUMN esperando_nombre INTEGER DEFAULT 0"
+            )
+        # Teléfono solo si Meta lo envía; se usa como respaldo de envío, no se muestra
+        if "telefono" not in columnas:
+            cursor.execute("ALTER TABLE chats ADD COLUMN telefono TEXT")
 
         # 4. Migración segura para messages
         cursor.execute("PRAGMA table_info(messages)")
@@ -361,6 +371,42 @@ def marcar_recordatorio_enviado(chat_id: str):
         cursor.execute(
             "UPDATE chats SET recordatorio_enviado = 1 WHERE chat_id = ?",
             (chat_id,),
+        )
+        conn.commit()
+
+
+def obtener_chat(chat_id: str) -> Optional[Dict]:
+    init_db()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM chats WHERE chat_id = ?", (chat_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+def guardar_nombre_cliente(chat_id: str, nombre: str):
+    """Guarda el nombre que dio el cliente y deja de esperarlo."""
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE chats SET nombre_cliente = ?, esperando_nombre = 0 WHERE chat_id = ?",
+            (nombre, chat_id),
+        )
+        conn.commit()
+
+
+def marcar_esperando_nombre(chat_id: str, esperando: bool):
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE chats SET esperando_nombre = ? WHERE chat_id = ?",
+            (1 if esperando else 0, chat_id),
+        )
+        conn.commit()
+
+
+def guardar_telefono(chat_id: str, telefono: str):
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE chats SET telefono = ? WHERE chat_id = ?", (telefono, chat_id)
         )
         conn.commit()
 

@@ -83,6 +83,11 @@ def fetch_chats():
         return []
 
 
+def nombre_mostrado(chat) -> str:
+    """Nombre que dio el cliente; si aún no lo dio, el de su perfil de WhatsApp."""
+    return chat.get("nombre_cliente") or chat.get("nombre") or "Cliente"
+
+
 def fetch_messages(chat_id):
     try:
         r = api.get(f"{BACKEND_URL}/api/messages/{chat_id}", timeout=10.0)
@@ -161,7 +166,7 @@ def renderizar_mensajes_vivos(chat_id_seleccionado: str):
                     st.write(m["texto"])
             elif "bot" in m["emisor"].lower():
                 with st.chat_message("assistant"):
-                    st.markdown(f"🤖 *(Bot)* {m['texto']}")
+                    st.markdown(f"🤖 *(Globix)* {m['texto']}")
             else:
                 with st.chat_message("assistant"):
                     st.markdown(f"👨‍💼 *({m['emisor']})* {m['texto']}")
@@ -233,10 +238,10 @@ else:
                         chat.get("ultimo_mensaje_cliente_at")
                     )
                     st.caption(
-                        f"{tiempo_info['color']} {tiempo_info['texto']} | 📱 {str(chat.get('chat_id','')).replace('@c.us', '')}"
+                        f"{tiempo_info['color']} {tiempo_info['texto']} | 🆔 {chat.get('chat_id', '')}"
                     )
 
-                    st.subheader(f"💬 {chat.get('nombre', 'Cliente')}")
+                    st.subheader(f"💬 {nombre_mostrado(chat)}")
 
                     srv = chat.get("servicio", "Cotización Courier")
                     tipo_c = chat.get("tipo_contacto", "🌱 Prospecto Nuevo")
@@ -287,7 +292,7 @@ if (
     if info_chat:
         st.markdown("---")
         st.header(
-            f"Conversación: {info_chat.get('nombre')} ({str(sel_id).replace('@c.us', '')})"
+            f"Conversación: {nombre_mostrado(info_chat)} (🆔 {sel_id})"
         )
 
         c_act1, c_act2, c_act3 = st.columns([3, 2, 2])
@@ -352,7 +357,7 @@ if (
                 cot = info_chat.get("cotizacion_total")
                 monto_txt = f"de ${cot:,.2f} USD" if cot else ""
                 nudge_msg = (
-                    f"¡Hola {info_chat.get('nombre')}! 👋 Te escribo de Globex para recordarte que tu cotización {monto_txt} "
+                    f"¡Hola {nombre_mostrado(info_chat).split()[0]}! 👋 Te escribo de Globex para recordarte que tu cotización {monto_txt} "
                     f"sigue activa en nuestro sistema.\n\n"
                     f"¿Deseas que te asigne tu casillero en Miami para proceder con tu compra?"
                 )

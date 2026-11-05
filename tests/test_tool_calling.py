@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 import main
+from tests.utilidades import mensajes_enviados
 
 
 def _tool_call(id_, nombre, args):
@@ -42,13 +43,7 @@ class LLMFalso:
 
 
 @pytest.fixture
-def entorno(monkeypatch):
-    enviados = []
-
-    async def enviar_falso(destino, texto):
-        enviados.append(texto)
-
-    monkeypatch.setattr(main, "send_meta_whatsapp_message", enviar_falso)
+def entorno(monkeypatch, bloquear_meta):
     main.sessions.clear()
 
     def correr(chat_id, texto, respuestas):
@@ -59,7 +54,7 @@ def entorno(monkeypatch):
             main, "client", SimpleNamespace(chat=SimpleNamespace(completions=llm))
         )
         asyncio.run(main.procesar_mensaje_consolidado(chat_id, "Cliente", texto))
-        return llm, enviados[-1]
+        return llm, mensajes_enviados(bloquear_meta)[-1]
 
     return correr
 
@@ -118,7 +113,7 @@ def test_peso_de_catalogo_y_luego_cotizacion(entorno):
             _respuesta(tool_calls=[_tool_call("t2", "calcular_cotizacion", {"valor_producto_usd": 1100, "peso_kg": peso_catalogo})]),
         ],
     )
-    assert "Peso estimado con caja" in enviado
+    assert "peso estimado con caja" in enviado
     assert "COTIZACIÓN ESTIMADA" in enviado
     _historial_valido(main.sessions["chat_rag"]["history"])
 
@@ -203,7 +198,7 @@ def test_escape_lo_decide_el_llm(entorno):
         "quiero hablar con un asesor",
         [_respuesta(tool_calls=[_tool_call("t1", "derivar_a_asesor", {"motivo": "pide asesor"})])],
     )
-    assert enviado == main.RESPUESTA_DERIVACION
+    assert enviado == main.texto_derivacion(None) + "\n\n" + main.PREGUNTA_NOMBRE
     chat = _estado_chat("chat_esc")
     assert chat["estado"] == "Listo para Asesor" and chat["bot_activo"] == 0
     _historial_valido(main.sessions["chat_esc"]["history"])

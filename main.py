@@ -7,8 +7,9 @@ import asyncio
 from datetime import datetime, timedelta
 import json
 import os
+import re
 import time
-from typing import Dict, List
+from typing import Dict, List, Optional
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 import httpx
@@ -21,7 +22,11 @@ from database import (
     calcular_tiempo_relativo,
     es_mensaje_duplicado,
     esta_bot_activo,
-    get_connection,  # <-- AGREGAR
+    get_connection,
+    guardar_nombre_cliente,
+    guardar_telefono,
+    marcar_esperando_nombre,
+    obtener_chat,  # <-- AGREGAR
     init_db,
     marcar_recordatorio_enviado,
     obtener_chats_para_recordatorio,
@@ -36,7 +41,7 @@ from knowledge_base import buscar_faq_comercial
 from pdf_generator import buscar_ultimo_pdf, generar_pdf_cotizacion
 from pricing_engine import GlobexPricingEngine
 from product_catalog import buscar_peso_producto
-from validaciones import validar_argumentos_cotizacion
+from validaciones import extraer_nombre, validar_argumentos_cotizacion
 
 load_dotenv()
 init_db()
@@ -94,27 +99,30 @@ def firma_meta_valida(cuerpo: bytes, firma_header: str) -> bool:
     ).hexdigest()
     return hmac.compare_digest(firma_header[len("sha256="):], esperada)
 
-SYSTEM_PROMPT = """Eres el asistente virtual oficial de Globex Courier (importaciones USA a Perú).
+SYSTEM_PROMPT = """Eres Globix, el asistente virtual de Globex Courier (importaciones de EE. UU. a Perú).
+Si te preguntan con quién hablan o si eres un bot, responde con naturalidad que eres Globix, un asistente virtual. No repitas tu nombre en cada mensaje.
 
 REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
-1. SALUDO CORTO O VACÍO:
-   Si el cliente solo dice "Hola", "Buenas" o no especifica nada:
-   "¡Hola! Bienvenido a Globex Courier 📦. Te puedo ayudar a cotizar una importación desde USA (Courier o Viajero) o con el seguimiento de un paquete en camino. ¿Qué consulta deseas realizar?"
+1. SALUDO O CONSULTA SIN DEFINIR:
+   Si el cliente solo saluda ("Hola", "Buenas") o no dice qué necesita, llama a 'mostrar_menu'. No escribas tú el saludo.
 
 2. SI EL CLIENTE YA DECLARÓ SU CONSULTA:
-   Atiende directamente sin menús repetitivos:
+   Atiende directamente, sin menús.
 
    - CUADRANTE 1 [COTIZACIÓN COURIER (Happy Path)]:
-     Pide precio en USD y peso en kg (o usa 'consultar_peso_producto' si es tecnología/consola). Con ambos datos llama de inmediato a 'calcular_cotizacion'.
+     Pide UN dato a la vez, con un ejemplo corto:
+       a) Si falta el producto o el precio: "¿Qué producto quieres traer y cuál es su precio en dólares? Ejemplo: 'Laptop Lenovo de $650'".
+       b) Si falta el peso: "¿Sabes cuánto pesa? Si no, dime el modelo exacto y lo estimo por ti." (si es tecnología o consola, usa 'consultar_peso_producto').
+     Con precio y peso, llama de inmediato a 'calcular_cotizacion' e incluye el nombre del producto.
 
    - CUADRANTE 2 [SEGUIMIENTO COURIER]:
      Si pregunta por paquetes en camino, tracking o almacén: solicita el código de tracking y llama a 'clasificar_como_seguimiento'.
 
    - CUADRANTE 3 [COTIZACIÓN VIAJERO]:
-     Si menciona "viajero" o "maleta": explica que depende de cupos de vuelo y llama a 'clasificar_como_viajero'.
+     Si menciona "viajero" o "maleta": llama a 'clasificar_como_viajero'.
 
 3. PREGUNTAS GENERALES (FAQs):
-   Si preguntan por dirección de Miami, plazos de entrega, envíos a provincias o formas de pago, usa 'consultar_faq_comercial'.
+   Si preguntan por dirección de Miami, plazos de entrega, envíos a provincias, cómo funciona o formas de pago, usa 'consultar_faq_comercial'.
 
 4. ATENCIÓN HUMANA:
    Si el cliente pide hablar con un asesor, una persona o un humano, o que lo llamen, llama a 'derivar_a_asesor'.
@@ -123,12 +131,24 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 5. MONTOS Y PESOS:
    Si el cliente escribe el valor o el peso en palabras ("mil dólares", "medio kilo"), conviértelo a número al llamar a 'calcular_cotizacion'.
 
+6. SI NO ENTIENDES:
+   Si no logras entender qué necesita el cliente, llama a 'mostrar_menu' para ofrecerle las opciones.
+
 REGLAS DE FORMATO Y ESTILO:
-- Respuestas breves: Máximo 2 a 3 oraciones por mensaje.
+- Respuestas breves: máximo 2 a 3 oraciones por mensaje.
 - Deja saltos de línea limpios entre ideas.
+- Si conoces el nombre del cliente, úsalo con moderación (no en cada mensaje).
 - NUNCA inventes precios ni estados de paquetes."""
 
 TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "mostrar_menu",
+            "description": "Muestra la bienvenida de Globix con los botones de opciones (cotizar, rastrear, otras consultas). Úsala cuando el cliente solo saluda, no dice qué necesita o no se le entiende.",
+            "parameters": {"type": "object", "properties": {}},
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -161,6 +181,10 @@ TOOLS = [
                     "peso_kg": {
                         "type": "number",
                         "description": "Peso en kilogramos.",
+                    },
+                    "producto": {
+                        "type": "string",
+                        "description": "Nombre corto del producto (ej: 'laptop Lenovo', 'iPhone 15').",
                     },
                 },
                 "required": ["valor_producto_usd", "peso_kg"],
@@ -274,48 +298,250 @@ def get_or_create_history(chat_id: str) -> List[Dict[str, str]]:
     return history
 
 
-# 📤 FUNCIÓN OFICIAL PARA ENVIAR MENSAJES VÍA META CLOUD API
-async def send_meta_whatsapp_message(to_recipient: str, message: str):
-    """Envía mensajes oficiales vía Meta Graph API soportando tanto Teléfonos (E.164) como BSUID."""
+# 📤 ENVÍO DE MENSAJES VÍA META CLOUD API
+async def _post_meta(payload: Dict) -> bool:
+    """Único punto de salida hacia la Graph API (texto, botones, listas, leído)."""
+    if not META_PHONE_NUMBER_ID or not META_ACCESS_TOKEN:
+        print("⚠️ [Meta Cloud API] Faltan META_PHONE_NUMBER_ID/META_ACCESS_TOKEN; no se envía.")
+        return False
     url = f"https://graph.facebook.com/v21.0/{META_PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {META_ACCESS_TOKEN}",
         "Content-Type": "application/json",
     }
-    
-    clean_recipient = str(to_recipient).replace("@c.us", "").strip()
-
-    # Estructura base del mensaje
-    payload = {
-        "messaging_product": "whatsapp",
-        "recipient_type": "individual",
-        "type": "text",
-        "text": {"preview_url": False, "body": message}
-    }
-
-    # Si es un identificador BSUID (ej. PE.234727... o US.1349...) usamos 'recipient'
-    # Si es un número telefónico tradicional (solo dígitos) usamos 'to'
-    if "." in clean_recipient and not clean_recipient.isdigit():
-        payload["recipient"] = clean_recipient
-    else:
-        payload["to"] = clean_recipient
-
     async with httpx.AsyncClient() as http_client:
         try:
             res = await http_client.post(url, json=payload, headers=headers, timeout=10.0)
             if res.status_code == 200:
-                print(f"✅ [Meta Cloud API] Mensaje entregado a [{clean_recipient}]")
-            else:
-                print(f"⚠️ Error Meta API ({res.status_code}): {res.text}")
+                return True
+            print(f"⚠️ Error Meta API ({res.status_code}): {res.text}")
         except Exception as e:
             print(f"❌ Error de conexión al enviar con Meta: {e}")
+    return False
+
+
+def _payload_base(to_recipient: str) -> Dict:
+    """Destinatario: BSUID (ej. PE.2347...) va en 'recipient'; teléfono E.164 en 'to'."""
+    clean_recipient = str(to_recipient).replace("@c.us", "").strip()
+    payload = {"messaging_product": "whatsapp", "recipient_type": "individual"}
+    if "." in clean_recipient and not clean_recipient.isdigit():
+        payload["recipient"] = clean_recipient
+    else:
+        payload["to"] = clean_recipient
+    return payload
+
+
+async def _enviar(to_recipient: str, contenido: Dict) -> bool:
+    """Envía al ID del cliente; si Meta lo rechaza y conocemos su teléfono, reintenta con él."""
+    payload = _payload_base(to_recipient)
+    payload.update(contenido)
+    if await _post_meta(payload):
+        return True
+    if "recipient" in payload:
+        chat = obtener_chat(str(to_recipient)) or {}
+        if chat.get("telefono"):
+            print(f"↩️ [Meta Cloud API] Reintento por teléfono para [{to_recipient}]")
+            respaldo = _payload_base(chat["telefono"])
+            respaldo.update(contenido)
+            return await _post_meta(respaldo)
+    return False
+
+
+async def send_meta_whatsapp_message(to_recipient: str, message: str):
+    """Envía un mensaje de texto."""
+    if await _enviar(to_recipient, {"type": "text", "text": {"preview_url": False, "body": message}}):
+        print(f"✅ [Meta Cloud API] Mensaje entregado a [{to_recipient}]")
+
+
+async def send_meta_interactive(to_recipient: str, interactive: Dict):
+    """Envía un mensaje interactivo (botones de respuesta o lista)."""
+    await _enviar(to_recipient, {"type": "interactive", "interactive": interactive})
+
+
+async def marcar_leido_y_escribiendo(id_mensaje: str):
+    """Marca el mensaje como leído y muestra "escribiendo…" (hasta ~25 s o hasta responder)."""
+    if not id_mensaje:
+        return
+    await _post_meta(
+        {
+            "messaging_product": "whatsapp",
+            "status": "read",
+            "message_id": id_mensaje,
+            "typing_indicator": {"type": "text"},
+        }
+    )
+
+
+# 🔘 MENÚS INTERACTIVOS (títulos de botón: máx. 20 caracteres; filas de lista: 24)
+BOTONES_MENU = [("cotizar", "Cotizar envío"), ("rastrear", "Rastrear paquete"), ("otras", "Otras consultas")]
+BOTONES_POST_COTIZACION = [("asesor", "Hablar con asesor"), ("cotizar_otro", "Cotizar otro"), ("como_compro", "¿Cómo compro?")]
+BOTONES_RECUPERACION = [("cotizar", "Cotizar envío"), ("rastrear", "Rastrear paquete"), ("asesor", "Hablar con asesor")]
+FILAS_OTRAS_CONSULTAS = [
+    ("faq_direccion", "Dirección en Miami"),
+    ("faq_plazos", "Plazos de entrega"),
+    ("faq_provincias", "Envíos a provincias"),
+    ("faq_como_funciona", "Cómo funciona"),
+    ("faq_pagos", "Formas de pago"),
+    ("viajero", "Modalidad viajero"),
+    ("asesor", "Hablar con un asesor"),
+]
+# Lo que "dice" el cliente al tocar cada opción (entra al flujo normal como texto).
+TEXTO_POR_OPCION = {
+    "cotizar": "Quiero cotizar un envío",
+    "cotizar_otro": "Quiero cotizar otro producto",
+    "rastrear": "Quiero rastrear un paquete",
+    "como_compro": "Quiero saber cómo funciona el proceso para comprar",
+    "faq_direccion": "¿Cuál es la dirección del almacén en Miami?",
+    "faq_plazos": "¿Cuánto demora el envío?",
+    "faq_provincias": "¿Envían a provincias?",
+    "faq_como_funciona": "¿Cómo funciona el servicio?",
+    "faq_pagos": "¿Cuáles son las formas de pago?",
+    "viajero": "Quiero información de la modalidad viajero",
+    "asesor": "Quiero hablar con un asesor",
+}
+
+
+def interactivo_botones(cuerpo: str, botones) -> Dict:
+    return {
+        "type": "button",
+        "body": {"text": cuerpo},
+        "action": {
+            "buttons": [
+                {"type": "reply", "reply": {"id": id_, "title": titulo}}
+                for id_, titulo in botones
+            ]
+        },
+    }
+
+
+def interactivo_lista(cuerpo: str, boton: str, filas) -> Dict:
+    return {
+        "type": "list",
+        "body": {"text": cuerpo},
+        "action": {
+            "button": boton,
+            "sections": [
+                {"title": "Consultas", "rows": [{"id": id_, "title": t} for id_, t in filas]}
+            ],
+        },
+    }
+
+
+def texto_para_registro(cuerpo: str, opciones) -> str:
+    """Cómo queda el mensaje interactivo en la BD (dashboard e historial del LLM)."""
+    return f"{cuerpo}\n[Opciones: {' | '.join(t for _, t in opciones)}]"
+
+
+async def enviar_y_registrar_menu(chat_id: str, cuerpo: str, botones):
+    registrar_mensaje_saliente(chat_id, "bot", texto_para_registro(cuerpo, botones), None)
+    await send_meta_interactive(chat_id, interactivo_botones(cuerpo, botones))
+
+
+async def enviar_lista_otras_consultas(chat_id: str):
+    cuerpo = "Elige el tema de tu consulta:"
+    registrar_mensaje_saliente(
+        chat_id, "bot", texto_para_registro(cuerpo, FILAS_OTRAS_CONSULTAS), None
+    )
+    await send_meta_interactive(
+        chat_id, interactivo_lista(cuerpo, "Ver opciones", FILAS_OTRAS_CONSULTAS)
+    )
+
+
+# 🆔 IDENTIFICACIÓN DEL CLIENTE
+def _es_bsuid(valor: str) -> bool:
+    """BSUID de Meta: código de país + punto + alfanumérico (ej. 'PE.2347...')."""
+    return bool(valor) and "." in valor and not valor.replace("+", "").isdigit()
+
+
+def identificar_cliente(msg: Dict, contacts: List[Dict]):
+    """Devuelve (chat_id, telefono).
+
+    chat_id es siempre el BSUID si Meta lo envía (está disponible aunque el
+    cliente oculte su número); si no llega (payloads antiguos), se usa el
+    teléfono. telefono es None cuando el cliente lo tiene oculto.
+    """
+    contacto = contacts[0] if contacts else {}
+    candidatos_id = [
+        contacto.get("user_id"),
+        msg.get("from_user_id"),
+        msg.get("user_id"),
+        msg.get("from") if _es_bsuid(str(msg.get("from") or "")) else None,
+        contacto.get("wa_id") if _es_bsuid(str(contacto.get("wa_id") or "")) else None,
+    ]
+    bsuid = next((str(c).strip() for c in candidatos_id if c), None)
+
+    candidatos_tel = [msg.get("from"), contacto.get("wa_id")]
+    telefono = next(
+        (str(t).strip() for t in candidatos_tel if t and str(t).strip().lstrip("+").isdigit()),
+        None,
+    )
+    return (bsuid or telefono), telefono
+
+
+# 👤 NOMBRE DEL CLIENTE (perfil de WhatsApp)
+_NOMBRE_VALIDO = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]{2,20}$")
+
+
+def nombre_de_pila(nombre_perfil: str) -> Optional[str]:
+    """Primer nombre del perfil si parece un nombre real; None si es apodo, emoji, etc."""
+    if not nombre_perfil:
+        return None
+    partes = nombre_perfil.strip().split()
+    if not partes or not _NOMBRE_VALIDO.match(partes[0]):
+        return None
+    nombre = partes[0]
+    if nombre.lower() in {"cliente", "user", "usuario", "whatsapp"}:
+        return None
+    return nombre.capitalize()
+
+
+def texto_bienvenida(nombre: Optional[str], primer_contacto: bool) -> str:
+    if not primer_contacto:
+        return "¿En qué más te ayudo?"
+    saludo = f"¡Hola, {nombre}! 👋" if nombre else "¡Hola! 👋"
+    return (
+        f"{saludo} Soy *Globix, el asistente virtual de Globex Courier*. Te ayudo a cotizar tus compras "
+        "en EE. UU. y a resolver tus dudas al instante. Si prefieres hablar con una persona, solo dímelo.\n\n"
+        "¿En qué te ayudo?\n\n"
+        '_También puedes escribirme directamente, por ejemplo: "iPhone 15 de $900"._'
+    )
+
+
+def texto_derivacion(nombre: Optional[str]) -> str:
+    inicio = f"Listo, {nombre}." if nombre else "Listo."
+    return (
+        f"{inicio} Le pasé tu consulta a un asesor de Globex y te escribirá por este chat "
+        "lo antes posible. Ya tiene el detalle de tu consulta, así que no necesitas repetir nada. 🙌"
+    )
+
+
+PREGUNTA_NOMBRE = "Mientras tanto, ¿me compartes tu nombre completo para que tu asesor te atienda?"
+
+
+def pedir_nombre_si_falta(chat_id: str) -> str:
+    """Al derivar: si aún no tenemos el nombre del cliente, lo pedimos (una vez).
+
+    Devuelve el texto a agregar al mensaje de derivación ("" si no hace falta).
+    """
+    chat = obtener_chat(chat_id) or {}
+    if chat.get("nombre_cliente") or chat.get("esperando_nombre"):
+        return ""
+    marcar_esperando_nombre(chat_id, True)
+    return "\n\n" + PREGUNTA_NOMBRE
+
+
+def nombre_para_saludo(chat_id: str, nombre_perfil: str) -> Optional[str]:
+    """Primer nombre: el que dio el cliente si existe; si no, el del perfil."""
+    chat = obtener_chat(chat_id) or {}
+    if chat.get("nombre_cliente"):
+        return chat["nombre_cliente"].split()[0]
+    return nombre_de_pila(nombre_perfil)
 
 
 RESPUESTA_ERROR = "Disculpa, tuve un inconveniente interno al procesar tu consulta. ¿Podrías repetirla?"
-RESPUESTA_DERIVACION = (
-    "Entendido. He transferido tu solicitud a tu asesor asignado para que continúe la atención "
-    "directamente por este chat. Se comunicará contigo a la brevedad."
-)
+TEXTO_RECUPERACION = "Disculpa, no logré entenderte 😅. Elige una opción o pide hablar con un asesor:"
+# Meta limita el cuerpo de un mensaje interactivo a 1024 caracteres.
+LIMITE_CUERPO_INTERACTIVO = 1000
 # Máximo de llamadas al LLM por mensaje del cliente (evita bucles de herramientas).
 MAX_RONDAS_HERRAMIENTAS = 3
 
@@ -368,14 +594,31 @@ def ejecutar_herramienta(
             return {"derivado": True}, (
                 f"Por el valor de tu compra (más de USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}), "
                 "un asesor de Globex preparará tu cotización personalizada y te escribirá por este chat a la brevedad."
-            )
+            ) + pedir_nombre_si_falta(chat_id)
         resultado = GlobexPricingEngine.calcular(val, peso)
         estado["resultado_calculo"] = resultado
         actualizar_clasificacion_chat(chat_id, servicio="Cotización Courier", paso=3)
-        respuesta = GlobexPricingEngine.formatear_mensaje_whatsapp(resultado)
-        if any(abs(peso - p) < 1e-9 for p in estado["pesos_referenciales"]):
-            respuesta = f"ℹ️ *Peso estimado con caja:* ~{peso} kg\n\n" + respuesta
+        # Confirmación de lo entendido, en el mismo mensaje de la cotización
+        peso_de_catalogo = any(abs(peso - p) < 1e-9 for p in estado["pesos_referenciales"])
+        partes = []
+        producto = str(args.get("producto") or "").strip()[:40]
+        if producto:
+            partes.append(producto)
+        partes.append(f"USD {val:,.2f}".replace(".00", ""))
+        partes.append(f"~{peso:g} kg (peso estimado con caja)" if peso_de_catalogo else f"{peso:g} kg")
+        respuesta = (
+            f"Entendí: *{', '.join(partes)}* 👇\n\n"
+            + GlobexPricingEngine.formatear_mensaje_whatsapp(resultado)
+        )
+        estado["menu"] = BOTONES_POST_COTIZACION
         return {"cotizacion_emitida": True}, respuesta
+
+    # BIENVENIDA / MENÚ DE OPCIONES (texto fijo + botones)
+    if nombre_funcion == "mostrar_menu":
+        estado["menu"] = BOTONES_MENU
+        return {"menu_mostrado": True}, texto_bienvenida(
+            estado.get("nombre"), estado.get("primer_contacto", False)
+        )
 
     # BASE DE CONOCIMIENTO (FAQs)
     if nombre_funcion == "consultar_faq_comercial":
@@ -398,7 +641,7 @@ def ejecutar_herramienta(
         return {"derivado": True}, (
             "📦 He registrado tu consulta de seguimiento. Tu asesor asignado revisará "
             "el estado de tu paquete en almacén y te responderá a la brevedad por aquí."
-        )
+        ) + pedir_nombre_si_falta(chat_id)
 
     # VIAJERO
     if nombre_funcion == "clasificar_como_viajero":
@@ -409,7 +652,7 @@ def ejecutar_herramienta(
         return {"derivado": True}, (
             "🧳 La modalidad de *Viajero* depende del cupo y fecha de vuelos programados. "
             "He transferido tu solicitud a nuestro asesor especializado para confirmarte disponibilidad."
-        )
+        ) + pedir_nombre_si_falta(chat_id)
 
     # ESCAPE A ATENCIÓN HUMANA (lo decide el LLM según la intención del cliente)
     if nombre_funcion == "derivar_a_asesor":
@@ -418,7 +661,7 @@ def ejecutar_herramienta(
             f"(motivo: {args.get('motivo', '')})."
         )
         actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
-        return {"derivado": True}, RESPUESTA_DERIVACION
+        return {"derivado": True}, texto_derivacion(estado.get("nombre")) + pedir_nombre_si_falta(chat_id)
 
     print(f"⚠️ [Tool Calling] Herramienta desconocida: {nombre_funcion}")
     return {"error": f"La herramienta '{nombre_funcion}' no existe."}, None
@@ -455,6 +698,7 @@ async def procesar_mensaje_consolidado(
             actualizar_estado_chat(
                 chat_id, nuevo_estado="Listo para Asesor", bot_activo=0
             )
+            bot_reply += pedir_nombre_si_falta(chat_id)
 
         registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
         await send_meta_whatsapp_message(chat_id, bot_reply)
@@ -465,7 +709,20 @@ async def procesar_mensaje_consolidado(
     history.append({"role": "user", "content": texto_consolidado})
 
     inicio_turno = len(history)
-    estado = {"resultado_calculo": None, "pesos_referenciales": []}
+    nombre = nombre_para_saludo(chat_id, sender_name)
+    if nombre:
+        history[0] = {
+            "role": "system",
+            "content": SYSTEM_PROMPT + f"\n\nEl cliente se llama {nombre}.",
+        }
+    previas_del_bot = [m["content"] for m in history[:-1] if m.get("role") == "assistant"]
+    estado = {
+        "resultado_calculo": None,
+        "pesos_referenciales": [],
+        "nombre": nombre,
+        "primer_contacto": not previas_del_bot,
+        "menu": None,
+    }
     textos_cliente = [
         m["content"]
         for m in history
@@ -546,22 +803,66 @@ async def procesar_mensaje_consolidado(
         # rompería todas las llamadas siguientes de este chat.
         del history[inicio_turno:]
         resultado_calculo = None
+        estado["menu"] = None
         bot_reply = RESPUESTA_ERROR
         history.append({"role": "assistant", "content": bot_reply})
+
+    # 🔁 Dos fallos seguidos: en vez de repetir el error, ofrecer opciones y asesor
+    if (
+        bot_reply == RESPUESTA_ERROR
+        and previas_del_bot
+        and previas_del_bot[-1].startswith(RESPUESTA_ERROR)
+    ):
+        bot_reply = TEXTO_RECUPERACION
+        estado["menu"] = BOTONES_RECUPERACION
 
     # 📄 GENERAR PROFORMA PDF SI HUBO COTIZACIÓN
     if resultado_calculo:
         try:
+            chat_pdf = obtener_chat(chat_id) or {}
             ruta_pdf = generar_pdf_cotizacion(
-                chat_id, sender_name, resultado_calculo
+                chat_id, chat_pdf.get("nombre_cliente") or sender_name, resultado_calculo
             )
             print(f"📄 [PDF Generado exitosamente]: {ruta_pdf}")
             bot_reply += "\n\n📄 *He emitido tu Proforma Oficial en PDF.* Tu asesor te la puede compartir en cualquier momento."
         except Exception as e:
             print(f"Error generando PDF: {e}")
 
-    registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
-    await send_meta_whatsapp_message(chat_id, bot_reply)
+    # Botones solo si el bot sigue atendiendo (si derivó, el asesor toma el control)
+    menu = estado["menu"] if esta_bot_activo(chat_id) else None
+
+    if not menu:
+        registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
+        await send_meta_whatsapp_message(chat_id, bot_reply)
+    elif len(bot_reply) <= LIMITE_CUERPO_INTERACTIVO:
+        registrar_mensaje_saliente(
+            chat_id, "bot", texto_para_registro(bot_reply, menu), resultado_calculo
+        )
+        await send_meta_interactive(chat_id, interactivo_botones(bot_reply, menu))
+    else:
+        # Texto largo: va como mensaje normal y los botones en uno corto aparte
+        registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
+        await send_meta_whatsapp_message(chat_id, bot_reply)
+        await enviar_y_registrar_menu(chat_id, "¿Qué deseas hacer ahora?", menu)
+
+
+_tareas_fondo: set = set()
+
+
+def _en_segundo_plano(corrutina):
+    """Lanza una tarea sin bloquear y guarda la referencia para que no se pierda."""
+    tarea = asyncio.create_task(corrutina)
+    _tareas_fondo.add(tarea)
+    tarea.add_done_callback(_tareas_fondo.discard)
+    return tarea
+
+
+async def derivar_a_asesor(chat_id: str, sender_name: str):
+    """Derivación directa (botón 'Hablar con asesor'): silencia el bot y avisa al cliente."""
+    actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+    respuesta = texto_derivacion(nombre_para_saludo(chat_id, sender_name)) + pedir_nombre_si_falta(chat_id)
+    registrar_mensaje_saliente(chat_id, "bot", respuesta, None)
+    await send_meta_whatsapp_message(chat_id, respuesta)
 
 
 async def debounce_mensajes(chat_id: str, sender_name: str):
@@ -656,14 +957,9 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
             else "Cliente"
         )
 
-        # 4. Extracción Universal: Teléfono clásico ('from' / 'wa_id') o BSUID de Privacidad ('user_id')
-        chat_id = (
-            msg.get("from")
-            or (contacts[0].get("wa_id") if contacts else None)
-            or msg.get("from_user_id")
-            or (contacts[0].get("user_id") if contacts else None)
-        )
-        chat_id = str(chat_id).strip() if chat_id else None
+        # 4. Identificador único: siempre el ID de usuario de Meta (BSUID); el
+        # teléfono solo se guarda como respaldo de envío cuando Meta lo comparte.
+        chat_id, telefono = identificar_cliente(msg, contacts)
 
         if not chat_id or chat_id == "None":
             print(
@@ -690,6 +986,8 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
                 f"[{tipo_adjunto.upper()} ADJUNTO]",
                 id_mensaje=id_message,
             )
+            if telefono:
+                guardar_telefono(chat_id, telefono)
 
             if not esta_bot_activo(chat_id):
                 return {"status": "bot_silenced_for_human"}
@@ -702,6 +1000,18 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
             await send_meta_whatsapp_message(chat_id, bot_reply)
             return {"status": "media_handled"}
 
+        # 🔘 TOQUE DE BOTÓN O FILA DE LISTA: se traduce a lo que "dijo" el cliente
+        opcion_elegida = None
+        if msg_type == "interactive":
+            interactivo = msg.get("interactive", {})
+            respuesta = interactivo.get("button_reply") or interactivo.get("list_reply") or {}
+            opcion_elegida = respuesta.get("id")
+            texto_opcion = TEXTO_POR_OPCION.get(opcion_elegida) or respuesta.get("title", "")
+            if not texto_opcion:
+                return {"status": "interactive_without_option"}
+            msg_type = "text"
+            msg = {**msg, "text": {"body": texto_opcion}}
+
         # 💬 6. TRATAMIENTO DE MENSAJES DE TEXTO ESTÁNDAR
         if msg_type == "text":
             user_text = msg.get("text", {}).get("body", "").strip()
@@ -712,6 +1022,21 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
             registrar_mensaje_entrante(
                 chat_id, sender_name, user_text, id_mensaje=id_message
             )
+            if telefono:
+                guardar_telefono(chat_id, telefono)
+
+            # 👤 Respuesta a "¿me compartes tu nombre?" (se pidió al derivar).
+            # Se intenta una sola vez; si no parece un nombre, lo ve el asesor.
+            chat_info = obtener_chat(chat_id) or {}
+            if chat_info.get("esperando_nombre") and not opcion_elegida:
+                marcar_esperando_nombre(chat_id, False)
+                nombre_dado = extraer_nombre(user_text)
+                if nombre_dado:
+                    guardar_nombre_cliente(chat_id, nombre_dado)
+                    gracias = f"¡Gracias, {nombre_dado.split()[0]}! Ya se lo pasé a tu asesor. 🙌"
+                    registrar_mensaje_saliente(chat_id, "bot", gracias, None)
+                    await send_meta_whatsapp_message(chat_id, gracias)
+                    return {"status": "name_saved"}
 
             # Silencio si el asesor humano tiene el control
             if not esta_bot_activo(chat_id):
@@ -719,6 +1044,17 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
                     f"🤫 [Bot Silenciado] El chat [{chat_id}] está bajo atención humana."
                 )
                 return {"status": "bot_silenced_for_human"}
+
+            # "Leído" + "escribiendo…" mientras se arma la respuesta
+            _en_segundo_plano(marcar_leido_y_escribiendo(id_message))
+
+            # Opciones que no necesitan al LLM: se responden al instante
+            if opcion_elegida == "otras":
+                await enviar_lista_otras_consultas(chat_id)
+                return {"status": "list_sent"}
+            if opcion_elegida == "asesor":
+                await derivar_a_asesor(chat_id, sender_name)
+                return {"status": "derived_to_advisor"}
 
             # Acumular en buffer para Debouncing de 5 segundos
             if chat_id not in message_buffer:

@@ -187,3 +187,39 @@ def validar_argumentos_cotizacion(
         )
 
     return valor, peso
+
+
+# ---------------- Nombre que da el cliente ----------------
+
+_PREFIJOS_NOMBRE = re.compile(
+    r"^(hola[,!.\s]*)?(me llamo|mi nombre es|soy|es|claro[,\s]+soy|claro[,\s]+me llamo)\s+",
+    re.IGNORECASE,
+)
+# Palabras que delatan que el mensaje no es un nombre.
+_NO_NOMBRES = {
+    "ok", "okay", "si", "no", "hola", "gracias", "listo", "ya", "bueno", "perfecto",
+    "vale", "dale", "buenas", "buenos", "dias", "tardes", "noches", "quiero", "cotizar",
+    "envio", "paquete", "precio", "cuanto", "cuando", "donde", "como", "que", "por",
+    "para", "con", "un", "una", "el", "mi", "tu",
+    "asesor", "ayuda", "favor", "espero", "esperando", "tracking", "dolares", "kg",
+}
+_PALABRA_NOMBRE = re.compile(r"^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ'-]{2,25}$")
+
+
+def extraer_nombre(texto: str) -> Optional[str]:
+    """Extrae el nombre de respuestas como "Ana", "me llamo Ana Pérez" o "Soy José".
+
+    Devuelve None si el mensaje no parece un nombre (una pregunta, "ok", etc.).
+    """
+    if not texto:
+        return None
+    limpio = texto.strip().strip(".!¡¿?,;:").strip()
+    limpio = _PREFIJOS_NOMBRE.sub("", limpio).strip().strip(".!¡¿?,;:")
+    palabras = limpio.split()
+    if not 1 <= len(palabras) <= 4:
+        return None
+    if not all(_PALABRA_NOMBRE.match(p) for p in palabras):
+        return None
+    if any(_sin_tildes(p.lower()) in _NO_NOMBRES for p in palabras):
+        return None
+    return " ".join(p[:1].upper() + p[1:].lower() for p in palabras)
