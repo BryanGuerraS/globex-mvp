@@ -133,3 +133,21 @@ def test_evaluar_de_punta_a_punta_con_llm_simulado(monkeypatch):
         casos, resultados, ev.calcular_kpis(casos, resultados), main.resumir_metricas(main.obtener_metricas()),
     )
     assert "## KPIs" in reporte and "| COT | cotizacion | ✅ |" in reporte and "Sin fallas" in reporte
+
+
+def test_reporte_pdf(tmp_path, monkeypatch):
+    from evaluacion.reporte_pdf import generar_reporte_pdf
+
+    casos = [{"id": "COT", "categoria": "cotizacion", "descripcion": "Cotización 👋", "mensajes": ["x"],
+              "esperado": {"cotiza": True}}]
+    corrida = {"chat_id": "EVAL-COT", "repeticion": 1, "exito": False, "bot_activo_final": 1,
+               "checks": [{"check": "cotiza", "ok": False, "detalle": "cotizó=False"}],
+               "turnos": [{"cliente": "laptop de $650 😀", "respuestas": ["¿Cuánto pesa? 📦"], "tipo_respuesta": "libre",
+                           "herramientas": [{"nombre": "consultar_peso_producto", "argumentos": "{}", "resultado": {}}],
+                           "llamadas_llm": 1, "tokens_entrada": 1500, "tokens_salida": 40, "latencia_llm_ms": 900}]}
+    resultados = {"COT": [corrida]}
+    meta = {"fecha": "hoy", "archivo_casos": "x.json", "repeticiones": 1, "modelo": "m", "duracion_s": 3}
+    ruta = generar_reporte_pdf(meta, casos, resultados, ev.calcular_kpis(casos, resultados), {"turnos": 0},
+                               str(tmp_path / "r.pdf"))
+    contenido = open(ruta, "rb").read()
+    assert contenido.startswith(b"%PDF") and len(contenido) > 5_000

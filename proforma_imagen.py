@@ -15,11 +15,13 @@ from PIL import Image, ImageDraw, ImageFont
 import reportlab
 
 _FUENTES = os.path.join(os.path.dirname(reportlab.__file__), "fonts")
+_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "logo_globex.png")
 
 ANCHO = 1080
 MARGEN = 72
-INDIGO = (67, 56, 202)        # #4338CA, color de marca del dashboard
-INDIGO_SUAVE = (238, 242, 255)
+MORADO = (46, 26, 71)         # #2E1A47, morado del logo de Globex
+MORADO_SUAVE = (243, 239, 250)
+NARANJA = (255, 105, 0)       # #FF6900, naranja del logo
 TEXTO = (24, 24, 27)
 TEXTO_SUAVE = (113, 113, 122)
 BORDE = (228, 228, 231)
@@ -71,6 +73,7 @@ def generar_imagen_proforma(
     nombre_cliente: Optional[str] = None,
     chat_id: str = "",
     ahora: Optional[datetime] = None,
+    peso_estimado: bool = False,
 ) -> bytes:
     """Devuelve la proforma como PNG (bytes)."""
     ahora = ahora or datetime.now()
@@ -87,7 +90,7 @@ def generar_imagen_proforma(
         ("Valor del producto", "Precio declarado", _usd(valor)),
         ("Flete aéreo", f"{_kg(peso_fact)} × US$ 9.00/kg"
          + (f" (mínimo 1 kg; peso {_kg(peso)})" if peso_fact != peso else ""), _usd(flete)),
-        ("Trámite documentario", "Tarifa fija", _usd(tramite)),
+        ("Trámite aduanero", "Tarifa fija", _usd(tramite)),
         ("Tributos SUNAT",
          "Aprox. 22.72 % del valor CIF" if calculo.get("aplica_impuesto") else "Exonerado: valor hasta US$ 200",
          _usd(tributos)),
@@ -107,10 +110,17 @@ def generar_imagen_proforma(
     d = ImageDraw.Draw(img)
     x0, x1 = MARGEN, ANCHO - MARGEN
 
-    # Cabecera de marca
-    d.rectangle([0, 0, ANCHO, 190], fill=INDIGO)
-    d.text((x0, 54), "GLOBEX COURIER", font=f_marca, fill=BLANCO)
-    d.text((x0, 118), "Proforma referencial · Importación de EE. UU. a Perú", font=f_sub, fill=(224, 231, 255))
+    # Cabecera de marca: logo oficial a la izquierda, título a la derecha, franja naranja
+    if os.path.exists(_LOGO):
+        logo = Image.open(_LOGO).convert("RGBA")
+        alto_logo = 132
+        logo = logo.resize((round(logo.width * alto_logo / logo.height), alto_logo), Image.LANCZOS)
+        img.paste(logo, (x0, 26), logo)
+    else:
+        d.text((x0, 64), "GLOBEX COURIER", font=f_marca, fill=MORADO)
+    d.text((x1, 62), "PROFORMA", font=f_marca, fill=MORADO, anchor="ra")
+    d.text((x1, 118), "Referencial · EE. UU. a Perú", font=f_sub, fill=TEXTO_SUAVE, anchor="ra")
+    d.rectangle([0, 182, ANCHO, 190], fill=NARANJA)
 
     # Datos del documento
     y = 232
@@ -131,11 +141,12 @@ def generar_imagen_proforma(
     d.rounded_rectangle([x0, y, x1, y + 120], radius=18, fill=(250, 250, 250), outline=BORDE, width=2)
     d.text((x0 + 32, y + 22), "PRODUCTO", font=f_etiqueta, fill=TEXTO_SUAVE)
     nombre_producto = (producto or "Producto declarado").strip()
-    ancho_producto = (x1 - 32) - (x0 + 32) - d.textlength(_kg(peso), font=f_texto) - 40
+    peso_txt = f"~{_kg(peso)} (estimado)" if peso_estimado else _kg(peso)
+    ancho_producto = (x1 - 32) - (x0 + 32) - d.textlength(peso_txt, font=f_texto) - 40
     while d.textlength(nombre_producto, font=f_texto_neg) > ancho_producto and len(nombre_producto) > 4:
         nombre_producto = nombre_producto[:-2].rstrip() + "…"
     d.text((x0 + 32, y + 56), nombre_producto, font=f_texto_neg, fill=TEXTO)
-    d.text((x1 - 32, y + 56), _kg(peso), font=f_texto, fill=TEXTO, anchor="ra")
+    d.text((x1 - 32, y + 56), peso_txt, font=f_texto, fill=TEXTO, anchor="ra")
 
     # Desglose
     y += 164
@@ -148,9 +159,9 @@ def generar_imagen_proforma(
 
     # Total
     y += 10
-    d.rounded_rectangle([x0, y, x1, y + 140], radius=22, fill=INDIGO_SUAVE)
-    d.text((x0 + 36, y + 70), "TOTAL ESTIMADO", font=f_total_et, fill=INDIGO, anchor="lm")
-    d.text((x1 - 36, y + 70), _usd(total), font=f_total, fill=INDIGO, anchor="rm")
+    d.rounded_rectangle([x0, y, x1, y + 140], radius=22, fill=MORADO_SUAVE)
+    d.text((x0 + 36, y + 70), "TOTAL ESTIMADO", font=f_total_et, fill=MORADO, anchor="lm")
+    d.text((x1 - 36, y + 70), _usd(total), font=f_total, fill=MORADO, anchor="rm")
 
     # Nota
     y += 186

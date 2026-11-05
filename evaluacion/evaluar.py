@@ -27,6 +27,10 @@ import tempfile
 import time
 import uuid
 from datetime import datetime
+
+if __package__ in (None, ""):  # ejecutado como script: python evaluacion/evaluar.py
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from evaluacion.reporte_pdf import generar_reporte_pdf  # noqa: E402
 from typing import Dict, List, Optional, Tuple
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -366,6 +370,20 @@ def generar_reporte(meta: Dict, casos: List[Dict], resultados: Dict[str, List[Di
 
 # ---------------------------------------------------------------- CLI
 
+def pdf_desde_json(ruta_json: str) -> str:
+    """Genera el PDF de una corrida anterior a partir de su JSON de resultados."""
+    with open(ruta_json, encoding="utf-8") as f:
+        datos = json.load(f)
+    meta = datos["meta"]
+    with open(os.path.join(REPO, meta["archivo_casos"]), encoding="utf-8") as f:
+        todos = json.load(f)["casos"]
+    casos = [c for c in todos if c["id"] in datos["resultados"]]
+    ruta_pdf = os.path.splitext(ruta_json)[0].replace("resultados_", "reporte_") + ".pdf"
+    generar_reporte_pdf(meta, casos, datos["resultados"], datos["kpis"], datos["costo_latencia"], ruta_pdf, DEBOUNCE_S)
+    print(f"Reporte PDF: {ruta_pdf}")
+    return ruta_pdf
+
+
 def main_cli(argv=None):
     parser = argparse.ArgumentParser(description="Evaluación de Globix con el LLM real.")
     parser.add_argument("--casos", default=os.path.join(REPO, "evaluacion", "casos_desarrollo.json"))
@@ -373,7 +391,12 @@ def main_cli(argv=None):
     parser.add_argument("--solo", default="", help="IDs separados por coma")
     parser.add_argument("--pausa", type=float, default=0.0, help="Segundos entre corridas (límites de Groq)")
     parser.add_argument("--salida", default=os.path.join(REPO, "evaluacion", "reportes"))
+    parser.add_argument("--pdf-desde", default="",
+                        help="Regenera el PDF desde un resultados_*.json ya guardado (no llama al LLM)")
     args = parser.parse_args(argv)
+
+    if args.pdf_desde:
+        return pdf_desde_json(args.pdf_desde)
 
     archivo_casos = os.path.abspath(args.casos)
     with open(archivo_casos, encoding="utf-8") as f:
@@ -412,8 +435,11 @@ def main_cli(argv=None):
         json.dump({"meta": meta, "kpis": kpis, "costo_latencia": resumen_costo, "resultados": resultados},
                   f, ensure_ascii=False, indent=2, default=str)
 
+    ruta_pdf = os.path.join(salida, f"reporte_{marca}.pdf")
+    generar_reporte_pdf(meta, casos, resultados, kpis, resumen_costo, ruta_pdf, DEBOUNCE_S)
+
     print(f"\nÉxito (pass^1): {_pct(kpis['exito_tarea_pass1'])}")
-    print(f"Reporte: {ruta_md}\nDatos:   {ruta_json}")
+    print(f"Reporte PDF: {ruta_pdf}\nReporte MD:  {ruta_md}\nDatos:       {ruta_json}")
     return ruta_md
 
 

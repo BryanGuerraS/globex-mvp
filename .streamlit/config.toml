@@ -1,5 +1,5 @@
 # Tema del panel de asesores de Globex (Streamlit >= 1.60)
-# Base neutra (zinc) con un acento índigo de marca. Sin CSS inyectado: todo el
+# Base neutra (zinc) con los colores del logo: morado #2E1A47 y naranja #FF6900. Sin CSS inyectado: todo el
 # estilo vive aquí para que sobreviva a las actualizaciones de Streamlit.
 
 [theme]
@@ -17,21 +17,21 @@ showSidebarBorder = true
 linkUnderline = false
 
 [theme.light]
-primaryColor = "#4338CA"            # índigo 700: contraste AA con texto blanco
+primaryColor = "#2E1A47"            # morado del logo: contraste AA con texto blanco
 backgroundColor = "#FFFFFF"
 secondaryBackgroundColor = "#F4F4F5"
 codeBackgroundColor = "#F4F4F5"
 textColor = "#18181B"
-linkColor = "#4338CA"
+linkColor = "#5B3A8C"
 borderColor = "#E4E4E7"
 dataframeBorderColor = "#E4E4E7"
 dataframeHeaderBackgroundColor = "#F4F4F5"
 # Colores semánticos (badges de estado y tiempo de espera)
 greenColor = "#15803D"
-orangeColor = "#C2410C"
+orangeColor = "#E85F00"            # naranja del logo, un tono más oscuro para leerse en badges
 redColor = "#B91C1C"
-blueColor = "#4338CA"
-violetColor = "#6D28D9"
+blueColor = "#2563EB"
+violetColor = "#5B3A8C"
 grayColor = "#71717A"
 
 [theme.light.sidebar]
@@ -41,20 +41,20 @@ textColor = "#18181B"
 borderColor = "#E4E4E7"
 
 [theme.dark]
-primaryColor = "#818CF8"            # índigo 400: legible sobre fondo oscuro
+primaryColor = "#A78BDA"            # morado claro: legible sobre fondo oscuro
 backgroundColor = "#0B0B0F"
 secondaryBackgroundColor = "#18181B"
 codeBackgroundColor = "#18181B"
 textColor = "#F4F4F5"
-linkColor = "#A5B4FC"
+linkColor = "#C4B5E8"
 borderColor = "#27272A"
 dataframeBorderColor = "#27272A"
 dataframeHeaderBackgroundColor = "#18181B"
 greenColor = "#4ADE80"
-orangeColor = "#FB923C"
+orangeColor = "#FF8A33"
 redColor = "#F87171"
-blueColor = "#818CF8"
-violetColor = "#A78BFA"
+blueColor = "#60A5FA"
+violetColor = "#C4B5E8"
 grayColor = "#A1A1AA"
 
 [theme.dark.sidebar]

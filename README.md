@@ -104,7 +104,7 @@ Ejemplos verificados con el motor:
 - **Botones de WhatsApp:** la bienvenida ofrece *Cotizar envío*, *Rastrear paquete* y *Otras consultas*. Esta última abre una lista con dirección en Miami, plazos, provincias, cómo funciona, pagos, modalidad viajero y asesor. El cliente también puede escribir libremente; si ya dijo qué necesita, no se le muestra el menú.
 - **"Escribiendo…":** al recibir un mensaje, el bot lo marca como leído y muestra el indicador mientras prepara la respuesta.
 - **Datos para cotizar:** pide en un solo mensaje producto, precio en USD y peso en kg, con un ejemplo ("Laptop Lenovo, $650, 2.5 kg"). Si el cliente no da el peso, se busca en el catálogo; si el producto no está, pregunta solo "¿Cuánto pesa aproximadamente en kg?" (nunca el modelo ni la marca) y explica que basta un estimado únicamente si el cliente duda. Las notas internas del LLM, como "(Esperando respuesta del cliente)", se filtran antes de enviar.
-- **Proforma como imagen:** la cotización llega como una imagen de proforma (número, fecha, producto, desglose, total y vigencia de 24 h, generada por [`proforma_imagen.py`](proforma_imagen.py) con los montos del motor). La leyenda confirma lo entendido y luego llegan los botones con el total. Si la imagen no se puede enviar, se usa el mensaje de texto.
+- **Proforma como imagen:** la cotización llega como una imagen de proforma con el logo de Globex (número, fecha, producto, flete, trámite aduanero, tributos, total y vigencia de 24 h; generada por [`proforma_imagen.py`](proforma_imagen.py) con los montos del motor). Si el peso viene del catálogo se marca como *estimado*. La leyenda dice *"Te envío adjunto tu cotización **referencial**."* y luego llegan los botones con el total. Si la imagen no se puede enviar, se usa el mensaje de texto.
 - **Confirmación:** la cotización empieza con lo que entendió el bot, por ejemplo *"Entendí: laptop Lenovo, USD 650, 2.5 kg"*, y termina con los botones *Hablar con asesor*, *Cotizar otro* y *¿Cómo compro?*.
 - **Recuperación:** si el bot falla dos veces seguidas, ofrece las opciones y el asesor en vez de repetir el error.
 - **Alcance limitado a Globex (dos capas):**
@@ -129,7 +129,8 @@ Ejemplos verificados con el motor:
 
 Diseñada con las guías oficiales de Streamlit (skill *developing-with-streamlit* incluida en Streamlit ≥ 1.60):
 
-- **Tema** en [`.streamlit/config.toml`](.streamlit/config.toml): fuente Inter, base neutra con acento índigo, modo claro y oscuro, sin CSS inyectado.
+- **Marca Globex:** logo oficial en el login, la barra lateral y la pestaña (`assets/`), y colores del logo en el tema: morado `#2E1A47` como color principal y naranja `#FF6900` como acento.
+- **Tema** en [`.streamlit/config.toml`](.streamlit/config.toml): fuente Inter, modo claro y oscuro, sin CSS inyectado.
 - **Navegación superior:** *Bandeja* para todos y *Métricas* solo para el admin.
 - **Usuarios de prueba:** asesores Bryan, Juan y Anyela, y el usuario Admin. Los chats nuevos quedan *sin asignar*; el primer asesor que responde queda asignado y también se puede asignar desde el detalle.
 - **Indicador de Globix:** punto verde cuando el bot responde en ese chat y gris cuando está pausado.
@@ -258,6 +259,7 @@ El plan para medir la calidad del modelo está en [`docs/plan_evaluacion.md`](do
 
 - KPIs con IC 95 % de Clopper-Pearson: éxito de tarea (pass^1 y pass^k), exactitud de herramienta (K1) y de argumentos (K2), cotización indebida (K3), derivación (K4), guardrail (K5) y alcance (K11);
 - costo y latencia (incluida la espera estimada del cliente con el debounce);
+- **un PDF** listo para compartir (`reporte_*.pdf`), además del Markdown y el JSON;
 - resultado por caso y, para cada falla, la conversación completa con herramientas, argumentos, tokens y tiempos.
 
 ```bash
@@ -270,6 +272,12 @@ python evaluacion/evaluar.py --casos evaluacion/casos_reservados.json --repetici
 
 ```bash
 python evaluacion/evaluar.py --solo COT-01,ALC-02 --repeticiones 1
+```
+
+Para rehacer el PDF de una corrida anterior sin volver a llamar al LLM:
+
+```bash
+python evaluacion/evaluar.py --pdf-desde evaluacion/reportes/resultados_AAAAMMDD_HHMM.json
 ```
 
 `evaluacion/casos_desarrollo.json` (30 casos) es el **set de desarrollo**: sirve para probar y ajustar. Los resultados que se reporten deben salir de un **set reservado** escrito por otra persona del equipo y no usado para ajustar el prompt, con el mismo formato (`mensajes` y `esperado`: `tipo_final`, `herramientas`, `cotizacion`, `cotiza`, `deriva`, `contiene`, `no_contiene`).

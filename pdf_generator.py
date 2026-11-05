@@ -120,7 +120,7 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
         ["CONCEPTO", "DETALLE / TASA", "IMPORTE (USD)"],
         ["Valor Declarado del Producto (FOB)", f"Mercancía declarada ({peso} kg)", f"$ {val_prod:,.2f}"],
         ["Flete Aéreo Internacional", f"{peso_facturable:g} kg × $9.00 USD/kg", f"$ {flete:,.2f}"],
-        ["Trámite y Manejo Documentario", "Tarifa fija de almacén y guía", f"$ {tramite:,.2f}"],
+        ["Trámite aduanero", "Tarifa fija", f"$ {tramite:,.2f}"],
     ]
 
     if calculo.get("aplica_impuesto", False):

@@ -427,13 +427,13 @@ async def enviar_proforma_imagen(chat_id: str, resultado: Dict, estado: Dict) ->
     """
     try:
         imagen = generar_imagen_proforma(
-            resultado, estado.get("producto"), nombre_cliente_completo(chat_id), chat_id
+            resultado, estado.get("producto"), nombre_cliente_completo(chat_id), chat_id,
+            peso_estimado=bool(estado.get("peso_estimado")),
         )
         media_id = await _subir_media_meta(imagen, "image/png", "proforma_globex.png")
         if not media_id:
             return False
-        confirmacion = estado.get("confirmacion") or "Aquí tienes tu cotización"
-        leyenda = f"{confirmacion} 👇\nTu proforma referencial (válida por 24 horas)."
+        leyenda = LEYENDA_PROFORMA
         if not await send_meta_image(chat_id, media_id, leyenda):
             return False
     except Exception as e:
@@ -442,7 +442,7 @@ async def enviar_proforma_imagen(chat_id: str, resultado: Dict, estado: Dict) ->
 
     # En la BD queda el desglose en texto (dashboard, historial del LLM y auditoría)
     texto_registro = (
-        f"{leyenda}\n[Proforma enviada como imagen]\n\n"
+        f"{leyenda}\n[Proforma enviada como imagen · {estado.get('confirmacion') or 'cotización'}]\n\n"
         + GlobexPricingEngine.formatear_mensaje_whatsapp(resultado)
     )
     registrar_mensaje_saliente(chat_id, "bot", texto_registro, resultado)
@@ -646,6 +646,7 @@ def nombre_para_saludo(chat_id: str, nombre_perfil: str) -> Optional[str]:
 
 
 RESPUESTA_ERROR = "Disculpa, tuve un inconveniente interno al procesar tu consulta. ¿Podrías repetirla?"
+LEYENDA_PROFORMA = "Te envío adjunto tu cotización *referencial*."
 # Montos que aparecen en los ejemplos del prompt y de la bienvenida ("$650", "$900")
 MONTOS_EJEMPLO = (650, 900)
 TEXTO_RECUPERACION = "Disculpa, no logré entenderte 😅. Elige una opción o pide hablar con un asesor:"
@@ -726,6 +727,7 @@ def ejecutar_herramienta(
         estado["menu"] = BOTONES_POST_COTIZACION
         estado["confirmacion"] = f"Entendí: *{', '.join(partes)}*"
         estado["producto"] = producto or None
+        estado["peso_estimado"] = peso_de_catalogo
         return {"cotizacion_emitida": True}, respuesta
 
     # FUERA DE ALCANCE (texto fijo + botones; el LLM no responde el tema ajeno)

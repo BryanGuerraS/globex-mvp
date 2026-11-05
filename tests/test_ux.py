@@ -125,7 +125,7 @@ def test_cotizacion_confirma_datos_y_ofrece_botones(turno):
     assert subida and subida[0]["mime"] == "image/png" and subida[0]["bytes"] > 10_000
     (imagen,) = [p for p in enviados if p.get("type") == "image"]
     assert imagen["image"]["id"] == "media-de-prueba"
-    assert imagen["image"]["caption"].startswith("Entendí: *laptop Lenovo, USD 650, 2.5 kg* 👇")
+    assert imagen["image"]["caption"] == "Te envío adjunto tu cotización *referencial*."
     (msg,) = _interactivos(enviados)
     assert msg["interactive"]["body"]["text"].startswith("💰 *Total estimado: US$ 836.33*")
     assert _ids_botones(msg) == ["asesor", "cotizar_otro", "como_compro"]
@@ -133,7 +133,7 @@ def test_cotizacion_confirma_datos_y_ofrece_botones(turno):
     assert _textos(enviados) == []
     # En la BD queda el desglose (dashboard, historial del LLM) y el chat con su cotización
     textos = [m["texto"] for m in main.obtener_mensajes_chat("ux_cot") if m["emisor"] == "bot"]
-    assert "[Proforma enviada como imagen]" in textos[-2] and "COTIZACIÓN ESTIMADA" in textos[-2]
+    assert "[Proforma enviada como imagen" in textos[-2] and "Entendí: *laptop Lenovo" in textos[-2] and "COTIZACIÓN ESTIMADA" in textos[-2]
     assert "[Opciones: Hablar con asesor | Cotizar otro | ¿Cómo compro?]" in textos[-1]
     assert main.obtener_chat("ux_cot")["cotizacion_total"] == pytest.approx(836.33)
 

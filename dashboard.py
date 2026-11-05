@@ -24,11 +24,18 @@ load_dotenv()
 # URL base del backend en Render y key compartida (Streamlit Cloud: Secrets)
 BACKEND_URL = os.getenv("BACKEND_URL", "https://globex-mvp.onrender.com")
 DASHBOARD_API_KEY = os.getenv("DASHBOARD_API_KEY", "")
-COLOR_MARCA = "#4338CA"
+COLOR_MARCA = "#2E1A47"  # morado del logo de Globex
+
+ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+LOGO = os.path.join(ASSETS, "logo_globex.png")
+LOGO_OSCURO = os.path.join(ASSETS, "logo_globex_oscuro.png")  # texto blanco para tema oscuro
+ICONO = os.path.join(ASSETS, "logo_icono.png")
+LOGO_H = os.path.join(ASSETS, "logo_horizontal.png")  # barra lateral (st.logo limita la altura)
+LOGO_H_OSCURO = os.path.join(ASSETS, "logo_horizontal_oscuro.png")
 
 st.set_page_config(
     page_title="Globex · Consola de asesores",
-    page_icon=":material/local_shipping:",
+    page_icon=ICONO,
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -215,12 +222,25 @@ def separar_opciones(texto: str):
 
 # ---------------------------------------------------------------- Páginas
 
+def _tema_oscuro() -> bool:
+    try:
+        return st.context.theme.type == "dark"
+    except Exception:
+        return False
+
+
+def logo_segun_tema(horizontal: bool = False) -> str:
+    if horizontal:
+        return LOGO_H_OSCURO if _tema_oscuro() else LOGO_H
+    return LOGO_OSCURO if _tema_oscuro() else LOGO
+
+
 def pagina_login():
     st.space("large")
     _, centro, _ = st.columns([1, 1.2, 1])
     with centro:
         with st.container(horizontal_alignment="center"):
-            st.title("Globex Courier", icon=":material/local_shipping:", text_alignment="center")
+            st.image(logo_segun_tema(), width=180)
             st.caption("Consola de asesores comerciales", text_alignment="center")
         with st.form("login", border=True):
             usuario = st.text_input("Usuario", placeholder="bryan").strip().lower()
@@ -631,6 +651,8 @@ def pagina_metricas():
 if not st.session_state.autenticado:
     pagina_login()
     st.stop()
+
+st.logo(logo_segun_tema(horizontal=True), icon_image=ICONO, size="large")
 
 paginas = [st.Page(pagina_bandeja, title="Bandeja", icon=":material/inbox:", url_path="bandeja", default=True)]
 if st.session_state.usuario_actual["rol"] == "admin":
