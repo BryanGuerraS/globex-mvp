@@ -481,12 +481,15 @@ def panel_detalle(chat: Dict):
             except Exception:
                 st.caption("Proforma no disponible.")
         if st.button("Enviar recordatorio", icon=":material/notifications:", width="stretch"):
+            # Texto aprobado 05/11: lo firma el asesor; nombre solo si el cliente lo dio
             cot = chat.get("cotizacion_total")
-            monto_txt = f"de ${cot:,.2f} USD" if cot else ""
+            nombre_cli = chat.get("nombre_cliente")
+            saludo = f"¡Hola, {nombre_cli.split()[0]}! 👋" if nombre_cli else "¡Hola! 👋"
+            monto_txt = f"de USD {cot:,.2f} " if cot else ""
             nudge = (
-                f"¡Hola {nombre_mostrado(chat).split()[0]}! 👋 Te escribo de Globex para recordarte que tu cotización {monto_txt} "
-                f"sigue activa en nuestro sistema.\n\n"
-                f"¿Deseas que te asigne tu casillero en Miami para proceder con tu compra?"
+                f"{saludo} Soy {st.session_state.usuario_actual['nombre']}, de Globex. "
+                f"Tu cotización {monto_txt}sigue vigente. "
+                "¿Te ayudo a avanzar con tu compra o tienes alguna duda?"
             )
             if enviar_mensaje(chat["chat_id"], nudge):
                 st.toast("Recordatorio enviado", icon=":material/check_circle:")

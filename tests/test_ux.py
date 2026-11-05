@@ -60,19 +60,20 @@ def test_nombre_de_pila(perfil, esperado):
 
 def test_bienvenida_primer_contacto():
     texto = main.texto_bienvenida("Ana", primer_contacto=True)
-    assert texto.startswith("¡Hola, Ana! 👋")
-    assert "Globix, el asistente virtual de Globex Courier" in texto
+    assert texto.startswith("¡Hola! 👋")  # sin nombre: aún no lo sabemos
+    assert "*Globix*, el asistente virtual de Globex Courier" in texto
+    assert "Ana" not in texto
     assert "hablar con una persona" in texto
 
 
 def test_bienvenida_sin_nombre_y_repetida():
     assert main.texto_bienvenida(None, True).startswith("¡Hola! 👋")
-    assert main.texto_bienvenida("Ana", False) == "¿En qué más te ayudo?"
+    assert main.texto_bienvenida("Ana", False) == "¿Hay algo más en lo que pueda ayudarte? 😊"
 
 
 def test_derivacion_con_y_sin_nombre():
-    assert main.texto_derivacion("Ana").startswith("Listo, Ana.")
-    assert main.texto_derivacion(None).startswith("Listo. Le pasé")
+    assert main.texto_derivacion("Ana").startswith("¡Listo, Ana!")
+    assert main.texto_derivacion(None).startswith("¡Listo! Un asesor")
 
 
 def test_limites_de_meta():
@@ -101,7 +102,7 @@ def test_saludo_muestra_bienvenida_con_botones(turno):
         "ux_hola", "hola", [_respuesta(tool_calls=[_tool_call("t1", "mostrar_menu", {})])], nombre="Ana Pérez"
     )
     (menu,) = _interactivos(enviados)
-    assert menu["interactive"]["body"]["text"].startswith("¡Hola, Ana! 👋")
+    assert menu["interactive"]["body"]["text"].startswith("¡Hola! 👋")
     assert _ids_botones(menu) == ["cotizar", "rastrear", "otras"]
     # El LLM sabe el nombre del cliente
     assert "El cliente se llama Ana." in llm.llamadas[0][0]["content"]
@@ -111,7 +112,7 @@ def test_segundo_menu_no_repite_presentacion(turno):
     turno("ux_menu2", "hola", [_respuesta(tool_calls=[_tool_call("t1", "mostrar_menu", {})])])
     _, enviados = turno("ux_menu2", "mmm", [_respuesta(tool_calls=[_tool_call("t2", "mostrar_menu", {})])])
     (menu,) = _interactivos(enviados)
-    assert menu["interactive"]["body"]["text"] == "¿En qué más te ayudo?"
+    assert menu["interactive"]["body"]["text"] == "¿Hay algo más en lo que pueda ayudarte? 😊"
 
 
 def test_cotizacion_confirma_datos_y_ofrece_botones(turno):
@@ -127,7 +128,7 @@ def test_cotizacion_confirma_datos_y_ofrece_botones(turno):
     assert imagen["image"]["id"] == "media-de-prueba"
     assert imagen["image"]["caption"] == "Te envío adjunto tu cotización *referencial*."
     (msg,) = _interactivos(enviados)
-    assert msg["interactive"]["body"]["text"].startswith("💰 *Total estimado: US$ 836.33*")
+    assert msg["interactive"]["body"]["text"].startswith("Total estimado: *USD 836.33*")
     assert _ids_botones(msg) == ["asesor", "cotizar_otro", "como_compro"]
     # No se manda el desglose en texto (va en la imagen)
     assert _textos(enviados) == []
@@ -173,7 +174,7 @@ def test_derivacion_por_llm_sin_botones_y_con_nombre(turno):
         nombre="Ana Pérez",
     )
     assert _interactivos(enviados) == []
-    assert _textos(enviados) == [main.texto_derivacion(None) + "\n\n" + main.PREGUNTA_NOMBRE]
+    assert _textos(enviados) == [main.texto_derivacion(None).removesuffix(" 🙌") + "\n\n" + main.PREGUNTA_NOMBRE]
 
 
 def test_dos_fallos_seguidos_ofrecen_opciones(turno):
@@ -266,7 +267,7 @@ def test_boton_asesor_deriva_al_instante(webhook):
     r = _post_firmado(cliente, _payload("51900000205", "wamid.b3", _boton("asesor", "Hablar con asesor")))
     assert r.json() == {"status": "derived_to_advisor"}
     assert encolados == []
-    assert _textos(enviados) == [main.texto_derivacion(None) + "\n\n" + main.PREGUNTA_NOMBRE]
+    assert _textos(enviados) == [main.texto_derivacion(None).removesuffix(" 🙌") + "\n\n" + main.PREGUNTA_NOMBRE]
     assert main.esta_bot_activo("51900000205") is False
 
 

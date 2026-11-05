@@ -120,7 +120,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 
    - CUADRANTE 1 [COTIZACIÓN COURIER (Happy Path)]:
      a) Si el cliente quiere cotizar pero no dio datos, pide los tres en un solo mensaje, con este texto:
-        "¿Qué producto quieres traer, cuál es su precio en USD y cuánto pesa en kg? Ejemplo: 'Laptop Lenovo, $650, 2.5 kg'"
+        "¡Claro! Cuéntame qué producto quieres traer, su precio en USD y cuánto pesa en kg. Por ejemplo: _Laptop Lenovo, $650, 2.5 kg_."
      b) Con producto, precio y peso: llama de inmediato a 'calcular_cotizacion' e incluye el nombre del producto.
      c) Si dio producto y precio pero NO el peso: llama a 'consultar_peso_producto'.
         - Si el catálogo encuentra el producto, cotiza con ese peso.
@@ -448,7 +448,7 @@ async def enviar_proforma_imagen(chat_id: str, resultado: Dict, estado: Dict) ->
     registrar_mensaje_saliente(chat_id, "bot", texto_registro, resultado)
     await enviar_y_registrar_menu(
         chat_id,
-        f"💰 *Total estimado: US$ {resultado['costo_total']:,.2f}*\n\n¿Qué deseas hacer ahora?",
+        f"Total estimado: *USD {resultado['costo_total']:,.2f}*. ¿Qué deseas hacer ahora? 😊",
         BOTONES_POST_COTIZACION,
     )
     return True
@@ -534,7 +534,7 @@ async def enviar_y_registrar_menu(chat_id: str, cuerpo: str, botones):
 
 
 async def enviar_lista_otras_consultas(chat_id: str):
-    cuerpo = "Elige el tema de tu consulta:"
+    cuerpo = "¿Sobre qué tema es tu consulta?"
     registrar_mensaje_saliente(
         chat_id, "bot", texto_para_registro(cuerpo, FILAS_OTRAS_CONSULTAS), None
     )
@@ -592,26 +592,46 @@ def nombre_de_pila(nombre_perfil: str) -> Optional[str]:
 
 
 def texto_bienvenida(nombre: Optional[str], primer_contacto: bool) -> str:
+    """Bienvenida (aprobada 05/11): sin nombre, porque aún no lo sabemos."""
     if not primer_contacto:
-        return "¿En qué más te ayudo?"
-    saludo = f"¡Hola, {nombre}! 👋" if nombre else "¡Hola! 👋"
+        return "¿Hay algo más en lo que pueda ayudarte? 😊"
     return (
-        f"{saludo} Soy *Globix, el asistente virtual de Globex Courier*. Te ayudo a cotizar tus compras "
-        "en EE. UU. y a resolver tus dudas al instante. Si prefieres hablar con una persona, solo dímelo.\n\n"
+        "¡Hola! 👋 Soy *Globix*, el asistente virtual de Globex Courier. Cotizo tus compras en EE. UU. "
+        "al instante y resuelvo tus dudas. Si prefieres hablar con una persona, solo dímelo.\n\n"
         "¿En qué te ayudo?\n\n"
-        '_También puedes escribirme directamente, por ejemplo: "iPhone 15 de $900"._'
+        '_También puedes escribirme directo: "iPhone 15, $900, 0.5 kg"._'
     )
 
 
 def texto_derivacion(nombre: Optional[str]) -> str:
-    inicio = f"Listo, {nombre}." if nombre else "Listo."
+    inicio = f"¡Listo, {nombre}!" if nombre else "¡Listo!"
     return (
-        f"{inicio} Le pasé tu consulta a un asesor de Globex y te escribirá por este chat "
-        "lo antes posible. Ya tiene el detalle de tu consulta, así que no necesitas repetir nada. 🙌"
+        f"{inicio} Un asesor de Globex ya tiene el detalle de tu consulta y te escribirá por este chat "
+        "lo antes posible. No necesitas repetir nada. 🙌"
     )
 
 
-PREGUNTA_NOMBRE = "Mientras tanto, ¿me compartes tu nombre completo para que tu asesor te atienda?"
+PREGUNTA_NOMBRE = "Mientras tanto, ¿me indicas tu nombre y apellido? 😊"
+
+
+def _tiene_emoji(texto: str) -> bool:
+    return any(ord(c) >= 0x2600 for c in texto)
+
+
+def con_pedido_de_nombre(texto: str, chat_id: str) -> str:
+    """Agrega la pregunta del nombre si falta, con un solo emoji en todo el mensaje.
+
+    Si el texto termina en 🙌 (derivación), se quita para dejar el 😊 de la
+    pregunta; si trae otro emoji (📦, 🧳, ⚠️), la pregunta va sin el suyo.
+    """
+    sufijo = pedir_nombre_si_falta(chat_id)
+    if not sufijo:
+        return texto
+    if texto.endswith(" 🙌"):
+        texto = texto[: -len(" 🙌")]
+    elif _tiene_emoji(texto):
+        sufijo = sufijo.replace(" 😊", "")
+    return texto + sufijo
 
 
 def pedir_nombre_si_falta(chat_id: str) -> str:
@@ -645,14 +665,14 @@ def nombre_para_saludo(chat_id: str, nombre_perfil: str) -> Optional[str]:
     return nombre_de_pila(nombre_perfil)
 
 
-RESPUESTA_ERROR = "Disculpa, tuve un inconveniente interno al procesar tu consulta. ¿Podrías repetirla?"
+RESPUESTA_ERROR = "Disculpa, tuve un problema para leer tu mensaje. ¿Me lo escribes de nuevo?"
 LEYENDA_PROFORMA = "Te envío adjunto tu cotización *referencial*."
-# Montos que aparecen en los ejemplos del prompt y de la bienvenida ("$650", "$900")
-MONTOS_EJEMPLO = (650, 900)
-TEXTO_RECUPERACION = "Disculpa, no logré entenderte 😅. Elige una opción o pide hablar con un asesor:"
+# Montos que aparecen en los ejemplos que da el propio bot ("$650", "$900", "$120")
+MONTOS_EJEMPLO = (650, 900, 120)
+TEXTO_RECUPERACION = "Disculpa, no logré entenderte 😅. Elige una opción o, si prefieres, te paso con un asesor:"
 TEXTO_FUERA_DE_ALCANCE = (
-    "Eso está fuera de lo que puedo ayudarte 😊. Soy Globix y te ayudo con tus importaciones "
-    "de EE. UU. a Perú con Globex Courier. ¿Qué deseas hacer?"
+    "En eso no puedo ayudarte 😊. Soy Globix y te ayudo a traer tus compras "
+    "de EE. UU. a Perú con Globex. ¿Qué deseas hacer?"
 )
 # Meta limita el cuerpo de un mensaje interactivo a 1024 caracteres.
 LIMITE_CUERPO_INTERACTIVO = 1000
@@ -705,10 +725,10 @@ def ejecutar_herramienta(
                 chat_id, servicio="Cotización Courier (alto valor)", estado="Listo para Asesor", paso=4
             )
             actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
-            return {"derivado": True}, (
-                f"Por el valor de tu compra (más de USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}), "
-                "un asesor de Globex preparará tu cotización personalizada y te escribirá por este chat a la brevedad."
-            ) + pedir_nombre_si_falta(chat_id)
+            return {"derivado": True}, con_pedido_de_nombre(
+                f"Como tu compra supera los USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}, "
+                "un asesor de Globex preparará tu cotización personalizada y te escribirá por este chat lo antes posible."
+            , chat_id)
         resultado = GlobexPricingEngine.calcular(val, peso)
         estado["resultado_calculo"] = resultado
         actualizar_clasificacion_chat(chat_id, servicio="Cotización Courier", paso=3)
@@ -761,10 +781,11 @@ def ejecutar_herramienta(
             chat_id, servicio="Seguimiento Courier", estado="Listo para Asesor", paso=4
         )
         actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
-        return {"derivado": True}, (
-            "📦 He registrado tu consulta de seguimiento. Tu asesor asignado revisará "
-            "el estado de tu paquete en almacén y te responderá a la brevedad por aquí."
-        ) + pedir_nombre_si_falta(chat_id)
+        return {"derivado": True}, con_pedido_de_nombre(
+            "📦 Recibí tu consulta de seguimiento. Un asesor revisará el estado de tu paquete "
+            "y te responderá por este chat lo antes posible.",
+            chat_id,
+        )
 
     # VIAJERO
     if nombre_funcion == "clasificar_como_viajero":
@@ -772,10 +793,11 @@ def ejecutar_herramienta(
             chat_id, servicio="Cotización Viajero", estado="Listo para Asesor", paso=4
         )
         actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
-        return {"derivado": True}, (
-            "🧳 La modalidad de *Viajero* depende del cupo y fecha de vuelos programados. "
-            "He transferido tu solicitud a nuestro asesor especializado para confirmarte disponibilidad."
-        ) + pedir_nombre_si_falta(chat_id)
+        return {"derivado": True}, con_pedido_de_nombre(
+            "🧳 La modalidad *Viajero* depende de los cupos y fechas de vuelo disponibles. "
+            "Un asesor te escribirá por este chat para confirmarte la disponibilidad.",
+            chat_id,
+        )
 
     # ESCAPE A ATENCIÓN HUMANA (lo decide el LLM según la intención del cliente)
     if nombre_funcion == "derivar_a_asesor":
@@ -784,7 +806,7 @@ def ejecutar_herramienta(
             f"(motivo: {args.get('motivo', '')})."
         )
         actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
-        return {"derivado": True}, texto_derivacion(nombre_confirmado(chat_id)) + pedir_nombre_si_falta(chat_id)
+        return {"derivado": True}, con_pedido_de_nombre(texto_derivacion(nombre_confirmado(chat_id)), chat_id)
 
     print(f"⚠️ [Tool Calling] Herramienta desconocida: {nombre_funcion}")
     return {"error": f"La herramienta '{nombre_funcion}' no existe."}, None
@@ -882,7 +904,7 @@ async def _procesar_turno(
             actualizar_estado_chat(
                 chat_id, nuevo_estado="Listo para Asesor", bot_activo=0
             )
-            bot_reply += pedir_nombre_si_falta(chat_id)
+            bot_reply = con_pedido_de_nombre(bot_reply, chat_id)
 
         registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
         await send_meta_whatsapp_message(chat_id, bot_reply)
@@ -1070,7 +1092,7 @@ def _en_segundo_plano(corrutina):
 async def derivar_a_asesor(chat_id: str, sender_name: str):
     """Derivación directa (botón 'Hablar con asesor'): silencia el bot y avisa al cliente."""
     actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
-    respuesta = texto_derivacion(nombre_confirmado(chat_id)) + pedir_nombre_si_falta(chat_id)
+    respuesta = con_pedido_de_nombre(texto_derivacion(nombre_confirmado(chat_id)), chat_id)
     registrar_mensaje_saliente(chat_id, "bot", respuesta, None)
     await send_meta_whatsapp_message(chat_id, respuesta)
 
@@ -1203,8 +1225,8 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
                 return {"status": "bot_silenced_for_human"}
 
             bot_reply = (
-                f"He recibido tu {tipo_adjunto}. Por el momento atiendo consultas por texto.\n\n"
-                f"¿Podrías escribir brevemente tu consulta o describir el producto para ayudarte con tu cotización?"
+                f"Recibí tu {tipo_adjunto.split()[0]}, pero por ahora solo leo mensajes de texto. "
+                f"¿Me escribes tu consulta? Por ejemplo: _Zapatillas Nike, $120, 1 kg_."
             )
             registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
             await send_meta_whatsapp_message(chat_id, bot_reply)
@@ -1288,6 +1310,15 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
     return {"status": "received_ok"}
 
 
+def texto_recordatorio(nombre_cliente: Optional[str], monto: float) -> str:
+    """Recordatorio automático (aprobado 05/11): sin ofrecer casillero (es cierre de venta)."""
+    saludo = f"¡Hola, {nombre_cliente.split()[0]}! 👋" if nombre_cliente else "¡Hola! 👋"
+    return (
+        f"{saludo} Tu cotización de USD {monto:,.2f} sigue vigente por 24 horas. "
+        "¿Te ayudo con algo más o prefieres que un asesor te escriba para avanzar?"
+    )
+
+
 # ⏰ TRABAJADOR DE FONDO: AUTO-NUDGE DE 20 MINUTOS
 async def tarea_fondo_recordatorios():
     while True:
@@ -1300,13 +1331,8 @@ async def tarea_fondo_recordatorios():
                     tiempo = calcular_tiempo_relativo(ultimo_msg)
                     if tiempo["minutos"] >= 20:
                         chat_id = c["chat_id"]
-                        nombre = c["nombre"]
                         monto = c["cotizacion_total"]
-                        msg_nudge = (
-                            f"¡Hola {nombre}! 👋 Te escribo de Globex para recordarte que tu cotización "
-                            f"de ${monto:,.2f} USD sigue activa en nuestro sistema.\n\n"
-                            f"¿Deseas que procedamos a asignarte tu casillero en Miami para realizar tu compra?"
-                        )
+                        msg_nudge = texto_recordatorio(c.get("nombre_cliente"), monto)
                         print(
                             f"⚡ [Auto-Nudge] Recordatorio enviado a [{chat_id}]"
                         )

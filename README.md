@@ -98,7 +98,7 @@ Ejemplos verificados con el motor:
 
 **Experiencia del cliente**
 
-- **Globix:** el asistente se presenta por nombre y aclara que es virtual en la bienvenida. Saluda con el nombre del perfil de WhatsApp si parece un nombre real.
+- **Globix:** el asistente se presenta por nombre y aclara que es virtual en la bienvenida. No usa el nombre del perfil de WhatsApp: solo saluda por nombre cuando el cliente ya lo dio. Los textos fijos se revisaron y aprobaron el 05/11 (como máximo un emoji por mensaje; montos en USD).
 - **Nombre del cliente:** al derivar al asesor, Globix no usa el nombre del perfil: pide el nombre completo (una sola vez; entiende respuestas como "Sí, llamo Ana") y lo guarda en la base asociado al ID del cliente. Si la respuesta no parece un nombre, no insiste y el asesor ve el mensaje. Desde ahí, el dashboard y la proforma usan ese nombre.
 - **ID único del cliente:** cada chat se identifica con el ID de usuario de Meta (BSUID, por ejemplo `PE.2347…`), que llega siempre, aunque el cliente oculte su número. El teléfono, cuando Meta lo comparte, se guarda aparte solo como respaldo de envío y no se muestra.
 - **Botones de WhatsApp:** la bienvenida ofrece *Cotizar envío*, *Rastrear paquete* y *Otras consultas*. Esta última abre una lista con dirección en Miami, plazos, provincias, cómo funciona, pagos, modalidad viajero y asesor. El cliente también puede escribir libremente; si ya dijo qué necesita, no se le muestra el menú.

@@ -152,7 +152,7 @@ def test_no_vuelve_a_pedir_nombre_si_ya_lo_tiene(webhook):
     main.guardar_nombre_cliente("PE.5004", "Luis Gómez")
     _post_firmado(cliente, _payload("PE.5004", "wamid.r2", _boton_asesor()))
     ultimo = _textos(enviados)[-1]
-    assert ultimo.startswith("Listo, Luis.")
+    assert ultimo.startswith("¡Listo, Luis!")
     assert main.PREGUNTA_NOMBRE not in ultimo
 
 

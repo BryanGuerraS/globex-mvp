@@ -63,11 +63,14 @@ class GlobexPricingEngine:
             if peso_facturable == peso
             else f"{peso} kg, se cobra el mínimo de {peso_facturable:g} kg"
         )
+        flete = calculo.get("costo_flete", round(peso_facturable * cls.FLETE_POR_KG, 2))
+        tramite = round(calculo["costo_envio"] - flete, 2)
         msg = (
             f"📦 *COTIZACIÓN ESTIMADA GLOBEX*\n"
             f"────────────────────────\n"
             f"• *Costo del Producto:* ${calculo['valor_producto']:,.2f} USD\n"
-            f"• *Costo de Envío:* ${calculo['costo_envio']:,.2f} USD ({detalle_peso})\n"
+            f"• *Flete aéreo:* ${flete:,.2f} USD ({detalle_peso})\n"
+            f"• *Trámite aduanero:* ${tramite:,.2f} USD\n"
         )
 
         if calculo["aplica_impuesto"]:

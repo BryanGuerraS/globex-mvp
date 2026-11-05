@@ -29,9 +29,8 @@ RESTRICCIONES_ADUANA = {
         ],
         "entidad": "DIGEMID",
         "mensaje": (
-            "⚠️ *Mercancía Restringida por DIGEMID:*\n\n"
-            "Los productos cosméticos, perfumes, vitaminas o medicamentos requieren *autorización sanitaria de DIGEMID* en la aduana de Perú.\n\n"
-            "He transferido tu caso a tu asesor asignado para verificar las cantidades permitidas y los requisitos de importación antes de cotizar."
+            "⚠️ Los perfumes, cosméticos, vitaminas y medicamentos necesitan *autorización de DIGEMID* para ingresar a Perú. "
+            "Un asesor revisará las cantidades y requisitos de tu caso y te escribirá por este chat antes de cotizar."
         ),
     },
     "prohibido": {
@@ -51,9 +50,8 @@ RESTRICCIONES_ADUANA = {
         ],
         "entidad": "PROHIBICIÓN ABSOLUTA",
         "mensaje": (
-            "⛔ *Mercancía Prohibida de Importación:*\n\n"
-            "Por regulaciones aduaneras de SUNAT y seguridad aérea internacional, Globex *no transporta* vapeadores, cigarrillos electrónicos, armas, pirotecnia ni artículos inflamables.\n\n"
-            "No es posible cotizar ni trasladar este producto."
+            "⛔ Por normas de SUNAT y de seguridad aérea, Globex *no transporta* vapeadores, cigarrillos electrónicos, "
+            "armas, pirotecnia ni artículos inflamables. Si quieres traer otro producto, con gusto lo cotizo."
         ),
     },
     "baterias": {
@@ -65,9 +63,8 @@ RESTRICCIONES_ADUANA = {
         ],
         "entidad": "CARGA PELIGROSA (IATA)",
         "mensaje": (
-            "🔋 *Restricción de Baterías de Litio:*\n\n"
-            "Las baterías sueltas o powerbanks tienen restricciones estrictas de transporte aéreo internacional.\n\n"
-            "Un asesor revisará las especificaciones técnicas de tu producto para confirmarte si es admisible en vuelo."
+            "🔋 Las baterías sueltas y los powerbanks tienen restricciones para viajar en avión. "
+            "Un asesor revisará tu producto y te confirmará por este chat si se puede enviar."
         ),
     },
 }

@@ -198,7 +198,7 @@ def test_escape_lo_decide_el_llm(entorno):
         "quiero hablar con un asesor",
         [_respuesta(tool_calls=[_tool_call("t1", "derivar_a_asesor", {"motivo": "pide asesor"})])],
     )
-    assert enviado == main.texto_derivacion(None) + "\n\n" + main.PREGUNTA_NOMBRE
+    assert enviado == main.texto_derivacion(None).removesuffix(" 🙌") + "\n\n" + main.PREGUNTA_NOMBRE
     chat = _estado_chat("chat_esc")
     assert chat["estado"] == "Listo para Asesor" and chat["bot_activo"] == 0
     _historial_valido(main.sessions["chat_esc"]["history"])
@@ -226,7 +226,7 @@ def test_tope_1200_deriva_sin_cotizar(entorno):
         "una laptop de 1500 dólares que pesa 2 kg",
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 1500, "peso_kg": 2})])],
     )
-    assert "más de USD 1,200" in enviado
+    assert "supera los USD 1,200" in enviado
     assert "COTIZACIÓN" not in enviado
     chat = _estado_chat("chat_tope")
     assert chat["estado"] == "Listo para Asesor" and chat["bot_activo"] == 0
@@ -247,7 +247,7 @@ def test_peso_bajo_1kg_cobra_minimo(entorno):
         "unos audífonos de 150 dólares que pesan 300 gramos",
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 150, "peso_kg": 0.3})])],
     )
-    assert "$18.00 USD (0.3 kg, se cobra el mínimo de 1 kg)" in texto_bot_registrado("chat_min")
+    assert "$9.00 USD (0.3 kg, se cobra el mínimo de 1 kg)" in texto_bot_registrado("chat_min")
 
 
 def test_nota_interna_no_llega_al_cliente(entorno):
@@ -261,6 +261,6 @@ def test_nota_interna_no_llega_al_cliente(entorno):
 
 def test_prompt_pide_producto_precio_y_peso_juntos():
     prompt = main.SYSTEM_PROMPT
-    assert "¿Qué producto quieres traer, cuál es su precio en USD y cuánto pesa en kg?" in prompt
+    assert "Cuéntame qué producto quieres traer, su precio en USD y cuánto pesa en kg" in prompt
     assert "Nunca pidas el modelo" in prompt
     assert "modelo exacto" not in prompt
