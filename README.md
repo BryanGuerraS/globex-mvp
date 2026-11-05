@@ -124,6 +124,17 @@ Ejemplos verificados con el motor:
 
 ---
 
+### Consola de asesores (Streamlit)
+
+Diseñada con las guías oficiales de Streamlit (skill *developing-with-streamlit* incluida en Streamlit ≥ 1.60):
+
+- **Tema** en [`.streamlit/config.toml`](.streamlit/config.toml): fuente Inter, base neutra con acento índigo, modo claro y oscuro, sin CSS inyectado.
+- **Navegación superior:** *Bandeja* para todos y *Métricas* solo para el admin.
+- **Bandeja en tres paneles:** lista de chats (ordenada por los que requieren asesor y llevan más tiempo esperando, con badges de estado y semáforo de espera) · conversación con el formato de WhatsApp y respuesta directa · detalle del lead (cotización, avance, estado y acciones).
+- **KPIs** en tarjetas: conversaciones, requieren asesor, esperan más de 45 min y monto cotizado.
+- **Filtros** en la barra lateral (búsqueda, estado, asesor y servicio) y actualización automática cada 5 s.
+- **Métricas:** costo y latencia de Globix, gráfico de tipos de respuesta, últimos turnos y una zona de administración con confirmación antes de borrar datos.
+
 ## 5. Costo y latencia
 
 Cada turno de Globix se registra en la tabla `metricas_turno` (ver [`metricas.py`](metricas.py)):
@@ -169,6 +180,7 @@ globex-mvp/
 ├── metricas.py          # Costo, latencia y herramientas por turno
 ├── tests/               # Pruebas automatizadas (pytest)
 ├── docs/                # Plan de evaluación y KPIs de calidad del modelo
+├── evaluacion/          # Script de evaluación con el LLM real y casos de prueba
 ├── requirements.txt
 ├── Procfile             # Comando de arranque en Render
 └── .env.example         # Plantilla de variables de entorno (sin secretos)
@@ -237,7 +249,31 @@ Para que Meta alcance un backend local hace falta exponerlo con un túnel HTTPS 
 
 El plan para medir la calidad del modelo está en [`docs/plan_evaluacion.md`](docs/plan_evaluacion.md). Propone 11 KPIs basados en τ-bench, BFCL, RAGAS y OWASP, entre ellos exactitud de herramienta y de argumentos, cotización indebida, exactitud de derivación y consistencia pass^3. El KPI de tiempo (≤ 60 min) queda como métrica de negocio.
 
-Pruebas automatizadas (corren en una carpeta temporal y no tocan `globex.db`):
+### Evaluación con el LLM real
+
+[`evaluacion/evaluar.py`](evaluacion/evaluar.py) corre conversaciones guionadas contra el flujo real de Globix (con el LLM de Groq, sin WhatsApp y con una base temporal), repite cada caso para medir consistencia y genera un **reporte para depurar** en `evaluacion/reportes/`:
+
+- KPIs con IC 95 % de Clopper-Pearson: éxito de tarea (pass^1 y pass^k), exactitud de herramienta (K1) y de argumentos (K2), cotización indebida (K3), derivación (K4), guardrail (K5) y alcance (K11);
+- costo y latencia (incluida la espera estimada del cliente con el debounce);
+- resultado por caso y, para cada falla, la conversación completa con herramientas, argumentos, tokens y tiempos.
+
+```bash
+python evaluacion/evaluar.py
+```
+
+```bash
+python evaluacion/evaluar.py --casos evaluacion/casos_reservados.json --repeticiones 3
+```
+
+```bash
+python evaluacion/evaluar.py --solo COT-01,ALC-02 --repeticiones 1
+```
+
+`evaluacion/casos_desarrollo.json` (30 casos) es el **set de desarrollo**: sirve para probar y ajustar. Los resultados que se reporten deben salir de un **set reservado** escrito por otra persona del equipo y no usado para ajustar el prompt, con el mismo formato (`mensajes` y `esperado`: `tipo_final`, `herramientas`, `cotizacion`, `cotiza`, `deriva`, `contiene`, `no_contiene`).
+
+### Pruebas automatizadas
+
+Corren en una carpeta temporal y no tocan `globex.db`:
 
 ```bash
 pip install pytest
@@ -278,7 +314,8 @@ Casos funcionales de referencia por WhatsApp:
 - [x] Experiencia de usuario: Globix, botones y listas de WhatsApp, "escribiendo…", confirmación de datos
 - [ ] Resumen automático del caso al derivar al asesor
 - [x] Plan de evaluación con KPIs de calidad del modelo ([docs/plan_evaluacion.md](docs/plan_evaluacion.md))
-- [ ] Script de evaluación con el LLM real sobre un set reservado (3 repeticiones por caso)
+- [x] Script de evaluación con el LLM real y reporte de depuración (`evaluacion/evaluar.py`)
+- [ ] Set reservado de conversaciones escrito por el equipo
 - [x] Registrar en SQLite las herramientas llamadas y sus argumentos
 - [x] Medir costo y latencia por turno (`/api/metricas` y panel admin)
 - [ ] Registro de tiempos para medir el KPI de ≤ 60 min

@@ -262,12 +262,16 @@ _MONTO = re.compile(
 )
 
 
-def revisar_respuesta_libre(texto: Optional[str], textos_cliente: Iterable[str]) -> Optional[str]:
+def revisar_respuesta_libre(
+    texto: Optional[str], textos_cliente: Iterable[str], montos_permitidos: Iterable[float] = ()
+) -> Optional[str]:
     """Revisa una respuesta libre del LLM antes de enviarla.
 
     Devuelve el motivo del bloqueo ("codigo", "enlace", "muy_larga",
     "monto_no_dado") o None si la respuesta puede enviarse. No aplica a los
     textos armados por código (cotización, FAQ, derivaciones).
+    `montos_permitidos` son montos que el propio sistema usa en ejemplos
+    (p. ej. "Laptop Lenovo, $650, 2.5 kg"), que no cuentan como inventados.
     """
     if not texto:
         return None
@@ -277,7 +281,7 @@ def revisar_respuesta_libre(texto: Optional[str], textos_cliente: Iterable[str])
         return "enlace"
     if len(texto) > LARGO_MAXIMO_RESPUESTA:
         return "muy_larga"
-    numeros_cliente = numeros_en_texto(textos_cliente)
+    numeros_cliente = numeros_en_texto(textos_cliente) + [float(m) for m in montos_permitidos]
     for m in _MONTO.finditer(texto):
         token = m.group(1) or m.group(2)
         if not any(_cerca(v, n) for v in _interpretar_numero(token) for n in numeros_cliente):

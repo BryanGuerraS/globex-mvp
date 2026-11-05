@@ -105,3 +105,42 @@ def test_prompt_define_alcance_y_pregunta_de_peso_corta():
     assert "fuera_de_alcance" in prompt
     assert 'con este texto exacto: "¿Cuánto pesa aproximadamente en kg?"' in prompt
     assert "fuera_de_alcance" in {t["function"]["name"] for t in main.TOOLS}
+
+
+# ---------- Regresiones encontradas por la evaluación (05/11) ----------
+
+def test_ejemplo_del_prompt_no_se_bloquea(turno):
+    """FAL-03: '¿Qué producto…? Ejemplo: Laptop Lenovo, $650, 2.5 kg' no es un precio inventado."""
+    pedido = "¿Qué producto quieres traer, cuál es su precio en USD y cuánto pesa en kg? Ejemplo: 'Laptop Lenovo, $650, 2.5 kg'"
+    enviados = turno("al_ejemplo", "Quiero cotizar un envío", [_respuesta(content=pedido)])
+    assert [p["text"]["body"] for p in enviados if p.get("type") == "text"] == [pedido]
+
+
+def test_monto_permitido_explicito():
+    assert revisar_respuesta_libre("Ejemplo: $650", ["hola"], montos_permitidos=[650]) is None
+    assert revisar_respuesta_libre("Te sale $45", ["hola"], montos_permitidos=[650]) == "monto_no_dado"
+
+
+def test_reintenta_si_groq_rechaza_la_llamada_a_herramienta(turno):
+    error = RuntimeError("Error code: 400 - {'error': {'code': 'tool_use_failed'}}")
+    enviados = turno(
+        "al_reintento", "laptop de 650 dólares, 2.5 kg",
+        [error, _respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
+                                                  {"valor_producto_usd": 650, "peso_kg": 2.5})])],
+    )
+    cuerpos = [p["interactive"]["body"]["text"] for p in enviados if p.get("type") == "interactive"]
+    assert cuerpos and "COTIZACIÓN ESTIMADA" in cuerpos[0]
+
+
+def test_otros_errores_no_se_reintentan(turno):
+    enviados = turno("al_sin_reintento", "hola", [RuntimeError("timeout"), _respuesta(content="no debería llegar")])
+    assert [p["text"]["body"] for p in enviados if p.get("type") == "text"] == [main.RESPUESTA_ERROR]
+
+
+def test_parametros_opcionales_aceptan_null():
+    for tool in main.TOOLS:
+        params = tool["function"]["parameters"]
+        requeridos = set(params.get("required", []))
+        for nombre, spec in params.get("properties", {}).items():
+            if nombre not in requeridos and spec.get("type") != "number":
+                assert spec["type"] == ["string", "null"], (tool["function"]["name"], nombre)

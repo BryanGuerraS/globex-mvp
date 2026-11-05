@@ -168,7 +168,7 @@ TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "tema": {"type": "string", "description": "Tema ajeno, en 2-4 palabras."}
+                    "tema": {"type": ["string", "null"], "description": "Tema ajeno, en 2-4 palabras."}
                 },
             },
         },
@@ -215,7 +215,7 @@ TOOLS = [
                         "description": "Peso en kilogramos.",
                     },
                     "producto": {
-                        "type": "string",
+                        "type": ["string", "null"],
                         "description": "Nombre corto del producto (ej: 'laptop Lenovo', 'iPhone 15').",
                     },
                 },
@@ -249,7 +249,7 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "codigo_tracking": {
-                        "type": "string",
+                        "type": ["string", "null"],
                         "description": "El número de tracking o tienda si fue mencionado.",
                     }
                 },
@@ -265,7 +265,7 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "motivo": {
-                        "type": "string",
+                        "type": ["string", "null"],
                         "description": "Frase breve con lo que pidió el cliente.",
                     }
                 },
@@ -281,7 +281,7 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "detalle": {
-                        "type": "string",
+                        "type": ["string", "null"],
                         "description": "Detalle del producto a traer por viajero.",
                     }
                 },
@@ -571,6 +571,8 @@ def nombre_para_saludo(chat_id: str, nombre_perfil: str) -> Optional[str]:
 
 
 RESPUESTA_ERROR = "Disculpa, tuve un inconveniente interno al procesar tu consulta. ¿Podrías repetirla?"
+# Montos que aparecen en los ejemplos del prompt y de la bienvenida ("$650", "$900")
+MONTOS_EJEMPLO = (650, 900)
 TEXTO_RECUPERACION = "Disculpa, no logré entenderte 😅. Elige una opción o pide hablar con un asesor:"
 TEXTO_FUERA_DE_ALCANCE = (
     "Eso está fuera de lo que puedo ayudarte 😊. Soy Globix y te ayudo con tus importaciones "
@@ -709,6 +711,30 @@ def ejecutar_herramienta(
     return {"error": f"La herramienta '{nombre_funcion}' no existe."}, None
 
 
+def _es_tool_use_failed(error: Exception) -> bool:
+    """Groq rechaza (400 tool_use_failed) llamadas con argumentos mal formados,
+    p. ej. 'valor_producto_usc' en vez de 'valor_producto_usd'."""
+    return "tool_use_failed" in str(error)
+
+
+async def _llamar_llm(history: List[Dict], intentos: int = 2):
+    """Llama al LLM; si Groq rechaza la llamada a herramienta por formato, reintenta."""
+    for intento in range(intentos):
+        try:
+            return await asyncio.to_thread(
+                client.chat.completions.create,
+                model=MODEL,
+                messages=history,
+                tools=TOOLS,
+                tool_choice="auto",
+                temperature=0.2,
+            )
+        except Exception as e:
+            if intento == intentos - 1 or not _es_tool_use_failed(e):
+                raise
+            print(f"🔁 [LLM] Llamada a herramienta mal formada; reintento ({e.__class__.__name__})")
+
+
 # Momento en que llegó el primer mensaje de cada lote (para la latencia que percibe el cliente)
 llegada_buffer: Dict[str, float] = {}
 
@@ -815,14 +841,7 @@ async def _procesar_turno(
 
         for _ in range(MAX_RONDAS_HERRAMIENTAS):
             inicio_llm = time.perf_counter()
-            ai_response = await asyncio.to_thread(
-                client.chat.completions.create,
-                model=MODEL,
-                messages=history,
-                tools=TOOLS,
-                tool_choice="auto",
-                temperature=0.2,
-            )
+            ai_response = await _llamar_llm(history)
             medidor.registrar_llamada_llm(ai_response, (time.perf_counter() - inicio_llm) * 1000)
             response_message = ai_response.choices[0].message
 
@@ -830,7 +849,7 @@ async def _procesar_turno(
                 bot_reply = limpiar_respuesta_llm(response_message.content)
                 medidor.tipo_respuesta = "libre"
                 # Capa 2: revisión determinista de la respuesta libre antes de enviarla
-                motivo = revisar_respuesta_libre(bot_reply, textos_cliente)
+                motivo = revisar_respuesta_libre(bot_reply, textos_cliente, MONTOS_EJEMPLO)
                 if motivo:
                     medidor.tipo_respuesta = f"bloqueado:{motivo}"
                     print(f"🛑 [Revisión de salida] Respuesta bloqueada en [{chat_id}] ({motivo}): {bot_reply!r}")
