@@ -11,6 +11,13 @@ class GlobexPricingEngine:
     TRAMITE_ADUANERO: float = 9.0  # $9 tarifa fija de trámite
     TASA_IMPUESTO_SUNAT: float = 0.2271957  # ~22.72% (Ad-Valorem 4% + IGV/IPM 18%)
     UMBRAL_EXONERACION_SUNAT: float = 200.0  # Menores a $200 no pagan tributos
+    PESO_MINIMO_KG: float = 1.0  # Bajo 1 kg se cobra 1 kg; desde ahí, proporcional
+    LIMITE_COTIZACION_AUTOMATICA: float = 1200.0  # Por encima, cotiza un asesor
+
+    @classmethod
+    def requiere_asesor(cls, valor_producto: float) -> bool:
+        """True si el valor supera el límite del cálculo automático."""
+        return valor_producto > cls.LIMITE_COTIZACION_AUTOMATICA
 
     @classmethod
     def calcular(cls, valor_producto: float, peso_kg: float) -> Dict[str, float]:
@@ -20,8 +27,9 @@ class GlobexPricingEngine:
                 "El valor del producto y el peso deben ser mayores a cero."
             )
 
-        # 1. Costo de flete y envío
-        costo_flete = round(peso_kg * cls.FLETE_POR_KG, 2)
+        # 1. Costo de flete y envío (con peso mínimo facturable)
+        peso_facturable = max(peso_kg, cls.PESO_MINIMO_KG)
+        costo_flete = round(peso_facturable * cls.FLETE_POR_KG, 2)
         costo_envio = round(costo_flete + cls.TRAMITE_ADUANERO, 2)
 
         # 2. Tributos e impuestos de importación
@@ -37,6 +45,8 @@ class GlobexPricingEngine:
         return {
             "valor_producto": valor_producto,
             "peso_kg": peso_kg,
+            "peso_facturable_kg": peso_facturable,
+            "costo_flete": costo_flete,
             "costo_envio": costo_envio,
             "tributos_aprox": tributos,
             "costo_total": costo_total,
@@ -46,11 +56,18 @@ class GlobexPricingEngine:
     @classmethod
     def formatear_mensaje_whatsapp(cls, calculo: Dict[str, float]) -> str:
         """Genera el mensaje con formato ejecutivo y disclaimer para WhatsApp."""
+        peso = calculo["peso_kg"]
+        peso_facturable = calculo.get("peso_facturable_kg", peso)
+        detalle_peso = (
+            f"{peso} kg"
+            if peso_facturable == peso
+            else f"{peso} kg, se cobra el mínimo de {peso_facturable:g} kg"
+        )
         msg = (
             f"📦 *COTIZACIÓN ESTIMADA GLOBEX*\n"
             f"────────────────────────\n"
             f"• *Costo del Producto:* ${calculo['valor_producto']:,.2f} USD\n"
-            f"• *Costo de Envío:* ${calculo['costo_envio']:,.2f} USD ({calculo['peso_kg']} kg)\n"
+            f"• *Costo de Envío:* ${calculo['costo_envio']:,.2f} USD ({detalle_peso})\n"
         )
 
         if calculo["aplica_impuesto"]:

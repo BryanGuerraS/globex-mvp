@@ -109,15 +109,17 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
     # 3. Tabla de Desglose Financiero y Aduanero
     val_prod = calculo.get("valor_producto", 0.0)
     peso = calculo.get("peso_kg", 0.0)
-    flete = round(peso * 9.0, 2)
-    tramite = 9.0
+    # Montos tomados del motor (no se recalculan aquí)
+    peso_facturable = calculo.get("peso_facturable_kg", peso)
+    flete = calculo.get("costo_flete", round(peso_facturable * 9.0, 2))
+    tramite = round(calculo.get("costo_envio", flete + 9.0) - flete, 2)
     tributos = calculo.get("tributos_aprox", 0.0)
     total = calculo.get("costo_total", 0.0)
 
     tabla_cotizacion = [
         ["CONCEPTO", "DETALLE / TASA", "IMPORTE (USD)"],
         ["Valor Declarado del Producto (FOB)", f"Mercancía declarada ({peso} kg)", f"$ {val_prod:,.2f}"],
-        ["Flete Aéreo Internacional", f"{peso} kg × $9.00 USD/kg", f"$ {flete:,.2f}"],
+        ["Flete Aéreo Internacional", f"{peso_facturable:g} kg × $9.00 USD/kg", f"$ {flete:,.2f}"],
         ["Trámite y Manejo Documentario", "Tarifa fija de almacén y guía", f"$ {tramite:,.2f}"],
     ]
 

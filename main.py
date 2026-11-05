@@ -34,6 +34,7 @@ from knowledge_base import buscar_faq_comercial
 from pdf_generator import buscar_ultimo_pdf, generar_pdf_cotizacion
 from pricing_engine import GlobexPricingEngine
 from product_catalog import buscar_peso_producto
+from validaciones import validar_argumentos_cotizacion
 
 load_dotenv()
 init_db()
@@ -113,6 +114,13 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 3. PREGUNTAS GENERALES (FAQs):
    Si preguntan por dirección de Miami, plazos de entrega, envíos a provincias o formas de pago, usa 'consultar_faq_comercial'.
 
+4. ATENCIÓN HUMANA:
+   Si el cliente pide hablar con un asesor, una persona o un humano, o que lo llamen, llama a 'derivar_a_asesor'.
+   No derives si esas palabras aparecen con otro sentido (ej.: "uso personal", "¿cómo se llama?", "me llamo Ana", "es para una persona de Arequipa").
+
+5. MONTOS Y PESOS:
+   Si el cliente escribe el valor o el peso en palabras ("mil dólares", "medio kilo"), conviértelo a número al llamar a 'calcular_cotizacion'.
+
 REGLAS DE FORMATO Y ESTILO:
 - Respuestas breves: Máximo 2 a 3 oraciones por mensaje.
 - Deja saltos de línea limpios entre ideas.
@@ -185,6 +193,22 @@ TOOLS = [
                     "codigo_tracking": {
                         "type": "string",
                         "description": "El número de tracking o tienda si fue mencionado.",
+                    }
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "derivar_a_asesor",
+            "description": "Transfiere el chat a un asesor humano y silencia el bot. Úsala solo cuando el cliente pide explícitamente hablar con un asesor, una persona o un humano, o que lo llamen.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "motivo": {
+                        "type": "string",
+                        "description": "Frase breve con lo que pidió el cliente.",
                     }
                 },
             },
@@ -271,35 +295,126 @@ async def send_meta_whatsapp_message(to_recipient: str, message: str):
             print(f"❌ Error de conexión al enviar con Meta: {e}")
 
 
+RESPUESTA_ERROR = "Disculpa, tuve un inconveniente interno al procesar tu consulta. ¿Podrías repetirla?"
+RESPUESTA_DERIVACION = (
+    "Entendido. He transferido tu solicitud a tu asesor asignado para que continúe la atención "
+    "directamente por este chat. Se comunicará contigo a la brevedad."
+)
+# Máximo de llamadas al LLM por mensaje del cliente (evita bucles de herramientas).
+MAX_RONDAS_HERRAMIENTAS = 3
+
+
+def ejecutar_herramienta(
+    nombre_funcion: str,
+    argumentos_json: str,
+    chat_id: str,
+    texto_consolidado: str,
+    textos_cliente: List[str],
+    estado: Dict,
+):
+    """Ejecuta una herramienta pedida por el LLM.
+
+    Devuelve (resultado_para_llm, respuesta_final). Si respuesta_final no es None,
+    ese texto (armado por código) es lo que se envía al cliente; si es None, el
+    resultado vuelve al LLM para que continúe la conversación.
+    """
+    try:
+        args = json.loads(argumentos_json or "{}")
+        if not isinstance(args, dict):
+            raise ValueError("los argumentos no son un objeto")
+    except (json.JSONDecodeError, ValueError) as e:
+        return {"error": f"Argumentos inválidos: {e}"}, None
+
+    # RAG DE PESOS: el resultado vuelve al LLM para que pida o calcule
+    if nombre_funcion == "consultar_peso_producto":
+        info_prod = buscar_peso_producto(str(args.get("nombre_producto", "")))
+        if info_prod and info_prod.get("peso_kg"):
+            estado["pesos_referenciales"].append(float(info_prod["peso_kg"]))
+        return (info_prod if info_prod else {"encontrado": False}), None
+
+    # CÁLCULO DETERMINISTA COURIER (argumentos validados en código)
+    if nombre_funcion == "calcular_cotizacion":
+        if estado["resultado_calculo"] is not None:
+            return {"error": "Ya se emitió una cotización en este mensaje."}, None
+        validacion = validar_argumentos_cotizacion(
+            args, textos_cliente, estado["pesos_referenciales"]
+        )
+        if isinstance(validacion, str):
+            print(f"🚫 [Validación] Cotización rechazada para [{chat_id}]: {validacion}")
+            return {"error": validacion}, None
+        val, peso = validacion
+        if GlobexPricingEngine.requiere_asesor(val):
+            print(f"💼 [Tope USD 1 200] Valor {val} supera el cálculo automático en [{chat_id}]")
+            actualizar_clasificacion_chat(
+                chat_id, servicio="Cotización Courier (alto valor)", estado="Listo para Asesor", paso=4
+            )
+            actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+            return {"derivado": True}, (
+                f"Por el valor de tu compra (más de USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}), "
+                "un asesor de Globex preparará tu cotización personalizada y te escribirá por este chat a la brevedad."
+            )
+        resultado = GlobexPricingEngine.calcular(val, peso)
+        estado["resultado_calculo"] = resultado
+        actualizar_clasificacion_chat(chat_id, servicio="Cotización Courier", paso=3)
+        respuesta = GlobexPricingEngine.formatear_mensaje_whatsapp(resultado)
+        if any(abs(peso - p) < 1e-9 for p in estado["pesos_referenciales"]):
+            respuesta = f"ℹ️ *Peso estimado con caja:* ~{peso} kg\n\n" + respuesta
+        return {"cotizacion_emitida": True}, respuesta
+
+    # BASE DE CONOCIMIENTO (FAQs)
+    if nombre_funcion == "consultar_faq_comercial":
+        info_faq = buscar_faq_comercial(texto_consolidado) or buscar_faq_comercial(
+            str(args.get("tema", ""))
+        )
+        respuesta = (
+            info_faq["contenido"]
+            if info_faq
+            else "Globex realiza envíos de USA a Perú en 5 a 7 días hábiles. ¿Deseas cotizar algún producto?"
+        )
+        return {"respondido": True}, respuesta
+
+    # SEGUIMIENTO
+    if nombre_funcion == "clasificar_como_seguimiento":
+        actualizar_clasificacion_chat(
+            chat_id, servicio="Seguimiento Courier", estado="Listo para Asesor", paso=4
+        )
+        actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+        return {"derivado": True}, (
+            "📦 He registrado tu consulta de seguimiento. Tu asesor asignado revisará "
+            "el estado de tu paquete en almacén y te responderá a la brevedad por aquí."
+        )
+
+    # VIAJERO
+    if nombre_funcion == "clasificar_como_viajero":
+        actualizar_clasificacion_chat(
+            chat_id, servicio="Cotización Viajero", estado="Listo para Asesor", paso=4
+        )
+        actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+        return {"derivado": True}, (
+            "🧳 La modalidad de *Viajero* depende del cupo y fecha de vuelos programados. "
+            "He transferido tu solicitud a nuestro asesor especializado para confirmarte disponibilidad."
+        )
+
+    # ESCAPE A ATENCIÓN HUMANA (lo decide el LLM según la intención del cliente)
+    if nombre_funcion == "derivar_a_asesor":
+        print(
+            f"👨‍💼 [Escape Hatch] Cliente [{chat_id}] solicitó atención humana "
+            f"(motivo: {args.get('motivo', '')})."
+        )
+        actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+        return {"derivado": True}, RESPUESTA_DERIVACION
+
+    print(f"⚠️ [Tool Calling] Herramienta desconocida: {nombre_funcion}")
+    return {"error": f"La herramienta '{nombre_funcion}' no existe."}, None
+
+
 async def procesar_mensaje_consolidado(
     chat_id: str, sender_name: str, texto_consolidado: str
 ):
     print(f"\n🚀 Procesando consolidado de [{chat_id}]: '{texto_consolidado}'")
 
-    # 🛑 1. ESCAPE HATCH HUMANO INMEDIATO (T13 / F42)
-    palabras_escape = [
-        "humano",
-        "asesor",
-        "persona",
-        "operador",
-        "llámame",
-        "llamar",
-        "hablar con alguien",
-    ]
-    if any(palabra in texto_consolidado.lower() for palabra in palabras_escape):
-        print(
-            f"👨‍💼 [Escape Hatch] Cliente [{chat_id}] solicitó atención humana directa."
-        )
-        actualizar_estado_chat(
-            chat_id=chat_id, nuevo_estado="Listo para Asesor", bot_activo=0
-        )
-        bot_reply = (
-            "Entendido. He transferido tu solicitud a tu asesor asignado para que continúe la atención "
-            "directamente por este chat. Se comunicará contigo a la brevedad."
-        )
-        registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
-        await send_meta_whatsapp_message(chat_id, bot_reply)
-        return
+    # 🛑 El escape a atención humana (T13 / F42) lo decide el LLM con la
+    # herramienta 'derivar_a_asesor', según la intención y no por palabras sueltas.
 
     # 🛡️ 2. GUARDRAIL DE MERCANCÍA RESTRINGIDA / SUNAT (CE11, CE12, F28, F31)
     alerta_aduanera = verificar_mercancia_restringida(texto_consolidado)
@@ -333,139 +448,90 @@ async def procesar_mensaje_consolidado(
     history = get_or_create_history(chat_id)
     history.append({"role": "user", "content": texto_consolidado})
 
-    resultado_calculo = None
+    inicio_turno = len(history)
+    estado = {"resultado_calculo": None, "pesos_referenciales": []}
+    textos_cliente = [
+        m["content"]
+        for m in history
+        if m.get("role") == "user" and isinstance(m.get("content"), str)
+    ]
 
     try:
-        # Llamada en hilo separado para no bloquear el servidor
-        ai_response = await asyncio.to_thread(
-            client.chat.completions.create,
-            model=MODEL,
-            messages=history,
-            tools=TOOLS,
-            tool_choice="auto",
-            temperature=0.2,
-        )
+        bot_reply = None
+        respuestas_finales: List[str] = []
 
-        response_message = ai_response.choices[0].message
+        for _ in range(MAX_RONDAS_HERRAMIENTAS):
+            ai_response = await asyncio.to_thread(
+                client.chat.completions.create,
+                model=MODEL,
+                messages=history,
+                tools=TOOLS,
+                tool_choice="auto",
+                temperature=0.2,
+            )
+            response_message = ai_response.choices[0].message
 
-        if response_message.tool_calls:
-            tool_call = response_message.tool_calls[0]
-            nombre_funcion = tool_call.function.name
-            args = json.loads(tool_call.function.arguments)
+            if not response_message.tool_calls:
+                bot_reply = response_message.content
+                break
 
-            # RAG DE PESOS
-            if nombre_funcion == "consultar_peso_producto":
-                prod_busqueda = args.get("nombre_producto", "")
-                info_prod = buscar_peso_producto(prod_busqueda)
-
-                history.append(
-                    {
-                        "role": "assistant",
-                        "content": None,
-                        "tool_calls": [tool_call],
-                    }
+            # Se registran TODAS las llamadas y cada una recibe su respuesta "tool",
+            # como exige la API para que el historial siga siendo válido.
+            history.append(
+                {
+                    "role": "assistant",
+                    "content": response_message.content,
+                    "tool_calls": [
+                        {
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments,
+                            },
+                        }
+                        for tc in response_message.tool_calls
+                    ],
+                }
+            )
+            for tool_call in response_message.tool_calls:
+                resultado_para_llm, respuesta_final = ejecutar_herramienta(
+                    tool_call.function.name,
+                    tool_call.function.arguments,
+                    chat_id,
+                    texto_consolidado,
+                    textos_cliente,
+                    estado,
                 )
                 history.append(
                     {
                         "role": "tool",
                         "tool_call_id": tool_call.id,
-                        "name": nombre_funcion,
-                        "content": json.dumps(
-                            info_prod if info_prod else {"encontrado": False}
-                        ),
+                        "name": tool_call.function.name,
+                        "content": json.dumps(resultado_para_llm, ensure_ascii=False),
                     }
                 )
+                if respuesta_final:
+                    respuestas_finales.append(respuesta_final)
 
-                segunda_respuesta = await asyncio.to_thread(
-                    client.chat.completions.create,
-                    model=MODEL,
-                    messages=history,
-                    tools=TOOLS,
-                    temperature=0.2,
-                )
+            # Cotización, FAQ o derivación: la respuesta la arma el código, no el LLM.
+            if respuestas_finales:
+                bot_reply = "\n\n".join(respuestas_finales)
+                break
 
-                msg_2 = segunda_respuesta.choices[0].message
-                if (
-                    msg_2.tool_calls
-                    and msg_2.tool_calls[0].function.name
-                    == "calcular_cotizacion"
-                ):
-                    args_calc = json.loads(
-                        msg_2.tool_calls[0].function.arguments
-                    )
-                    val = float(args_calc.get("valor_producto_usd", 0))
-                    peso = float(args_calc.get("peso_kg", 0))
-                    resultado_calculo = GlobexPricingEngine.calcular(val, peso)
-                    actualizar_clasificacion_chat(
-                        chat_id, servicio="Cotización Courier", paso=3
-                    )
-                    bot_reply = f"ℹ️ *Peso estimado con caja:* ~{peso} kg\n\n" + GlobexPricingEngine.formatear_mensaje_whatsapp(
-                        resultado_calculo
-                    )
-                else:
-                    bot_reply = msg_2.content
-
-            # CÁLCULO DETERMINISTA COURIER
-            elif nombre_funcion == "calcular_cotizacion":
-                val = float(args.get("valor_producto_usd", 0))
-                peso = float(args.get("peso_kg", 0))
-                resultado_calculo = GlobexPricingEngine.calcular(val, peso)
-                actualizar_clasificacion_chat(
-                    chat_id, servicio="Cotización Courier", paso=3
-                )
-                bot_reply = GlobexPricingEngine.formatear_mensaje_whatsapp(
-                    resultado_calculo
-                )
-
-            # BASE DE CONOCIMIENTO (FAQs)
-            elif nombre_funcion == "consultar_faq_comercial":
-                info_faq = buscar_faq_comercial(texto_consolidado)
-                bot_reply = (
-                    info_faq["contenido"]
-                    if info_faq
-                    else "Globex realiza envíos de USA a Perú en 5 a 7 días hábiles. ¿Deseas cotizar algún producto?"
-                )
-
-            # SEGUIMIENTO
-            elif nombre_funcion == "clasificar_como_seguimiento":
-                actualizar_clasificacion_chat(
-                    chat_id,
-                    servicio="Seguimiento Courier",
-                    estado="Listo para Asesor",
-                    paso=4,
-                )
-                actualizar_estado_chat(
-                    chat_id, nuevo_estado="Listo para Asesor", bot_activo=0
-                )
-                bot_reply = (
-                    "📦 He registrado tu consulta de seguimiento. Tu asesor asignado revisará "
-                    "el estado de tu paquete en almacén y te responderá a la brevedad por aquí."
-                )
-
-            # VIAJERO
-            elif nombre_funcion == "clasificar_como_viajero":
-                actualizar_clasificacion_chat(
-                    chat_id,
-                    servicio="Cotización Viajero",
-                    estado="Listo para Asesor",
-                    paso=4,
-                )
-                actualizar_estado_chat(
-                    chat_id, nuevo_estado="Listo para Asesor", bot_activo=0
-                )
-                bot_reply = (
-                    "🧳 La modalidad de *Viajero* depende del cupo y fecha de vuelos programados. "
-                    "He transferido tu solicitud a nuestro asesor especializado para confirmarte disponibilidad."
-                )
-
-            history.append({"role": "assistant", "content": bot_reply})
-        else:
-            bot_reply = response_message.content
-            history.append({"role": "assistant", "content": bot_reply})
+        if not bot_reply:
+            bot_reply = RESPUESTA_ERROR
+        history.append({"role": "assistant", "content": bot_reply})
+        resultado_calculo = estado["resultado_calculo"]
 
     except Exception as e:
         print(f"❌ Error al procesar mensaje: {e}")
-        bot_reply = "Disculpa, tuve un inconveniente interno al procesar tu consulta. ¿Podrías repetirla?"
+        # Deshace mensajes de herramientas a medias: un tool_call sin respuesta
+        # rompería todas las llamadas siguientes de este chat.
+        del history[inicio_turno:]
+        resultado_calculo = None
+        bot_reply = RESPUESTA_ERROR
+        history.append({"role": "assistant", "content": bot_reply})
 
     # 📄 GENERAR PROFORMA PDF SI HUBO COTIZACIÓN
     if resultado_calculo:

@@ -38,12 +38,13 @@ Meta WhatsApp Cloud API ── POST firmado (X-Hub-Signature-256) ──┐
                                   ┌───────────────── Backend FastAPI (main.py) · Render ─────────────────┐
                                   │ 1. Valida firma, descarta duplicados y responde 200 de inmediato     │
                                   │ 2. Debounce de 5 s (une mensajes seguidos del mismo cliente)         │
-                                  │ 3. Escape a humano · interruptor de silencio (bot_activo)            │
+                                  │ 3. Interruptor de silencio (bot_activo)                              │
                                   │ 4. Guardrail de mercancía restringida (guardrails.py)                │
                                   │ 5. LLM con tool calling (Groq · openai/gpt-oss-120b)                 │
                                   │      ├─ consultar_peso_producto  → product_catalog.py                │
                                   │      ├─ calcular_cotizacion      → pricing_engine.py (determinista)  │
                                   │      ├─ consultar_faq_comercial  → knowledge_base.py                 │
+                                  │      ├─ derivar_a_asesor         → escape a atención humana          │
                                   │      └─ clasificar_como_seguimiento / clasificar_como_viajero        │
                                   │ 6. Proforma PDF (pdf_generator.py) · registro en SQLite (database.py)│
                                   │ 7. Respuesta al cliente vía Graph API                                │
@@ -54,7 +55,7 @@ Meta WhatsApp Cloud API ── POST firmado (X-Hub-Signature-256) ──┐
                                          Consola de asesores · Streamlit (dashboard.py) · Streamlit Cloud
 ```
 
-**Principio de diseño:** el LLM solo interpreta la intención y extrae datos; **todo cálculo lo hace el motor** en Python.
+**Principio de diseño:** el LLM solo interpreta la intención y extrae datos; **todo cálculo lo hace el motor** en Python. Antes de llegar al motor, [`validaciones.py`](validaciones.py) comprueba que el valor y el peso sean mayores a cero y que aparezcan en los mensajes del cliente (el peso también puede venir del catálogo); si no, el LLM debe volver a preguntar.
 
 ### Despliegue
 
@@ -73,21 +74,23 @@ Implementado en [`pricing_engine.py`](pricing_engine.py). Reglas vigentes en el 
 
 | Concepto | Regla |
 | :-- | :-- |
-| Flete | `peso_kg × USD 9` |
+| Flete | `peso_kg × USD 9`, con mínimo de 1 kg (bajo 1 kg se cobra 1 kg; desde ahí, proporcional) |
 | Trámite | USD 9 fijo |
 | Costo de envío | Flete + trámite |
 | Tributos | USD 0 si el valor del producto es ≤ USD 200 |
 | | Si supera USD 200: `≈ 22.72 % × (valor + costo de envío)` |
 | Total | Valor + costo de envío + tributos |
+| Tope automático | Si el valor supera USD 1 200, no se cotiza: el chat pasa a un asesor |
 
 Ejemplos verificados con el motor:
 
 | Valor | Peso | Envío | Tributos | Total |
 | --: | --: | --: | --: | --: |
+| USD 150 | 0.45 kg (se cobra 1 kg) | USD 18.00 | USD 0.00 | **USD 168.00** |
 | USD 150 | 1.2 kg | USD 19.80 | USD 0.00 | **USD 169.80** |
 | USD 1 000 | 2.5 kg | USD 31.50 | USD 234.35 | **USD 1 265.85** |
 
-> ⚠️ **Reglas en revisión con Globex.** Están pendientes de confirmar el peso mínimo de 1 kg, el tope de USD 1 200 para el cálculo automático, el TAX de tienda (7 %), la tasa de tributos y la vigencia de la cotización. No se cambian sin la confirmación de Globex.
+> ⚠️ **Reglas en revisión con Globex.** Están pendientes de confirmar el TAX de tienda (7 %), la tasa de tributos y la vigencia de la cotización. No se cambian sin la confirmación de Globex.
 
 ---
 
@@ -95,7 +98,8 @@ Ejemplos verificados con el motor:
 
 - **Debounce de 5 s:** si el cliente escribe en varios mensajes seguidos, el bot los une y responde una sola vez.
 - **Mensajes no textuales:** ante audios, fotos, documentos o videos, el bot avisa que atiende por texto y deja el registro para el asesor.
-- **Escape a humano:** si el cliente pide un asesor, el bot se silencia (`bot_activo = 0`), marca el chat como *Listo para Asesor* y deja de responder.
+- **Escape a humano:** el LLM decide si el cliente realmente pide hablar con una persona (herramienta `derivar_a_asesor`), en lugar de buscar palabras sueltas: "quiero hablar con un asesor" deriva, "es para uso personal" no. Al derivar, el bot se silencia (`bot_activo = 0`) y marca el chat como *Listo para Asesor*.
+- **Montos en palabras:** el cliente puede escribir "mil dólares" o "medio kilo"; el LLM lo convierte a número y la validación lo reconoce.
 - **Interruptor de silencio:** mientras un asesor atiende desde la consola, el bot no responde encima.
 - **Guardrail de mercancía:** perfumes, cosméticos o vitaminas (DIGEMID) y vapes, armas o pirotecnia (prohibidos) no se cotizan automáticamente; se derivan.
 - **Deduplicación:** los reintentos de Meta con el mismo `wamid` se ignoran.
@@ -212,6 +216,8 @@ Casos funcionales de referencia por WhatsApp:
 | CP05 | Guardrail DIGEMID | *"Quiero traer 3 perfumes por $150"* | No cotiza, explica la restricción y deriva al asesor |
 | CP06 | Mercancía prohibida | *"Quiero importar unos vapes"* | Rechaza el envío por normativa |
 | CP07 | Escape a humano | *"Quiero hablar con un asesor"* | Silencia el bot y marca el chat como *Listo para Asesor* |
+| CP10 | Tope de USD 1 200 | *"Una laptop de 1500 dólares que pesa 2 kg"* | No cotiza; deriva al asesor |
+| CP11 | Monto en palabras | *"Un celular de mil dólares que pesa medio kilo"* | Cotiza con valor USD 1 000 y cobra el mínimo de 1 kg |
 | CP08 | Respuesta del asesor | Enviar un mensaje desde la consola | El cliente lo recibe en WhatsApp y el bot sigue en silencio |
 | CP09 | Descarga de proforma | *Descargar Proforma PDF* en la consola | Se descarga la última proforma del chat |
 
@@ -221,7 +227,8 @@ Casos funcionales de referencia por WhatsApp:
 
 - [x] Migración de GREEN-API a Meta WhatsApp Cloud API
 - [x] Seguridad: firma de webhooks, API key del dashboard, PDFs sin teléfono
-- [ ] Manejar todas las llamadas a herramientas del LLM y validar valor y peso antes del motor
+- [x] Manejar todas las llamadas a herramientas del LLM y validar valor y peso antes del motor
+- [x] Peso mínimo de 1 kg y tope de USD 1 200 para la cotización automática
 - [ ] Responder también los mensajes que llegan con más de 10 min de retraso
 - [ ] Reconstruir el historial de conversación desde SQLite tras un reinicio
 - [ ] Resumen automático del caso al derivar al asesor
