@@ -1,176 +1,230 @@
-# 📦 GLOBEX ATIENDE — ASISTENTE INTELIGENTE & PANEL OPERATIVO MULTI-AGENTE
+# 📦 Globex Atiende
 
-**Proyecto Integrador (Capstone Project I)**  
-*Maestría en Ciencia de Datos e Inteligencia Artificial — Universidad de Ingeniería y Tecnología (UTEC)*  
-*Fecha: Octubre 2026*  
+Chatbot de **primera atención comercial por WhatsApp** para Globex Courier (importaciones EE. UU. → Perú), con consola web para los asesores.
 
----
+> Proyecto Integrador (Capstone Project I) · Maestría en Ciencia de Datos e Inteligencia Artificial · UTEC
+> Equipo 1: Juan Carlos Vasquez, Anyela Rosado, Bryan Guerra · 2026
 
-## 🎯 1. RESUMEN EJECUTIVO Y PROBLEMA DE NEGOCIO
-
-Globex Courier es una empresa peruana especializada en la importación y transporte de compras desde Estados Unidos (almacén en Miami, Florida) hacia Lima y provincias de Perú. 
-
-### El Problema Operativo (As-Is):
-* **Sobrecarga Operativa:** Los cuatro (4) asesores comerciales de Globex deben alternar simultáneamente entre la atención de consultas comerciales en WhatsApp y la logística física de recepción, pesaje y despacho de paquetes en almacén (*"ellos no solo asesoran, sino también embarcan"*).
-* **Fuga de Clientes (Leads Perdidos):** En el histórico de 3 años de la empresa, **1,804 prospectos calificados (41% de los evaluables)** no volvieron a escribir tras experimentar una primera respuesta tardía (> 60 minutos).
-* **Línea Base:** Solo el 32% de los prospectos recibe una primera respuesta útil dentro de la primera hora.
-* **Impacto Económico Cuantificado:** Asumiendo una tasa de conversión conservadora del 35% y un margen promedio de $45 USD por envío, la fuga representa una pérdida estimada de **~$9,465 USD anuales**.
-
-### La Solución Implementada (To-Be):
-**Globex Atiende** es un Producto de Datos *End-to-End* que automatiza el 60% de las consultas estándar (*Happy Path*): orienta al usuario, recupera especificaciones técnicas de productos mediante RAG, calcula cotizaciones determinísticas con impuestos de aduana SUNAT exactos, genera proformas formales en PDF y transfiere leads listos para compra a una consola web para los asesores comerciales.
+El bot responde con información comercial autorizada, pide los datos que faltan, emite una **cotización preliminar calculada por reglas (no por IA)** y deriva el caso al asesor. Negociación, cierre de venta, pagos, embarques y liquidación quedan **fuera de alcance**: son trabajo del asesor.
 
 ---
 
-## 🏛️ 2. ARQUITECTURA TÉCNICA DEL SISTEMA
+## 1. Problema y objetivo
 
-El sistema opera bajo un desacoplamiento estricto de 5 capas:
+Los asesores de Globex atienden WhatsApp mientras también reciben, pesan y despachan paquetes, así que muchos prospectos esperan demasiado por una primera respuesta útil.
 
-[ CLIENTE EN WHATSAPP ] │ (Mensaje de texto, audio o foto) ▼ [ GREEN API GATEWAY
-] │ (Webhook HTTP POST en tiempo real) ▼ [ TÚNEL NGROK (Puerto 8000) ] │
-(Redirección segura a localhost) ▼ [ BACKEND FASTAPI (main.py) ] ◄──► [ BASE DE
-DATOS LOCAL (globex.db - SQLite) ] │ │ ├── [ Buffer Debounce 5s ] └── Registra
-mensajes, estados y tiempos ├── [ Guardrail Mercancía Restringida (DIGEMID /
-SUNAT) ] ├── [ Escape Hatch Humano Inmediato (T13) ] │ ▼ (Consulta con Tool /
-Function Calling) [ GROQ INFERENCE ENGINE (openai/gpt-oss-120b) ] │ ├── Tool 1:
-consultar_peso_producto() ──► [ RAG Catálogo (product_catalog.py) ] ├── Tool 2:
-calcular_cotizacion() ──► [ Motor SUNAT (pricing_engine.py) ] └── Tool 3:
-consultar_faq_globex() ──► [ Base de Conocimiento (knowledge_base.py) ] │ ▼
-(Generación de Proforma) [ GENERADOR DE PDF (pdf_generator.py - ReportLab) ] │
-├── Despacho automático de respuesta a WhatsApp (Green API) └──
-Sincronización en vivo cada 3s (@st.fragment) │ ▼ [ CONSOLA MULTI-AGENTE
-STREAMLIT (dashboard.py) ] • Login para los 4 Asesores + Director (Diego) •
-Tarjetas de clientes con avance del Happy Path (🟢 🟢 🟡 ⚪ ⚪) • Semáforo de tiempo
-de espera (🟢 <15m, 🟡 15-45m, 🔴 >45m) • Envío de respuestas manuales limpias a
-WhatsApp • Carga y despacho de Proformas PDF oficiales con 1 clic
+| Indicador (histórico de 3 años) | Valor |
+| :-- | :-- |
+| Prospectos que no volvieron a escribir tras una respuesta tardía (> 60 min) | 1 804 (41 % de los evaluables) |
+| Prospectos con primera respuesta útil en ≤ 60 min (línea base) | 32 % |
+| Pérdida anual estimada (conversión 35 %, margen USD 45/envío) | ~USD 9 465 |
 
+**KPIs del MVP**
+
+- **Uso:** % de leads atendidos correctamente.
+- **Impacto:** % de leads con primera atención útil en ≤ 60 min. Un saludo automático **no** cuenta como atención útil.
+- **Contrapeso:** cotizaciones emitidas indebidamente, derivaciones exitosas y pausa del bot durante la atención humana.
 
 ---
 
-## ⚙️ 3. REGLAS DE NEGOCIO Y MOTOR MATEMÁTICO (SUNAT)
+## 2. Arquitectura
 
-Para evitar alucinaciones numéricas del LLM, el cálculo financiero es 100% determinístico en Python puro (`pricing_engine.py`):
+```text
+Cliente (WhatsApp)
+      │
+      ▼
+Meta WhatsApp Cloud API ── POST firmado (X-Hub-Signature-256) ──┐
+                                                                ▼
+                                  ┌───────────────── Backend FastAPI (main.py) · Render ─────────────────┐
+                                  │ 1. Valida firma, descarta duplicados y responde 200 de inmediato     │
+                                  │ 2. Debounce de 5 s (une mensajes seguidos del mismo cliente)         │
+                                  │ 3. Escape a humano · interruptor de silencio (bot_activo)            │
+                                  │ 4. Guardrail de mercancía restringida (guardrails.py)                │
+                                  │ 5. LLM con tool calling (Groq · openai/gpt-oss-120b)                 │
+                                  │      ├─ consultar_peso_producto  → product_catalog.py                │
+                                  │      ├─ calcular_cotizacion      → pricing_engine.py (determinista)  │
+                                  │      ├─ consultar_faq_comercial  → knowledge_base.py                 │
+                                  │      └─ clasificar_como_seguimiento / clasificar_como_viajero        │
+                                  │ 6. Proforma PDF (pdf_generator.py) · registro en SQLite (database.py)│
+                                  │ 7. Respuesta al cliente vía Graph API                                │
+                                  │ 8. Worker de recordatorio a los 20 min                               │
+                                  └──────────────────────────────┬───────────────────────────────────────┘
+                                                                 │ /api/*  (header X-API-Key)
+                                                                 ▼
+                                         Consola de asesores · Streamlit (dashboard.py) · Streamlit Cloud
+```
 
-1. **Costo de Envío Internacional:**  
-   $$\text{Flete} = (\text{Peso en Kg} \times \$9.00\text{ USD}) + \$9.00\text{ USD (Trámite documentario fijo)}$$
+**Principio de diseño:** el LLM solo interpreta la intención y extrae datos; **todo cálculo lo hace el motor** en Python.
 
-2. **Base Imponible Aduanera (Valor CIF):**  
-   $$\text{CIF} = \text{Valor Comercial Declarado (FOB)} + \text{Costo de Envío}$$
+### Despliegue
 
-3. **Tributos de Importación SUNAT (Decreto Legislativo N° 1053):**  
-   * **Si Valor FOB $\le$ $200 USD:** Impuesto SUNAT = **$0.00 USD** (Exoneración legal de envíos courier).
-   * **Si Valor FOB $>$ $200 USD:** Impuesto SUNAT = **22.72% sobre el valor CIF** (4% Ad-Valorem + 16% IGV + 2% IPM).
-
-4. **Total de la Operación:**  
-   $$\text{Total} = \text{Valor Producto} + \text{Costo Envío} + \text{Tributos SUNAT}$$
+| Componente | Plataforma | Notas |
+| :-- | :-- | :-- |
+| Backend FastAPI | Render (plan gratuito), deploy automático desde `main` | `Procfile`: `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+| Keep-alive | cron-job.org, cada 10 min | Evita que Render duerma el servicio tras 15 min sin tráfico |
+| Dashboard | Streamlit Cloud | Se conecta al backend con `BACKEND_URL` y `DASHBOARD_API_KEY` |
+| Base de datos | SQLite (`globex.db`) | El disco de Render es efímero: datos y PDF se pierden en cada deploy o reinicio (aceptado en fase de pruebas) |
 
 ---
 
-## 🛡️ 4. MEJORES PRÁCTICAS CONVERSACIONALES Y GUARDRAILS
+## 3. Motor de cotización
 
-* **Debouncing con Ventana Deslizante (5.0 segundos):** Si el cliente envía fragmentos seguidos (*"Hola"* $\rightarrow$ *"quiero una laptop"* $\rightarrow$ *"cuesta 800"*), el servidor espera 5 segundos, une los textos y responde una sola vez de forma coherente.
-* **Tratamiento de No-Textuales (OBS01 / T11):** Si el usuario envía audios, fotos o PDFs, el bot no se cuelga ni se queda mudo; avisa educadamente que atiende por texto y almacena la referencia para el asesor en el dashboard.
-* **Escape Hatch Humano Inmediato (T13 / F42):** Si el usuario escribe *"asesor"*, *"persona"* o *"humano"*, el bot se silencia (`bot_activo = 0`), marca el chat como `Listo para Asesor` y cede el control a la consola de Streamlit.
-* **Interruptor de Silencio:** Mientras un asesor conversa con el cliente desde la web, el LLM queda bloqueado para no responder encima de la persona.
-* **Guardrail de Mercancía Restringida (CE11 / CE12 / F28 / F31):** Bloquea automáticamente la cotización de perfumes, cosméticos y vitaminas (alerta de DIGEMID), y de vapes, armas y pirotecnia (prohibición SUNAT), derivando el caso a revisión humana.
-* **Auto-Nudge de 20 Minutos:** Tarea en segundo plano que detecta cotizaciones en silencio por más de 20 minutos y envía un mensaje proactivo para evitar la pérdida del lead.
+Implementado en [`pricing_engine.py`](pricing_engine.py). Reglas vigentes en el código:
+
+| Concepto | Regla |
+| :-- | :-- |
+| Flete | `peso_kg × USD 9` |
+| Trámite | USD 9 fijo |
+| Costo de envío | Flete + trámite |
+| Tributos | USD 0 si el valor del producto es ≤ USD 200 |
+| | Si supera USD 200: `≈ 22.72 % × (valor + costo de envío)` |
+| Total | Valor + costo de envío + tributos |
+
+Ejemplos verificados con el motor:
+
+| Valor | Peso | Envío | Tributos | Total |
+| --: | --: | --: | --: | --: |
+| USD 150 | 1.2 kg | USD 19.80 | USD 0.00 | **USD 169.80** |
+| USD 1 000 | 2.5 kg | USD 31.50 | USD 234.35 | **USD 1 265.85** |
+
+> ⚠️ **Reglas en revisión con Globex.** Están pendientes de confirmar el peso mínimo de 1 kg, el tope de USD 1 200 para el cálculo automático, el TAX de tienda (7 %), la tasa de tributos y la vigencia de la cotización. No se cambian sin la confirmación de Globex.
 
 ---
 
-## 📁 5. ESTRUCTURA DEL REPOSITORIO
+## 4. Comportamiento conversacional
+
+- **Debounce de 5 s:** si el cliente escribe en varios mensajes seguidos, el bot los une y responde una sola vez.
+- **Mensajes no textuales:** ante audios, fotos, documentos o videos, el bot avisa que atiende por texto y deja el registro para el asesor.
+- **Escape a humano:** si el cliente pide un asesor, el bot se silencia (`bot_activo = 0`), marca el chat como *Listo para Asesor* y deja de responder.
+- **Interruptor de silencio:** mientras un asesor atiende desde la consola, el bot no responde encima.
+- **Guardrail de mercancía:** perfumes, cosméticos o vitaminas (DIGEMID) y vapes, armas o pirotecnia (prohibidos) no se cotizan automáticamente; se derivan.
+- **Deduplicación:** los reintentos de Meta con el mismo `wamid` se ignoran.
+- **Recordatorio a los 20 min:** si una cotización queda sin respuesta, se envía un mensaje de seguimiento.
+
+---
+
+## 5. Seguridad
+
+| Control | Cómo funciona |
+| :-- | :-- |
+| Webhook de Meta | Solo acepta POST con firma `X-Hub-Signature-256` válida (`META_APP_SECRET`) |
+| Verificación del webhook | Requiere `META_VERIFY_TOKEN`; sin valor por defecto en el código |
+| API del dashboard | Todo `/api/*` exige el header `X-API-Key` (`DASHBOARD_API_KEY`) |
+| Falla cerrada | Si falta una de estas variables, el endpoint rechaza la petición y el arranque lo avisa en los logs |
+| Proformas PDF | El nombre del archivo usa un identificador hasheado, no el teléfono del cliente |
+| Secretos y datos | `.env`, `globex.db` y `cotizaciones_pdf/` están en `.gitignore` |
+
+---
+
+## 6. Estructura del repositorio
 
 ```text
 globex-mvp/
-├── .env.example            # Plantilla de variables de entorno (sin secretos)
-├── .gitignore              # Protección contra subida de .env, DB y PDFs
-├── requirements.txt        # Dependencias congeladas del proyecto
-├── README.md               # Documentación integral de arquitectura y uso
-│
-├── main.py                 # Backend FastAPI: Webhook Green API, orquestador de IA y Debounce
-├── database.py             # Capa de datos SQLite (globex.db), migraciones y métricas
-├── pricing_engine.py       # Motor determinístico de fletes y aranceles SUNAT
-├── product_catalog.py      # Base de conocimiento RAG para deducción de pesos de productos
-├── guardrails.py           # Escudo aduanero: detección de mercancías DIGEMID / Prohibidas
-├── knowledge_base.py       # Fichas comerciales oficiales (Dirección Miami, Plazos, Provincias)
-├── pdf_generator.py        # Generador de proformas corporativas en PDF (ReportLab)
-│
-├── dashboard.py            # Consola web Streamlit para los 4 asesores comerciales
-└── cotizaciones_pdf/       # Directorio local generado con los PDFs de cotización
+├── main.py              # Backend FastAPI: webhook de Meta, orquestación del LLM, API del dashboard
+├── pricing_engine.py    # Motor determinista de cotización
+├── guardrails.py        # Detección de mercancía restringida o prohibida
+├── knowledge_base.py    # Respuestas comerciales aprobadas (FAQ)
+├── product_catalog.py   # Pesos referenciales de productos
+├── pdf_generator.py     # Proforma PDF (ReportLab)
+├── database.py          # SQLite: chats, mensajes, estados, deduplicación
+├── dashboard.py         # Consola de asesores (Streamlit)
+├── tests/               # Pruebas automatizadas (pytest)
+├── requirements.txt
+├── Procfile             # Comando de arranque en Render
+└── .env.example         # Plantilla de variables de entorno (sin secretos)
+```
 
-🚀 6. GUÍA DE INSTALACIÓN Y DESPLIEGUE LOCAL
+---
 
-Requisitos Previos:
+## 7. Instalación local
 
-  - Python 3.10 o superior instalado.
-  - Cuenta gratuita en Groq Console (console.groq.com).
-  - Cuenta en Green API (green-api.com) con instancia de WhatsApp vinculada.
-  - ngrok instalado (ngrok.com).
+**Requisitos:** Python 3.10+, una API key de [Groq](https://console.groq.com) y una app de Meta con WhatsApp Cloud API configurada (ver el *Manual técnico de integración con Meta Cloud API* del equipo).
 
-Paso 1: Clonar el repositorio y configurar el entorno
-
-git clone https://github.com/TU_USUARIO/globex-mvp.git
+```bash
+git clone https://github.com/BryanGuerraS/globex-mvp.git
 cd globex-mvp
-
-# Crear y activar entorno virtual
 python -m venv .venv
+```
 
-# En Windows:
-.venv\Scripts\Activate.ps1
-# En Linux/Mac:
-source .venv/bin/activate
+Activar el entorno (Windows PowerShell: `.venv\Scripts\Activate.ps1`; Linux/Mac: `source .venv/bin/activate`) e instalar dependencias:
 
-# Instalar dependencias
+```bash
 pip install -r requirements.txt
+```
 
-Paso 2: Configurar las variables de entorno (.env)
+### Variables de entorno
 
-Crear el archivo .env en la raíz copiando el archivo de ejemplo:
+Copiar `.env.example` a `.env` y completar:
 
-cp .env.example .env
+| Variable | Uso |
+| :-- | :-- |
+| `GROQ_API_KEY`, `GROQ_MODEL` | Acceso al LLM |
+| `META_PHONE_NUMBER_ID`, `META_WABA_ID` | Identificadores de la línea y la cuenta de WhatsApp Business |
+| `META_ACCESS_TOKEN` | Token permanente de usuario del sistema |
+| `META_VERIFY_TOKEN` | Token que se registra en Meta al configurar el webhook |
+| `META_APP_SECRET` | App Secret de Meta (App settings → Basic), valida la firma de los webhooks |
+| `DASHBOARD_API_KEY` | Clave compartida entre backend y dashboard |
+| `BACKEND_URL` | URL del backend que usa el dashboard |
 
-Llenar las claves correspondientes en .env:
+Para generar `DASHBOARD_API_KEY`:
 
-GROQ_API_KEY=gsk_tu_clave_de_groq_aqui
-GROQ_MODEL=openai/gpt-oss-120b
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
 
-GREEN_API_URL=https://7107.api.greenapi.com
-GREEN_ID_INSTANCE=tu_id_instance
-GREEN_API_TOKEN=tu_api_token_aqui
+En producción, las mismas variables van en **Render → Environment** (backend) y en **Streamlit Cloud → Secrets** (`BACKEND_URL` y `DASHBOARD_API_KEY`).
 
-Paso 3: Ejecutar los servicios (3 terminales requeridas)
+### Ejecutar
 
-  - Terminal 1: Servidor Backend (FastAPI)
+Backend:
 
-    uvicorn main:app --reload --port 8000
+```bash
+uvicorn main:app --reload --port 8000
+```
 
-  - Terminal 2: Túnel Seguro de Red (ngrok)
+Dashboard (en otra terminal):
 
-    ngrok http 8000
+```bash
+streamlit run dashboard.py
+```
 
-    Nota: Copiar la URL pública generada (ej. https://xxxx.ngrok-free.dev) y
-    pegarla en el panel de Green API en la casilla Webhook Url agregando
-    /green-api-webhook al final, activando la opción Receive webhooks on
-    incoming messages and files en Yes.
+Para que Meta alcance un backend local hace falta exponerlo con un túnel HTTPS (por ejemplo, ngrok) y registrar esa URL + `/meta-webhook` en la configuración del webhook de Meta. Las credenciales de acceso a la consola se solicitan al equipo.
 
-  - Terminal 3: Consola Web de Asesores (Streamlit)
+---
 
-    streamlit run dashboard.py --server.port 8501
+## 8. Pruebas
 
-    Acceso al Dashboard: Navegar a http://localhost:8501 e ingresar con las
-    credenciales:
+Pruebas automatizadas (corren en una carpeta temporal y no tocan `globex.db`):
 
-      - Usuario: carlos (o diego, maria, juan, bryan)
-      - Contraseña: 123
+```bash
+pip install pytest
+python -m pytest tests -q
+```
 
-🧪 7. CASOS DE PRUEBA Y VALIDACIÓN FUNCIONAL
+Casos funcionales de referencia por WhatsApp:
 
-| ID       | Escenario de Prueba               | Mensaje en WhatsApp                                                      | Comportamiento Esperado                                                                            |
-| :------- | :-------------------------------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
-| **CP01** | Cotización Directa (Happy Path)   | *"Hola, quiero traer una laptop de 1000 dólares que pesa 2.5 kg a Lima"* | Calcula Flete ($31.50) + SUNAT ($211.63) = Total $1,143.13 USD. Genera proforma PDF correlativa.   |
-| **CP02** | RAG de Pesos Automático           | *"Quiero cotizar un iPhone 15 Pro Max de 1100 dólares"*                  | Recupera peso referencial con empaque (\~0.45 kg) del catálogo y emite cotización sin repreguntar. |
-| **CP03** | Consulta de Dirección Miami (F21) | *"¿Cuál es la dirección del almacén en Miami para poner en Amazon?"*     | Devuelve plantilla exacta de Doral, Florida con Zip Code 33122 y formato de código GX.             |
-| **CP04** | Consulta de Plazos y Provincias   | *"¿Cuánto demora en llegar y envían a Trujillo?"*                        | Informa 5 a 7 días hábiles desde recepción en Miami y confirma envío nacional vía Shalom/Olva.     |
-| **CP05** | Guardrail DIGEMID (CE11)          | *"Quiero traer 3 perfumes de Victoria's Secret por $150"*                | Bloquea cotización automática, advierte regulación de DIGEMID y transfiere al asesor.              |
-| **CP06** | Guardrail Mercancía Prohibida     | *"Quiero importar unos vapes con pods"*                                  | Rechaza el traslado por normativa aduanera SUNAT y seguridad aérea.                                |
-| **CP07** | Salida Humana Directa (T13)       | *"Quiero hablar con un asesor por favor"*                                | Silencia el bot (`bot_activo = 0`), avisa al usuario y asigna el chat a la consola web.            |
-| **CP08** | Intervención del Asesor           | Escribir desde el Dashboard y pulsar *"Enviar Mensaje a WhatsApp"*       | Llega el mensaje limpio al celular del cliente sin emojis de sistema.                              |
-| **CP09** | Despacho de Documento PDF         | Pulsar *"Enviar Proforma Oficial a WhatsApp"* en Dashboard               | El cliente recibe el archivo PDF adjunto en su chat de WhatsApp.                                   |
+| ID | Escenario | Mensaje | Resultado esperado |
+| :-- | :-- | :-- | :-- |
+| CP01 | Cotización directa | *"Quiero traer una laptop de 1000 dólares que pesa 2.5 kg"* | Envío USD 31.50 + tributos USD 234.35 = **USD 1 265.85**; genera proforma PDF |
+| CP02 | Peso referencial | *"Quiero cotizar un iPhone 15 Pro Max de 1100 dólares"* | Toma el peso del catálogo y cotiza sin repreguntar |
+| CP03 | Dirección en Miami | *"¿Cuál es la dirección del almacén para poner en Amazon?"* | Devuelve la dirección oficial del almacén |
+| CP04 | Plazos y provincias | *"¿Cuánto demora y envían a Trujillo?"* | Informa plazo de entrega y envío a provincias |
+| CP05 | Guardrail DIGEMID | *"Quiero traer 3 perfumes por $150"* | No cotiza, explica la restricción y deriva al asesor |
+| CP06 | Mercancía prohibida | *"Quiero importar unos vapes"* | Rechaza el envío por normativa |
+| CP07 | Escape a humano | *"Quiero hablar con un asesor"* | Silencia el bot y marca el chat como *Listo para Asesor* |
+| CP08 | Respuesta del asesor | Enviar un mensaje desde la consola | El cliente lo recibe en WhatsApp y el bot sigue en silencio |
+| CP09 | Descarga de proforma | *Descargar Proforma PDF* en la consola | Se descarga la última proforma del chat |
+
+---
+
+## 9. Hoja de ruta
+
+- [x] Migración de GREEN-API a Meta WhatsApp Cloud API
+- [x] Seguridad: firma de webhooks, API key del dashboard, PDFs sin teléfono
+- [ ] Manejar todas las llamadas a herramientas del LLM y validar valor y peso antes del motor
+- [ ] Responder también los mensajes que llegan con más de 10 min de retraso
+- [ ] Reconstruir el historial de conversación desde SQLite tras un reinicio
+- [ ] Resumen automático del caso al derivar al asesor
+- [ ] Registro de tiempos para medir el KPI de ≤ 60 min
+- [ ] 36 casos sintéticos de verificación del motor y evaluación conversacional del LLM
+- [ ] Credenciales del dashboard fuera del código
