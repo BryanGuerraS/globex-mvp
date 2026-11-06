@@ -132,6 +132,24 @@ def init_db():
         if "espera_limite_ms" not in [row["name"] for row in cursor.fetchall()]:
             cursor.execute("ALTER TABLE metricas_turno ADD COLUMN espera_limite_ms REAL DEFAULT 0")
 
+        # 3b'. Revisión del asesor (componente 5 del E3): validaciones de
+        # cotización y errores reportados, con quién y cuándo.
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS revisiones_asesor (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id TEXT,
+                tipo TEXT,
+                categoria TEXT,
+                nota TEXT,
+                mensaje_id INTEGER,
+                asesor TEXT,
+                cotizacion_total REAL,
+                timestamp TIMESTAMP
+            )
+        """
+        )
+
         # 3c. Valores antiguos: nombres de tipo de contacto y asesor de ejemplo
         cursor.execute("UPDATE chats SET tipo_contacto = 'Nuevo prospecto' WHERE tipo_contacto LIKE '%Prospecto Nuevo%'")
         cursor.execute("UPDATE chats SET tipo_contacto = 'Cliente recurrente' WHERE tipo_contacto LIKE '%Cliente Frecuente%'")
@@ -487,6 +505,43 @@ def obtener_metricas(desde: Optional[datetime] = None) -> List[Dict]:
             )
         else:
             cursor.execute("SELECT * FROM metricas_turno ORDER BY id")
+        return [dict(row) for row in cursor.fetchall()]
+
+
+def registrar_revision(
+    chat_id: str,
+    tipo: str,
+    asesor: str,
+    categoria: Optional[str] = None,
+    nota: Optional[str] = None,
+    mensaje_id: Optional[int] = None,
+    cotizacion_total: Optional[float] = None,
+) -> int:
+    """Guarda una revisión del asesor y devuelve su id."""
+    init_db()
+    with get_connection() as conn:
+        cursor = conn.execute(
+            """INSERT INTO revisiones_asesor
+               (chat_id, tipo, categoria, nota, mensaje_id, asesor, cotizacion_total, timestamp)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+            (chat_id, tipo, categoria, nota, mensaje_id, asesor, cotizacion_total, ahora()),
+        )
+        conn.commit()
+        return cursor.lastrowid
+
+
+def obtener_revisiones(chat_id: Optional[str] = None, desde: Optional[datetime] = None) -> List[Dict]:
+    init_db()
+    condiciones, params = [], []
+    if chat_id:
+        condiciones.append("chat_id = ?")
+        params.append(chat_id)
+    if desde:
+        condiciones.append("timestamp >= ?")
+        params.append(desde)
+    where = f"WHERE {' AND '.join(condiciones)}" if condiciones else ""
+    with get_connection() as conn:
+        cursor = conn.execute(f"SELECT * FROM revisiones_asesor {where} ORDER BY id", params)
         return [dict(row) for row in cursor.fetchall()]
 
 

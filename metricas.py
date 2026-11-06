@@ -234,3 +234,50 @@ def kpi_primera_atencion(
         "minutos_p95": _percentil(minutos, 95),
         "por_actor": por_actor,
     }
+
+
+# ------------------------------------- Revisión del asesor (componente 5 del E3)
+
+# Tipos de revisión que registra la consola.
+REVISION_VALIDADA = "cotizacion_validada"    # el asesor envió el PDF formal sin cambios
+REVISION_CORREGIDA = "cotizacion_corregida"  # la cotización de Globix tenía un error
+REVISION_ERROR = "error_reportado"           # error en cualquier otro mensaje de Globix
+TIPOS_REVISION = (REVISION_VALIDADA, REVISION_CORREGIDA, REVISION_ERROR)
+
+# Qué estuvo mal (lista corta para que el asesor no tenga que escribir).
+CATEGORIAS_ERROR = {
+    "dato_mal_extraido": "Dato mal extraído (producto, precio o peso)",
+    "no_debio_cotizar": "No debió cotizar",
+    "debio_derivar": "Debió derivar al asesor",
+    "no_debio_derivar": "No debió derivar",
+    "respuesta_incorrecta": "Respuesta incorrecta o desactualizada",
+    "tono": "Tono o forma",
+    "otro": "Otro",
+}
+
+
+def resumir_revisiones(filas: Iterable[Dict]) -> Dict:
+    """Cotizaciones validadas sin corrección (con IC 95 %) y errores por categoría.
+
+    Si un chat tiene varias revisiones de su cotización, cuenta la última.
+    """
+    filas = list(filas)
+    ultima_por_chat = {}
+    for f in filas:
+        if f.get("tipo") in (REVISION_VALIDADA, REVISION_CORREGIDA):
+            ultima_por_chat[f["chat_id"]] = f["tipo"]
+    revisadas = len(ultima_por_chat)
+    validadas = sum(1 for t in ultima_por_chat.values() if t == REVISION_VALIDADA)
+    errores: Dict[str, int] = {}
+    for f in filas:
+        if f.get("tipo") in (REVISION_CORREGIDA, REVISION_ERROR):
+            clave = f.get("categoria") or "otro"
+            errores[clave] = errores.get(clave, 0) + 1
+    return {
+        "cotizaciones_revisadas": revisadas,
+        "cotizaciones_validadas": validadas,
+        "porcentaje_validadas": validadas / revisadas if revisadas else None,
+        "ic95": list(clopper_pearson(validadas, revisadas)) if revisadas else None,
+        "errores_reportados": sum(errores.values()),
+        "errores_por_categoria": dict(sorted(errores.items(), key=lambda kv: -kv[1])),
+    }

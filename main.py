@@ -40,6 +40,8 @@ from database import (
     obtener_todos_los_chats,
     registrar_mensaje_entrante,
     registrar_mensaje_saliente,
+    obtener_revisiones,
+    registrar_revision,
 )
 from guardrails import verificar_mercancia_restringida
 from knowledge_base import buscar_faq_comercial, buscar_faq_por_tema
@@ -47,7 +49,16 @@ from pdf_generator import buscar_ultimo_pdf, generar_pdf_cotizacion
 from proforma_imagen import generar_imagen_proforma
 from pricing_engine import GlobexPricingEngine
 from product_catalog import buscar_peso_producto
-from metricas import MedidorTurno, kpi_primera_atencion, resumir as resumir_metricas
+from metricas import (
+    CATEGORIAS_ERROR,
+    REVISION_CORREGIDA,
+    REVISION_ERROR,
+    REVISION_VALIDADA,
+    MedidorTurno,
+    kpi_primera_atencion,
+    resumir as resumir_metricas,
+    resumir_revisiones,
+)
 from notificaciones import enviar_telegram, notificaciones_activas, texto_aviso
 from resumen_caso import construir_resumen
 from validaciones import (
@@ -426,6 +437,14 @@ async def _subir_media_meta(contenido: bytes, mime: str, nombre_archivo: str) ->
 async def send_meta_image(to_recipient: str, media_id: str, caption: str) -> bool:
     """Envía una imagen ya subida a Meta, con leyenda."""
     return await _enviar(to_recipient, {"type": "image", "image": {"id": media_id, "caption": caption}})
+
+
+async def send_meta_document(to_recipient: str, media_id: str, nombre_archivo: str, caption: str) -> bool:
+    """Envía un documento (PDF) ya subido a Meta, con leyenda."""
+    return await _enviar(
+        to_recipient,
+        {"type": "document", "document": {"id": media_id, "filename": nombre_archivo, "caption": caption}},
+    )
 
 
 async def enviar_proforma_imagen(chat_id: str, resultado: Dict, estado: Dict) -> bool:
@@ -1536,16 +1555,94 @@ async def api_enviar_mensaje_asesor(payload: MensajeAsesorPayload):
     registrar_mensaje_saliente(
         payload.chat_id, payload.nombre_asesor, payload.texto
     )
-    # El primer asesor que responde queda asignado (si el chat no tenía asesor)
-    chat = obtener_chat(payload.chat_id) or {}
+    _tomar_chat_asesor(payload.chat_id, payload.nombre_asesor)
+    return {"status": "sent"}
+
+
+def _tomar_chat_asesor(chat_id: str, nombre_asesor: str):
+    """El asesor que escribe toma el chat: se pausa Globix y, si no tenía asesor, queda asignado."""
+    chat = obtener_chat(chat_id) or {}
     actualizar_estado_chat(
-        payload.chat_id,
+        chat_id,
         "Listo para Asesor",
-        nuevo_asesor=None if chat.get("asesor_asignado") else payload.nombre_asesor,
+        nuevo_asesor=None if chat.get("asesor_asignado") else nombre_asesor,
         bot_activo=0,
     )
-    marcar_atencion_util(payload.chat_id, "asesor", "mensaje_asesor")
+    marcar_atencion_util(chat_id, "asesor", "mensaje_asesor")
+
+
+# 📄 Proforma formal: la imagen que envía Globix es preliminar (acordado con
+# Diego); el asesor la revisa y envía el PDF, que es la versión formal.
+TEXTO_PROFORMA_FORMAL = "📄 Te envío adjunto tu proforma *formal* de Globex."
+NOMBRE_PDF_CLIENTE = "Proforma_Globex.pdf"
+
+
+class AsesorChatPayload(BaseModel):
+    chat_id: str
+    nombre_asesor: str
+
+
+class RevisionPayload(BaseModel):
+    chat_id: str
+    nombre_asesor: str
+    tipo: str
+    categoria: str
+    nota: Optional[str] = None
+    mensaje_id: Optional[int] = None
+
+
+@app.post("/api/send-pdf", dependencies=[Depends(verificar_api_key)])
+async def api_enviar_proforma_pdf(payload: AsesorChatPayload):
+    """El asesor valida la cotización de Globix y envía el PDF formal al cliente."""
+    chat = obtener_chat(payload.chat_id)
+    ruta_pdf = buscar_ultimo_pdf(payload.chat_id)
+    if not chat or not chat.get("cotizacion_total") or not ruta_pdf:
+        raise HTTPException(status_code=404, detail="Proforma no encontrada")
+    with open(ruta_pdf, "rb") as f:
+        contenido = f.read()
+    media_id = await _subir_media_meta(contenido, "application/pdf", NOMBRE_PDF_CLIENTE)
+    if not media_id or not await send_meta_document(
+        payload.chat_id, media_id, NOMBRE_PDF_CLIENTE, TEXTO_PROFORMA_FORMAL
+    ):
+        raise HTTPException(status_code=502, detail="No se pudo enviar la proforma por WhatsApp")
+    registrar_mensaje_saliente(
+        payload.chat_id, payload.nombre_asesor, TEXTO_PROFORMA_FORMAL + " [Proforma PDF adjunta]"
+    )
+    _tomar_chat_asesor(payload.chat_id, payload.nombre_asesor)
+    registrar_revision(
+        payload.chat_id, REVISION_VALIDADA, payload.nombre_asesor,
+        cotizacion_total=chat.get("cotizacion_total"),
+    )
     return {"status": "sent"}
+
+
+@app.post("/api/revision", dependencies=[Depends(verificar_api_key)])
+def api_registrar_revision(payload: RevisionPayload):
+    """El asesor marca un error de Globix: en la cotización (corregida) o en otro mensaje."""
+    if payload.tipo not in (REVISION_CORREGIDA, REVISION_ERROR):
+        raise HTTPException(status_code=422, detail="Tipo de revisión inválido")
+    if payload.categoria not in CATEGORIAS_ERROR:
+        raise HTTPException(status_code=422, detail="Categoría inválida")
+    chat = obtener_chat(payload.chat_id)
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat no encontrado")
+    if payload.tipo == REVISION_CORREGIDA and not chat.get("cotizacion_total"):
+        raise HTTPException(status_code=422, detail="El chat no tiene cotización")
+    if payload.mensaje_id is not None and payload.mensaje_id not in {
+        m["id"] for m in obtener_mensajes_chat(payload.chat_id)
+    }:
+        raise HTTPException(status_code=422, detail="El mensaje no es de este chat")
+    nota = (payload.nota or "").strip()[:500] or None
+    id_revision = registrar_revision(
+        payload.chat_id, payload.tipo, payload.nombre_asesor, categoria=payload.categoria,
+        nota=nota, mensaje_id=payload.mensaje_id, cotizacion_total=chat.get("cotizacion_total"),
+    )
+    return {"status": "ok", "id": id_revision}
+
+
+@app.get("/api/revisiones/{chat_id}", dependencies=[Depends(verificar_api_key)])
+def api_revisiones_chat(chat_id: str):
+    return obtener_revisiones(chat_id=chat_id)
 
 
 @app.post("/api/update-chat-status", dependencies=[Depends(verificar_api_key)])
@@ -1583,6 +1680,7 @@ def api_metricas(horas: float = 24, ultimos: int = 20):
         "resumen": resumir_metricas(filas),
         "ultimos": filas[-max(0, ultimos):],
         "kpi_atencion": kpi_primera_atencion(obtener_todos_los_chats(), momento, desde),
+        "revisiones": resumir_revisiones(obtener_revisiones(desde=desde)),
     }
 
 
@@ -1595,6 +1693,7 @@ def api_limpiar_datos():
         cursor.execute("DELETE FROM messages;")
         cursor.execute("DELETE FROM chats;")
         cursor.execute("DELETE FROM metricas_turno;")
+        cursor.execute("DELETE FROM revisiones_asesor;")
         cursor.execute("VACUUM;")
         conn.commit()
 

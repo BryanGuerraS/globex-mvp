@@ -28,6 +28,8 @@ import httpx
 import pandas as pd
 import streamlit as st
 
+from metricas import CATEGORIAS_ERROR, REVISION_CORREGIDA, REVISION_ERROR, REVISION_VALIDADA
+
 load_dotenv()
 
 # URL base del backend en Render y key compartida (Streamlit Cloud: Secrets)
@@ -125,6 +127,39 @@ def enviar_mensaje(chat_id: str, texto: str) -> bool:
         r = api.post(
             f"{BACKEND_URL}/api/send-advisor-message",
             json={"chat_id": chat_id, "nombre_asesor": st.session_state.usuario_actual["nombre"], "texto": texto},
+        )
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def fetch_revisiones(chat_id: str) -> List[Dict]:
+    try:
+        r = api.get(f"{BACKEND_URL}/api/revisiones/{chat_id}")
+        return r.json() if r.status_code == 200 else []
+    except Exception:
+        return []
+
+
+def enviar_proforma_pdf(chat_id: str) -> bool:
+    """Valida la cotización de Globix y envía el PDF formal al cliente por WhatsApp."""
+    try:
+        r = api.post(
+            f"{BACKEND_URL}/api/send-pdf",
+            json={"chat_id": chat_id, "nombre_asesor": st.session_state.usuario_actual["nombre"]},
+            timeout=40,
+        )
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def registrar_revision(chat_id: str, tipo: str, categoria: str, nota: str, mensaje_id: Optional[int] = None) -> bool:
+    try:
+        r = api.post(
+            f"{BACKEND_URL}/api/revision",
+            json={"chat_id": chat_id, "nombre_asesor": st.session_state.usuario_actual["nombre"], "tipo": tipo,
+                  "categoria": categoria, "nota": nota, "mensaje_id": mensaje_id},
         )
         return r.status_code == 200
     except Exception:
@@ -533,13 +568,43 @@ def panel_detalle(chat: Dict):
     with st.container(border=True):
         st.markdown("**Acciones**")
         if chat.get("cotizacion_total"):
+            revision = estado_revision(chat["chat_id"])
+            if revision:
+                hora = _fecha(revision.get("timestamp"))
+                cuando = hora.strftime("%H:%M del %d/%m") if hora else ""
+                if revision["tipo"] == REVISION_VALIDADA:
+                    st.badge(f"Validada por {revision.get('asesor')} · {cuando}", icon=":material/verified:", color="green")
+                else:
+                    st.badge(f"Corregida por {revision.get('asesor')} · {cuando}", icon=":material/edit_note:", color="orange")
+                    st.caption(CATEGORIAS_ERROR.get(revision.get("categoria"), "")
+                               + (f": {revision['nota']}" if revision.get("nota") else ""))
+            else:
+                st.caption("Revisa la cotización de Globix: si está bien, envía el PDF formal; si no, corrígela.")
+            pdf = None
             try:
-                pdf = api.get(f"{BACKEND_URL}/api/download-pdf/{chat['chat_id']}")
-                if pdf.status_code == 200:
-                    st.download_button("Descargar proforma", data=pdf.content, file_name=f"Proforma_Globex_{chat['chat_id']}.pdf",
-                                       mime="application/pdf", icon=":material/download:", width="stretch")
+                respuesta_pdf = api.get(f"{BACKEND_URL}/api/download-pdf/{chat['chat_id']}")
+                pdf = respuesta_pdf.content if respuesta_pdf.status_code == 200 else None
             except Exception:
-                st.caption("Proforma no disponible.")
+                pass
+            if pdf:
+                validada = bool(revision and revision["tipo"] == REVISION_VALIDADA)
+                if st.button("Reenviar PDF" if validada else "Validar y enviar PDF", type="primary",
+                             icon=":material/send:", width="stretch",
+                             help="Envía la proforma formal en PDF al cliente por WhatsApp y registra la cotización como validada."):
+                    if enviar_proforma_pdf(chat["chat_id"]):
+                        st.toast("Proforma enviada por WhatsApp", icon=":material/check_circle:")
+                        st.rerun(scope="app")
+                    else:
+                        st.toast("No se pudo enviar la proforma", icon=":material/error:")
+                if st.button("Corregir cotización", icon=":material/edit:", width="stretch",
+                             help="La cotización de Globix tenía un error: regístralo (no se envía nada al cliente)."):
+                    dialogo_corregir(chat)
+                st.download_button("Descargar proforma", data=pdf, file_name=f"Proforma_Globex_{chat['chat_id']}.pdf",
+                                   mime="application/pdf", icon=":material/download:", width="stretch")
+            else:
+                st.caption("Proforma PDF no disponible (el servidor se reinició).")
+        if st.button("Reportar error de Globix", icon=":material/flag:", width="stretch"):
+            dialogo_reportar(chat)
         if st.button("Enviar recordatorio", icon=":material/notifications:", width="stretch"):
             # Texto aprobado 05/11: lo firma el asesor; nombre solo si el cliente lo dio
             cot = chat.get("cotizacion_total")
@@ -554,6 +619,60 @@ def panel_detalle(chat: Dict):
             if enviar_mensaje(chat["chat_id"], nudge):
                 st.toast("Recordatorio enviado", icon=":material/check_circle:")
                 st.rerun()
+
+
+def _campos_error(clave: str):
+    categoria = st.selectbox("¿Qué estuvo mal?", list(CATEGORIAS_ERROR), format_func=CATEGORIAS_ERROR.get,
+                             index=None, placeholder="Elige una opción", key=f"cat_{clave}")
+    nota = st.text_area("Nota (opcional)", max_chars=500, key=f"nota_{clave}",
+                        placeholder="Ej.: el cliente dijo 1.5 kg y Globix usó 15 kg")
+    return categoria, nota
+
+
+def _guardar_revision(chat_id: str, tipo: str, categoria: Optional[str], nota: str, mensaje_id=None):
+    if not categoria:
+        st.toast("Elige qué estuvo mal.", icon=":material/warning:")
+        return
+    if registrar_revision(chat_id, tipo, categoria, nota, mensaje_id):
+        st.toast("Revisión registrada", icon=":material/check_circle:")
+        st.rerun()
+    else:
+        st.error("No se pudo registrar la revisión.", icon=":material/error:")
+
+
+@st.dialog("Corregir cotización")
+def dialogo_corregir(chat: Dict):
+    st.caption("Marca qué estuvo mal en la cotización de Globix. No se envía nada al cliente: "
+               "luego respóndele tú con los datos correctos.")
+    categoria, nota = _campos_error(f"corr_{chat['chat_id']}")
+    with st.container(horizontal=True, horizontal_alignment="right"):
+        if st.button("Guardar", type="primary", icon=":material/save:"):
+            _guardar_revision(chat["chat_id"], REVISION_CORREGIDA, categoria, nota)
+
+
+@st.dialog("Reportar error de Globix")
+def dialogo_reportar(chat: Dict):
+    del_bot = [m for m in fetch_messages(chat["chat_id"]) if (m.get("emisor") or "").lower().startswith("bot")][-15:]
+    if not del_bot:
+        st.caption("Globix aún no ha enviado mensajes en este chat.")
+        return
+
+    def etiqueta(m):
+        hora = _fecha(m.get("timestamp"))
+        texto = " ".join(separar_opciones(m.get("texto") or "")[0].replace("*", "").split())
+        return f"{hora.strftime('%H:%M') if hora else ''} · {texto[:70]}{'…' if len(texto) > 70 else ''}"
+
+    mensaje = st.selectbox("Mensaje de Globix", del_bot[::-1], format_func=etiqueta, key=f"msg_{chat['chat_id']}")
+    categoria, nota = _campos_error(f"rep_{chat['chat_id']}")
+    with st.container(horizontal=True, horizontal_alignment="right"):
+        if st.button("Reportar", type="primary", icon=":material/flag:"):
+            _guardar_revision(chat["chat_id"], REVISION_ERROR, categoria, nota, mensaje["id"])
+
+
+def estado_revision(chat_id: str) -> Optional[Dict]:
+    """Última validación o corrección de la cotización de este chat."""
+    revs = [r for r in fetch_revisiones(chat_id) if r.get("tipo") in (REVISION_VALIDADA, REVISION_CORREGIDA)]
+    return revs[-1] if revs else None
 
 
 def pagina_bandeja():
@@ -658,6 +777,31 @@ def panel_kpi_atencion(kpi: Dict):
         st.caption(f"IC 95 %: {li:.0%}–{ls:.0%} sobre {kpi['leads_evaluables']} leads.")
 
 
+def panel_revision_asesor(rev: Dict):
+    """Componente 5 del E3: cotizaciones validadas por el asesor y errores reportados."""
+    with st.container(border=True):
+        st.markdown("**Revisión del asesor**")
+        if not rev or (not rev.get("cotizaciones_revisadas") and not rev.get("errores_reportados")):
+            st.caption("Aún no hay cotizaciones validadas ni errores reportados en este periodo.")
+            return
+        with st.container(horizontal=True):
+            if rev.get("cotizaciones_revisadas"):
+                li, ls = rev["ic95"]
+                st.metric("Cotizaciones validadas sin corrección", f"{rev['porcentaje_validadas']:.0%}", border=True,
+                          icon=":material/verified:",
+                          help=f"{rev['cotizaciones_validadas']} de {rev['cotizaciones_revisadas']} revisadas · "
+                               f"IC 95 % {li:.0%}–{ls:.0%} (Clopper-Pearson)")
+            st.metric("Errores reportados", rev.get("errores_reportados", 0), border=True, icon=":material/flag:")
+        if rev.get("errores_por_categoria"):
+            errores = pd.DataFrame([(CATEGORIAS_ERROR.get(c, c), n) for c, n in rev["errores_por_categoria"].items()],
+                                   columns=["Categoría", "Errores"])
+            st.bar_chart(errores, x="Categoría", y="Errores", horizontal=True, color=COLOR_MARCA, sort="-Errores",
+                         x_label="", y_label="Errores")
+        if rev.get("cotizaciones_revisadas"):
+            li, ls = rev["ic95"]
+            st.caption(f"IC 95 %: {li:.0%}–{ls:.0%} sobre {rev['cotizaciones_revisadas']} cotizaciones revisadas.")
+
+
 def pagina_metricas():
     with st.sidebar:
         st.markdown(f"**{st.session_state.usuario_actual['nombre']}**")
@@ -675,6 +819,7 @@ def pagina_metricas():
 
     datos = fetch_metricas(horas)
     panel_kpi_atencion(datos.get("kpi_atencion") or {})
+    panel_revision_asesor(datos.get("revisiones") or {})
     res = datos.get("resumen", {})
     if not res.get("turnos"):
         st.caption("Aún no hay turnos registrados en este periodo.")
