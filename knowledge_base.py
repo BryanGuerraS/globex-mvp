@@ -3,6 +3,7 @@
 Fichas KB01 a KB08 aprobadas según el Manual Funcional y Operativo.
 """
 
+import unicodedata
 from typing import Dict, Optional
 
 KB_GLOBEX = {
@@ -57,9 +58,32 @@ KB_GLOBEX = {
 }
 
 
+# Temas que el LLM pasa a 'consultar_faq_comercial' -> ficha
+TEMAS_FAQ = {
+    "direccion_miami": "direccion_miami",
+    "plazos_entrega": "plazos_entrega",
+    "plazos": "plazos_entrega",
+    "provincias": "cobertura_provincias",
+    "como_funciona": "como_funciona",
+    "pagos": "metodos_pago",
+}
+
+
+def _normalizar(texto: str) -> str:
+    """Minúsculas, sin tildes y con '_' como espacio: 'Cómo_compro' -> 'como compro'."""
+    sin_tildes = unicodedata.normalize("NFD", texto.lower())
+    sin_tildes = "".join(c for c in sin_tildes if unicodedata.category(c) != "Mn")
+    return sin_tildes.replace("_", " ")
+
+
+def buscar_faq_por_tema(tema: str) -> Optional[Dict[str, str]]:
+    clave = TEMAS_FAQ.get(str(tema or "").strip().lower())
+    return KB_GLOBEX[clave] if clave else None
+
+
 def buscar_faq_comercial(consulta: str) -> Optional[Dict[str, str]]:
     """Busca en las fichas aprobadas de Globex según la intención del cliente."""
-    texto = consulta.lower()
+    texto = _normalizar(consulta)
 
     if any(p in texto for p in ["direccion", "dirección", "casillero", "zip", "miami", "donde envio", "dónde envío"]):
         return KB_GLOBEX["direccion_miami"]

@@ -277,3 +277,51 @@ def test_chat_silenciado_no_muestra_escribiendo(webhook):
     main.actualizar_estado_chat("51900000206", "Listo para Asesor", bot_activo=0)
     _post_firmado(cliente, _payload("51900000206", "wamid.s1", {"type": "text", "text": {"body": "sigo aquí"}}))
     assert enviados == [] and encolados == []
+
+
+# ---------- Cierre después de una FAQ ----------
+
+def test_faq_termina_con_pregunta_y_botones_sin_asesor(turno):
+    _, enviados = turno("PE.faq1", "¿Cómo compro?",
+                        [_respuesta(tool_calls=[_tool_call("t1", "consultar_faq_comercial", {"tema": "como_funciona"})]),
+                         _respuesta(content="ok")])
+    textos, botones = _textos(enviados), _interactivos(enviados)
+    assert any("4 pasos" in t for t in textos)  # la FAQ va sola, sin botones
+    assert botones and botones[-1]["interactive"]["body"]["text"] == main.TEXTO_CIERRE_FAQ
+    ids = _ids_botones(botones[-1])
+    assert ids == ["cotizar", "otras"] and "asesor" not in ids  # asesor solo tras cotizar
+
+
+def test_faq_y_cotizacion_en_el_mismo_turno_usan_los_botones_de_cotizacion(turno):
+    _, enviados = turno("PE.faq2", "¿cuánto demora? y cotízame una laptop de 650 dólares, 2.5 kg",
+                        [_respuesta(tool_calls=[_tool_call("t1", "consultar_faq_comercial", {"tema": "plazos"}),
+                                                _tool_call("t2", "calcular_cotizacion",
+                                                           {"valor_producto_usd": 650, "peso_kg": 2.5})]),
+                         _respuesta(content="ok")])
+    assert all(_ids_botones(p) != [i for i, _ in main.BOTONES_POST_FAQ] for p in _interactivos(enviados))
+
+
+@pytest.mark.parametrize("consulta, ficha", [
+    ("¿Cómo compro?", "como_funciona"),
+    ("como_funciona", "como_funciona"),
+    ("¿Dónde envío mis compras?", "direccion_miami"),
+    ("¿Cuántos días demora?", "plazos_entrega"),
+])
+def test_faq_sin_tildes_ni_guiones(consulta, ficha):
+    from knowledge_base import KB_GLOBEX, buscar_faq_comercial
+    assert buscar_faq_comercial(consulta) is KB_GLOBEX[ficha]
+
+
+@pytest.mark.parametrize("tema, ficha", [
+    ("direccion_miami", "direccion_miami"), ("plazos_entrega", "plazos_entrega"),
+    ("provincias", "cobertura_provincias"), ("como_funciona", "como_funciona"), ("pagos", "metodos_pago"),
+])
+def test_faq_por_tema_del_llm(tema, ficha):
+    from knowledge_base import KB_GLOBEX, buscar_faq_por_tema
+    assert buscar_faq_por_tema(tema) is KB_GLOBEX[ficha]
+
+
+def test_asesor_solo_como_boton_tras_cotizar():
+    """El botón de asesor solo se ofrece después de una cotización (y tras dos errores seguidos)."""
+    assert "asesor" not in {i for i, _ in main.FILAS_OTRAS_CONSULTAS + main.BOTONES_MENU + main.BOTONES_POST_FAQ}
+    assert "asesor" in {i for i, _ in main.BOTONES_POST_COTIZACION}

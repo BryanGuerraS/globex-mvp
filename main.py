@@ -42,7 +42,7 @@ from database import (
     registrar_mensaje_saliente,
 )
 from guardrails import verificar_mercancia_restringida
-from knowledge_base import buscar_faq_comercial
+from knowledge_base import buscar_faq_comercial, buscar_faq_por_tema
 from pdf_generator import buscar_ultimo_pdf, generar_pdf_cotizacion
 from proforma_imagen import generar_imagen_proforma
 from pricing_engine import GlobexPricingEngine
@@ -479,6 +479,9 @@ async def marcar_leido_y_escribiendo(id_mensaje: str):
 BOTONES_MENU = [("cotizar", "Cotizar envío"), ("rastrear", "Rastrear paquete"), ("otras", "Otras consultas")]
 BOTONES_POST_COTIZACION = [("asesor", "Hablar con asesor"), ("cotizar_otro", "Cotizar otro"), ("como_compro", "¿Cómo compro?")]
 BOTONES_RECUPERACION = [("cotizar", "Cotizar envío"), ("rastrear", "Rastrear paquete"), ("asesor", "Hablar con asesor")]
+# Después de una FAQ: la respuesta va sola y luego esta pregunta con botones (aprobado 05/11)
+TEXTO_CIERRE_FAQ = "¿Te ayudo con algo más? 😊"
+BOTONES_POST_FAQ = [("cotizar", "Cotizar envío"), ("otras", "Otras consultas")]  # asesor solo tras cotizar
 FILAS_OTRAS_CONSULTAS = [
     ("faq_direccion", "Dirección en Miami"),
     ("faq_plazos", "Plazos de entrega"),
@@ -486,7 +489,6 @@ FILAS_OTRAS_CONSULTAS = [
     ("faq_como_funciona", "Cómo funciona"),
     ("faq_pagos", "Formas de pago"),
     ("viajero", "Modalidad viajero"),
-    ("asesor", "Hablar con un asesor"),
 ]
 # Lo que "dice" el cliente al tocar cada opción (entra al flujo normal como texto).
 TEXTO_POR_OPCION = {
@@ -773,14 +775,19 @@ def ejecutar_herramienta(
 
     # BASE DE CONOCIMIENTO (FAQs)
     if nombre_funcion == "consultar_faq_comercial":
-        info_faq = buscar_faq_comercial(texto_consolidado) or buscar_faq_comercial(
-            str(args.get("tema", ""))
+        # Primero el tema que eligió el LLM; si no es uno conocido, las palabras del cliente
+        info_faq = (
+            buscar_faq_por_tema(args.get("tema"))
+            or buscar_faq_comercial(texto_consolidado)
+            or buscar_faq_comercial(str(args.get("tema", "")))
         )
         respuesta = (
             info_faq["contenido"]
             if info_faq
             else "Globex realiza envíos de USA a Perú en 5 a 7 días hábiles. ¿Deseas cotizar algún producto?"
         )
+        if not estado.get("menu"):  # si en el mismo turno hubo cotización, mandan sus botones
+            estado["menu"] = BOTONES_POST_FAQ
         return {"respondido": True}, respuesta
 
     # SEGUIMIENTO
@@ -1108,6 +1115,11 @@ async def _procesar_turno(
     if not menu:
         registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
         await send_meta_whatsapp_message(chat_id, bot_reply)
+    elif menu == BOTONES_POST_FAQ:
+        # La respuesta va sola y la pregunta de cierre, con los botones, en otro mensaje
+        registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
+        await send_meta_whatsapp_message(chat_id, bot_reply)
+        await enviar_y_registrar_menu(chat_id, TEXTO_CIERRE_FAQ, menu)
     elif len(bot_reply) <= LIMITE_CUERPO_INTERACTIVO:
         registrar_mensaje_saliente(
             chat_id, "bot", texto_para_registro(bot_reply, menu), resultado_calculo

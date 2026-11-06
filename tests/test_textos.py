@@ -19,6 +19,7 @@ TEXTOS_FIJOS = {
     "fuera_de_alcance": main.TEXTO_FUERA_DE_ALCANCE,
     "error": main.RESPUESTA_ERROR,
     "recuperacion": main.TEXTO_RECUPERACION,
+    "cierre_faq": main.TEXTO_CIERRE_FAQ,
     "leyenda_proforma": main.LEYENDA_PROFORMA,
     "recordatorio": main.texto_recordatorio("Ana Pérez", 836.33),
     **{f"guardrail_{k}": v["mensaje"] for k, v in guardrails.RESTRICCIONES_ADUANA.items()},
