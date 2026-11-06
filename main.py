@@ -1401,27 +1401,36 @@ def texto_recordatorio(nombre_cliente: Optional[str], monto: float) -> str:
 
 
 # ⏰ TRABAJADOR DE FONDO: AUTO-NUDGE DE 20 MINUTOS
+MINUTOS_RECORDATORIO = 20
+EMISOR_RECORDATORIO = "bot (auto-recordatorio)"  # el dashboard lo muestra como "recordatorio automático"
+
+
+async def enviar_recordatorios_pendientes() -> int:
+    """Una pasada del auto-nudge: un solo recordatorio por lead que cotizó y lleva
+    20 min en silencio con el bot activo. Devuelve cuántos se entregaron."""
+    entregados = 0
+    for c in obtener_chats_para_recordatorio():
+        ultimo_msg = c.get("ultimo_mensaje_cliente_at")
+        if not ultimo_msg or calcular_tiempo_relativo(ultimo_msg)["minutos"] < MINUTOS_RECORDATORIO:
+            continue
+        chat_id = c["chat_id"]
+        msg_nudge = texto_recordatorio(c.get("nombre_cliente"), c["cotizacion_total"])
+        # Se marca aunque falle el envío: así no se reintenta cada minuto.
+        marcar_recordatorio_enviado(chat_id)
+        if await _enviar(chat_id, {"type": "text", "text": {"preview_url": False, "body": msg_nudge}}):
+            registrar_mensaje_saliente(chat_id, EMISOR_RECORDATORIO, msg_nudge)
+            print(f"⚡ [Auto-Nudge] Recordatorio enviado a [{chat_id}]")
+            entregados += 1
+        else:
+            print(f"⚠️ [Auto-Nudge] No se pudo entregar el recordatorio a [{chat_id}]")
+    return entregados
+
+
 async def tarea_fondo_recordatorios():
     while True:
+        await asyncio.sleep(60)
         try:
-            await asyncio.sleep(60)
-            chats_pendientes = obtener_chats_para_recordatorio()
-            for c in chats_pendientes:
-                ultimo_msg = c.get("ultimo_mensaje_cliente_at")
-                if ultimo_msg:
-                    tiempo = calcular_tiempo_relativo(ultimo_msg)
-                    if tiempo["minutos"] >= 20:
-                        chat_id = c["chat_id"]
-                        monto = c["cotizacion_total"]
-                        msg_nudge = texto_recordatorio(c.get("nombre_cliente"), monto)
-                        print(
-                            f"⚡ [Auto-Nudge] Recordatorio enviado a [{chat_id}]"
-                        )
-                        await send_meta_whatsapp_message(chat_id, msg_nudge)
-                        registrar_mensaje_saliente(
-                            chat_id, "bot (auto-recordatorio)", msg_nudge
-                        )
-                        marcar_recordatorio_enviado(chat_id)
+            await enviar_recordatorios_pendientes()
         except Exception as e:
             print(f"Error en worker de recordatorios: {e}")
 

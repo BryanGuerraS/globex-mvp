@@ -210,36 +210,6 @@ def calcular_tiempo_relativo(dt_str: Optional[str]) -> Dict[str, str]:
         return {"texto": "Reciente", "color": "🟢", "minutos": 0}
 
 
-def registrar_mensaje_entrante(chat_id: str, nombre: str, texto: str):
-    init_db()
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        now = ahora()
-
-        cursor.execute(
-            """
-            INSERT INTO chats (chat_id, nombre, updated_at, ultimo_mensaje_cliente_at, primer_mensaje_at)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT(chat_id) DO UPDATE SET 
-                nombre = excluded.nombre,
-                updated_at = excluded.updated_at,
-                ultimo_mensaje_cliente_at = excluded.ultimo_mensaje_cliente_at,
-                primer_mensaje_at = COALESCE(chats.primer_mensaje_at, excluded.primer_mensaje_at)
-        """,
-            (chat_id, nombre, now, now, now),
-        )
-
-        cursor.execute(
-            """
-            INSERT INTO messages (chat_id, emisor, texto, timestamp)
-            VALUES (?, 'cliente', ?, ?)
-        """,
-            (chat_id, texto, now),
-        )
-
-        conn.commit()
-
-
 def registrar_mensaje_saliente(
     chat_id: str, emisor: str, texto: str, cotizacion: Optional[Dict] = None
 ):
@@ -403,32 +373,6 @@ def esta_bot_activo(chat_id: str) -> bool:
         if row is None:
             return True  # Si es un chat nuevo, el bot inicia activo
         return bool(row["bot_activo"])
-
-def obtener_chats_para_recordatorio() -> List[Dict]:
-    """Busca leads que cotizaron, llevan más de 20 min en silencio y no han recibido recordatorio."""
-    init_db()
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        # Busca chats atendidos por bot, con cotización, donde hayan pasado al menos 20 minutos
-        cursor.execute("""
-            SELECT * FROM chats 
-            WHERE estado = 'Atendido por Bot'
-              AND cotizacion_total > 0
-              AND recordatorio_enviado = 0
-              AND bot_activo = 1
-        """)
-        return [dict(row) for row in cursor.fetchall()]
-
-
-def marcar_recordatorio_enviado(chat_id: str):
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE chats SET recordatorio_enviado = 1 WHERE chat_id = ?",
-            (chat_id,),
-        )
-        conn.commit()
-
 
 def obtener_chat(chat_id: str) -> Optional[Dict]:
     init_db()
