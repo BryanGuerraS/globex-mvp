@@ -125,13 +125,13 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 
    - CUADRANTE 1 [COTIZACIÓN COURIER (Happy Path)]:
      a) Si el cliente quiere cotizar pero no dio datos, pide los tres en un solo mensaje, con este texto:
-        "¡Claro! Cuéntame qué producto quieres traer, su precio en USD y cuánto pesa en kg. Por ejemplo: _Laptop Lenovo, USD 650, 2.5 kg_."
+        "¡Claro! 😊 Cuéntame qué producto quieres traer, su precio en USD y cuánto pesa en kg. Por ejemplo: _Laptop Lenovo, USD 650, 2.5 kg_."
      b) Con producto, precio y peso: llama de inmediato a 'calcular_cotizacion' e incluye el nombre del producto.
         Esto vale aunque el cliente no diga "cotizar" ni "quiero traer": un mensaje como "Unas zapatillas de 90 dólares, 1 kg" ya es un pedido de cotización.
         Cualquier artículo cuenta como producto (ropa, hogar, decoración, etc.), no solo tecnología. Nunca vuelvas a pedir un dato que el cliente ya dio.
      c) Si dio producto y precio pero NO el peso: llama a 'consultar_peso_producto'.
         - Si el catálogo encuentra el producto, cotiza con ese peso.
-        - Si no lo encuentra, pide solo el peso, con este texto exacto: "¿Cuánto pesa aproximadamente en kg?"
+        - Si no lo encuentra, pide solo el peso, con este texto exacto: "¿Cuánto pesa aproximadamente en kg? 📦"
           Solo si el cliente duda o pregunta cómo saberlo, explica que un estimado está bien y que el peso final se confirma en el almacén de Miami.
      d) Si falta el precio, pide solo el precio en USD.
      Nunca pidas el modelo, la marca, la cantidad de piezas ni otros detalles para estimar el peso.
@@ -164,6 +164,8 @@ REGLAS DE FORMATO Y ESTILO:
 - Respuestas breves: máximo 2 a 3 oraciones por mensaje.
 - Deja saltos de línea limpios entre ideas.
 - Si conoces el nombre del cliente, úsalo con moderación (no en cada mensaje).
+- Pon un emoji por mensaje, acorde al tono (😊 👋 📦 ✈️ 🙌), y nunca más de dos.
+  Sin emojis si el cliente reclama, está molesto o tiene un problema con su pedido.
 - NUNCA inventes precios ni estados de paquetes.
 - Escribe solo el mensaje para el cliente: nunca agregues notas internas, comentarios entre paréntesis sobre tu proceso ni frases como "(Esperando respuesta del cliente)"."""
 
@@ -606,7 +608,7 @@ def texto_bienvenida(nombre: Optional[str], primer_contacto: bool) -> str:
         return "¿Hay algo más en lo que pueda ayudarte? 😊"
     return (
         "¡Hola! 👋 Soy *Globix*, el asistente virtual de Globex Courier. Cotizo tus compras en EE. UU. "
-        "al instante y resuelvo tus dudas. Si prefieres hablar con una persona, solo dímelo.\n\n"
+        "al instante y resuelvo tus dudas.\n\n"
         "¿En qué te ayudo?\n\n"
         '_También puedes escribirme directo: "iPhone 15, USD 900, 0.5 kg"._'
     )
@@ -625,6 +627,26 @@ PREGUNTA_NOMBRE = "Mientras tanto, ¿me indicas tu nombre y apellido? 😊"
 
 def _tiene_emoji(texto: str) -> bool:
     return any(ord(c) >= 0x2600 for c in texto)
+
+
+MAX_EMOJIS_POR_MENSAJE = 2  # aprobado por el usuario 06/11 (antes 1)
+
+
+def contar_emojis(texto: str) -> int:
+    """Emojis visibles: sin variaciones (U+FE0F) ni uniones (U+200D); una bandera (🇵🇪) cuenta uno."""
+    simbolos = [
+        c for c in texto
+        if (ord(c) >= 0x2600 or 0x2300 <= ord(c) <= 0x23FF) and ord(c) not in (0xFE0F, 0x200D)  # incluye ⏱️ ⏰ ⌛
+    ]
+    banderas = sum(1 for c in simbolos if 0x1F1E6 <= ord(c) <= 0x1F1FF)
+    return len(simbolos) - banderas // 2
+
+
+def cierre_faq_para(texto_faq: str) -> str:
+    """Pregunta de cierre tras una FAQ, sin su 😊 si el mensaje ya llegaría al tope de emojis."""
+    if contar_emojis(texto_faq) + contar_emojis(TEXTO_CIERRE_FAQ) > MAX_EMOJIS_POR_MENSAJE:
+        return TEXTO_CIERRE_FAQ.replace(" 😊", "")
+    return TEXTO_CIERRE_FAQ
 
 
 def con_pedido_de_nombre(texto: str, chat_id: str) -> str:
@@ -675,7 +697,7 @@ def nombre_para_saludo(chat_id: str, nombre_perfil: str) -> Optional[str]:
 
 
 RESPUESTA_ERROR = "Disculpa, tuve un problema para leer tu mensaje. ¿Me lo escribes de nuevo?"
-LEYENDA_PROFORMA = "Te envío adjunto tu cotización *referencial*."
+LEYENDA_PROFORMA = "📄 Te envío adjunto tu cotización *referencial*."
 # Montos que aparecen en los ejemplos que da el propio bot ("USD 650", "USD 900", "USD 120")
 MONTOS_EJEMPLO = (650, 900, 120)
 TEXTO_RECUPERACION = "Disculpa, no logré entenderte 😅. Elige una opción o, si prefieres, te paso con un asesor:"
@@ -1116,10 +1138,17 @@ async def _procesar_turno(
         registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
         await send_meta_whatsapp_message(chat_id, bot_reply)
     elif menu == BOTONES_POST_FAQ:
-        # La respuesta va sola y la pregunta de cierre, con los botones, en otro mensaje
-        registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
-        await send_meta_whatsapp_message(chat_id, bot_reply)
-        await enviar_y_registrar_menu(chat_id, TEXTO_CIERRE_FAQ, menu)
+        # Respuesta + pregunta de cierre + botones en un solo mensaje; si no cabe, en dos
+        con_cierre = f"{bot_reply}\n\n{cierre_faq_para(bot_reply)}"
+        if len(con_cierre) <= LIMITE_CUERPO_INTERACTIVO:
+            registrar_mensaje_saliente(
+                chat_id, "bot", texto_para_registro(con_cierre, menu), resultado_calculo
+            )
+            await send_meta_interactive(chat_id, interactivo_botones(con_cierre, menu))
+        else:
+            registrar_mensaje_saliente(chat_id, "bot", bot_reply, resultado_calculo)
+            await send_meta_whatsapp_message(chat_id, bot_reply)
+            await enviar_y_registrar_menu(chat_id, TEXTO_CIERRE_FAQ, menu)
     elif len(bot_reply) <= LIMITE_CUERPO_INTERACTIVO:
         registrar_mensaje_saliente(
             chat_id, "bot", texto_para_registro(bot_reply, menu), resultado_calculo

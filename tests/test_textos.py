@@ -6,9 +6,7 @@ import guardrails
 import main
 
 
-def _emojis(texto):
-    # Variaciones (U+FE0F) y unión (U+200D) no cuentan como emoji aparte
-    return sum(1 for c in texto if ord(c) >= 0x2600 and c not in "️‍")
+_emojis = main.contar_emojis
 
 
 TEXTOS_FIJOS = {
@@ -27,8 +25,19 @@ TEXTOS_FIJOS = {
 
 
 @pytest.mark.parametrize("nombre, texto", TEXTOS_FIJOS.items())
-def test_como_maximo_un_emoji(nombre, texto):
-    assert _emojis(texto) <= 1, nombre
+def test_como_maximo_dos_emojis(nombre, texto):
+    assert _emojis(texto) <= main.MAX_EMOJIS_POR_MENSAJE, nombre
+
+
+@pytest.mark.parametrize("tema, faq", __import__("knowledge_base").KB_GLOBEX.items())
+def test_faq_con_cierre_cabe_en_un_mensaje_con_maximo_dos_emojis(tema, faq):
+    mensaje = faq["contenido"] + "\n\n" + main.cierre_faq_para(faq["contenido"])
+    assert len(mensaje) <= main.LIMITE_CUERPO_INTERACTIVO, tema
+    assert _emojis(mensaje) <= main.MAX_EMOJIS_POR_MENSAJE, tema
+
+
+def test_contar_emojis():
+    assert _emojis("🇵🇪 hola ⚠️ ⏱️") == 3 and _emojis("sin emojis") == 0
 
 
 def test_bienvenida_sin_nombre():

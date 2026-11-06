@@ -37,7 +37,7 @@ def test_bloquea(texto, motivo):
 @pytest.mark.parametrize(
     "texto, cliente",
     [
-        ("¿Cuánto pesa aproximadamente en kg?", ["set de cuchillos de $640"]),
+        ("¿Cuánto pesa aproximadamente en kg? 📦", ["set de cuchillos de $640"]),
         ("Perfecto, tu laptop de $650. ¿Cuánto pesa en kg?", ["laptop de 650 usd"]),
         ("Entendido, un celular de mil dólares. ¿Cuánto pesa?", ["un celular de mil dólares"]),
         ("¡Hola! ¿En qué te ayudo?", ["hola"]),
@@ -96,14 +96,14 @@ def test_precio_inventado_por_el_llm_se_bloquea(turno):
 
 
 def test_respuesta_normal_pasa(turno):
-    enviados = turno("al_ok", "set de cuchillos de $640", [_respuesta(content="¿Cuánto pesa aproximadamente en kg?")])
-    assert [p["text"]["body"] for p in enviados if p.get("type") == "text"] == ["¿Cuánto pesa aproximadamente en kg?"]
+    enviados = turno("al_ok", "set de cuchillos de $640", [_respuesta(content="¿Cuánto pesa aproximadamente en kg? 📦")])
+    assert [p["text"]["body"] for p in enviados if p.get("type") == "text"] == ["¿Cuánto pesa aproximadamente en kg? 📦"]
 
 
 def test_prompt_define_alcance_y_pregunta_de_peso_corta():
     prompt = main.SYSTEM_PROMPT
     assert "fuera_de_alcance" in prompt
-    assert 'con este texto exacto: "¿Cuánto pesa aproximadamente en kg?"' in prompt
+    assert 'con este texto exacto: "¿Cuánto pesa aproximadamente en kg? 📦"' in prompt
     assert "fuera_de_alcance" in {t["function"]["name"] for t in main.TOOLS}
 
 

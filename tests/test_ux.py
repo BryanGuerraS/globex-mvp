@@ -63,7 +63,7 @@ def test_bienvenida_primer_contacto():
     assert texto.startswith("¡Hola! 👋")  # sin nombre: aún no lo sabemos
     assert "*Globix*, el asistente virtual de Globex Courier" in texto
     assert "Ana" not in texto
-    assert "hablar con una persona" in texto
+    assert "hablar con una persona" not in texto  # quitado el 06/11: el asesor se ofrece tras cotizar
 
 
 def test_bienvenida_sin_nombre_y_repetida():
@@ -126,7 +126,7 @@ def test_cotizacion_confirma_datos_y_ofrece_botones(turno):
     assert subida and subida[0]["mime"] == "image/png" and subida[0]["bytes"] > 10_000
     (imagen,) = [p for p in enviados if p.get("type") == "image"]
     assert imagen["image"]["id"] == "media-de-prueba"
-    assert imagen["image"]["caption"] == "Te envío adjunto tu cotización *referencial*."
+    assert imagen["image"]["caption"] == main.LEYENDA_PROFORMA
     (msg,) = _interactivos(enviados)
     assert msg["interactive"]["body"]["text"].startswith("Total estimado: *USD 836.33*")
     assert _ids_botones(msg) == ["asesor", "cotizar_otro", "como_compro"]
@@ -286,8 +286,10 @@ def test_faq_termina_con_pregunta_y_botones_sin_asesor(turno):
                         [_respuesta(tool_calls=[_tool_call("t1", "consultar_faq_comercial", {"tema": "como_funciona"})]),
                          _respuesta(content="ok")])
     textos, botones = _textos(enviados), _interactivos(enviados)
-    assert any("4 pasos" in t for t in textos)  # la FAQ va sola, sin botones
-    assert botones and botones[-1]["interactive"]["body"]["text"] == main.TEXTO_CIERRE_FAQ
+    # FAQ + cierre + botones en un solo mensaje
+    assert not any("4 pasos" in t for t in textos) and len(botones) == 1
+    cuerpo = botones[-1]["interactive"]["body"]["text"]
+    assert "4 pasos" in cuerpo and cuerpo.endswith(main.TEXTO_CIERRE_FAQ)
     ids = _ids_botones(botones[-1])
     assert ids == ["cotizar", "otras"] and "asesor" not in ids  # asesor solo tras cotizar
 
