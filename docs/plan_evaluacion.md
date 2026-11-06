@@ -64,7 +64,7 @@ Las metas son orientativas: vienen de reglas prácticas de proveedores y del cri
 1. **Set reservado:** 30–60 conversaciones guionadas que cubran cotización directa, peso de catálogo, montos en palabras, datos faltantes, más de USD 1 200, mercancía restringida y prohibida, FAQ, seguimiento, viajero, pedido de asesor, falsos amigos ("uso personal") y adversariales. Se anota el desenlace esperado **antes** de correrlas y no se usan para ajustar el prompt.
 2. **Ejecución sin WhatsApp:** `procesar_mensaje_consolidado` ya se puede ejecutar con Meta simulado (ver `tests/test_tool_calling.py`). Falta un script que lo corra con el **LLM real** sobre el set, 3 veces por caso, y guarde las herramientas llamadas con sus argumentos. Esto avanza el pendiente 8.
 3. **Registro de herramientas en producción:** hoy SQLite guarda los mensajes pero no qué herramienta se llamó ni con qué argumentos. Agregarlo permite calcular K1–K5 también sobre la prueba de uso con usuarios reales.
-4. **Revisión humana:** dos revisores independientes etiquetan K6–K9 con una rúbrica escrita. Se reporta el kappa de Cohen; si es bajo (< 0.6), se ajusta la rúbrica antes de reportar.
+4. **Revisión humana:** dos revisores independientes etiquetan K6–K9 con una rúbrica escrita. Se reporta el kappa de Cohen; si es bajo (< 0.6), se ajusta la rúbrica antes de reportar. Rúbrica en [`rubrica_calidad.md`](rubrica_calidad.md) (C1–C6; *atención correcta* = KPI de uso del E3) y herramienta en [`evaluacion/revision_humana.py`](../evaluacion/revision_humana.py) (muestra estratificada, κ con IC bootstrap, consenso y resultado por tipo de caso).
 5. **LLM como juez (opcional):** solo si su kappa contra el consenso humano es aceptable en las mismas conversaciones.
 
 ## Fuentes

@@ -65,6 +65,7 @@ from validaciones import (
     extraer_nombre,
     limpiar_respuesta_llm,
     revisar_respuesta_libre,
+    pide_dato_indispensable,
     validar_argumentos_cotizacion,
 )
 
@@ -925,9 +926,12 @@ _TIPO_POR_RESULTADO = {
 }
 
 # KPI de impacto: respuestas del bot que cuentan como "primera atención útil".
-# Saludo, menú, pedir datos, derivar, fuera de alcance y errores NO cuentan.
+# Definición del E3 (y de H1 del E4, con la que se midió la línea base de 32.72 %):
+# una respuesta que atiende la consulta o que pide un dato indispensable para avanzar.
+# Saludo, menú, pedir el nombre, derivar, fuera de alcance y errores NO cuentan.
 # (El primer mensaje de un asesor humano siempre cuenta.)
-TIPOS_ATENCION_UTIL = frozenset({"cotizacion", "faq", "guardrail"})
+TIPOS_RESOLUTIVOS = frozenset({"cotizacion", "faq", "guardrail"})
+TIPOS_ATENCION_UTIL = TIPOS_RESOLUTIVOS | {"pide_dato"}
 
 
 async def procesar_mensaje_consolidado(
@@ -952,9 +956,13 @@ async def procesar_mensaje_consolidado(
         except Exception as e:
             print(f"Error registrando métricas: {e}")
         try:
-            util = [t for t in medidor.tipo_respuesta.split("+") if t in TIPOS_ATENCION_UTIL]
+            tipos = medidor.tipo_respuesta.split("+")
+            util = [t for t in tipos if t in TIPOS_ATENCION_UTIL]
             if util and marcar_atencion_util(chat_id, "bot", util[0]):
                 print(f"✅ [KPI] [{chat_id}] primera atención útil: Globix ({util[0]})")
+            resolutiva = [t for t in tipos if t in TIPOS_RESOLUTIVOS]
+            if resolutiva:
+                marcar_atencion_util(chat_id, "bot", resolutiva[0], campo="primera_resolutiva")
         except Exception as e:
             print(f"Error registrando atención útil: {e}")
 
@@ -1038,7 +1046,7 @@ async def _procesar_turno(
 
             if not response_message.tool_calls:
                 bot_reply = limpiar_respuesta_llm(response_message.content)
-                medidor.tipo_respuesta = "libre"
+                medidor.tipo_respuesta = "pide_dato" if pide_dato_indispensable(bot_reply) else "libre"
                 # Capa 2: revisión determinista de la respuesta libre antes de enviarla
                 motivo = revisar_respuesta_libre(bot_reply, textos_cliente, MONTOS_EJEMPLO)
                 if motivo:
@@ -1569,6 +1577,7 @@ def _tomar_chat_asesor(chat_id: str, nombre_asesor: str):
         bot_activo=0,
     )
     marcar_atencion_util(chat_id, "asesor", "mensaje_asesor")
+    marcar_atencion_util(chat_id, "asesor", "mensaje_asesor", campo="primera_resolutiva")
 
 
 # 📄 Proforma formal: la imagen que envía Globix es preliminar (acordado con
@@ -1676,10 +1685,12 @@ def api_metricas(horas: float = 24, ultimos: int = 20):
     momento = ahora()
     desde = momento - timedelta(hours=horas) if horas > 0 else None
     filas = obtener_metricas(desde)
+    chats = obtener_todos_los_chats()
     return {
         "resumen": resumir_metricas(filas),
         "ultimos": filas[-max(0, ultimos):],
-        "kpi_atencion": kpi_primera_atencion(obtener_todos_los_chats(), momento, desde),
+        "kpi_atencion": kpi_primera_atencion(chats, momento, desde),
+        "kpi_atencion_resolutiva": kpi_primera_atencion(chats, momento, desde, campo="primera_resolutiva"),
         "revisiones": resumir_revisiones(obtener_revisiones(desde=desde)),
     }
 

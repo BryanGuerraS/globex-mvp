@@ -104,6 +104,10 @@ def init_db():
             ("primera_util_at", "TIMESTAMP"),
             ("primera_util_actor", "TEXT"),
             ("primera_util_tipo", "TEXT"),
+            # Versión estricta (dato secundario): solo respuestas que resuelven la consulta
+            ("primera_resolutiva_at", "TIMESTAMP"),
+            ("primera_resolutiva_actor", "TEXT"),
+            ("primera_resolutiva_tipo", "TEXT"),
         ):
             if columna not in columnas:
                 cursor.execute(f"ALTER TABLE chats ADD COLUMN {columna} {tipo}")
@@ -441,16 +445,19 @@ def guardar_derivacion(chat_id: str, motivo: Optional[str], resumen: str, nueva:
         conn.commit()
 
 
-def marcar_atencion_util(chat_id: str, actor: str, tipo: str) -> bool:
+def marcar_atencion_util(chat_id: str, actor: str, tipo: str, campo: str = "primera_util") -> bool:
     """Registra la primera atención útil del lead (actor: 'bot' o 'asesor').
 
-    Solo cuenta la primera; las siguientes no cambian nada. Devuelve True si
-    esta fue la primera.
+    campo: 'primera_util' (definición del E3, incluye pedir un dato indispensable)
+    o 'primera_resolutiva' (versión estricta). Solo cuenta la primera; las
+    siguientes no cambian nada. Devuelve True si esta fue la primera.
     """
+    if campo not in ("primera_util", "primera_resolutiva"):
+        raise ValueError(f"Campo inválido: {campo}")
     with get_connection() as conn:
         cur = conn.execute(
-            """UPDATE chats SET primera_util_at = ?, primera_util_actor = ?, primera_util_tipo = ?
-               WHERE chat_id = ? AND primera_util_at IS NULL""",
+            f"""UPDATE chats SET {campo}_at = ?, {campo}_actor = ?, {campo}_tipo = ?
+               WHERE chat_id = ? AND {campo}_at IS NULL""",
             (ahora(), actor, tipo, chat_id),
         )
         conn.commit()

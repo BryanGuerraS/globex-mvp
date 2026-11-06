@@ -149,7 +149,8 @@ Diseñada con las guías oficiales de Streamlit (skill *developing-with-streamli
 
 Por cada lead, la tabla `chats` guarda `primer_mensaje_at` (primer mensaje del cliente, se fija una sola vez) y la **primera atención útil**: `primera_util_at`, `primera_util_actor` (`bot` o `asesor`) y `primera_util_tipo`.
 
-- **Cuenta como atención útil:** una cotización, una respuesta de FAQ, la explicación de mercancía restringida o prohibida, o el primer mensaje de un asesor humano. La lista está en `TIPOS_ATENCION_UTIL` (`main.py`).
+- **Cuenta como atención útil** (definición del E3 y de la hipótesis H1 del E4, la misma con que se midió la línea base de 32.72 %): una respuesta que atiende la consulta (cotización, FAQ, explicación de mercancía restringida o prohibida, primer mensaje de un asesor) **o que pide un dato indispensable para avanzar** (producto, precio, peso o código de tracking; `pide_dato_indispensable` en `validaciones.py`). Un saludo, el menú o pedir el nombre no cuentan. La lista está en `TIPOS_ATENCION_UTIL` (`main.py`).
+- **Versión estricta (dato secundario):** solo las respuestas que resuelven la consulta (`TIPOS_RESOLUTIVOS`), en `primera_resolutiva_at/actor/tipo`. Está en `/api/metricas` como `kpi_atencion_resolutiva` y en la nota bajo el KPI de la consola.
 - **No cuenta:** saludo o menú, pedir datos que faltan, derivar, mensajes fuera de alcance, errores y recordatorios automáticos.
 
 El KPI (`kpi_primera_atencion` en [`metricas.py`](metricas.py)) es el % de leads atendidos en ≤ 60 min, con IC 95 % de Clopper-Pearson. Solo evalúa los leads cuya ventana de 60 min ya cerró o que ya fueron atendidos; los demás se muestran como *en curso*. También reporta la mediana del tiempo, cuántos atendió Globix y cuántos un asesor, y los leads sin atención útil. Está en `GET /api/metricas` (campo `kpi_atencion`) y en la página **Métricas** de la consola.

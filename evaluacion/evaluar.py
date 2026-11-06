@@ -54,7 +54,9 @@ def proporcion(exitos: int, n: int) -> Dict:
 def _tipo_coincide(tipo: Optional[str], permitidos: List[str]) -> bool:
     if tipo is None:
         return False
-    return any(tipo == p or tipo.startswith(p + ":") or (p in tipo.split("+")) for p in permitidos)
+    # "pide_dato" es una respuesta libre que pide un dato indispensable (KPI del E3)
+    partes = ["libre" if t == "pide_dato" else t for t in tipo.split("+")] + tipo.split("+")
+    return any(tipo == p or tipo.startswith(p + ":") or p in partes for p in permitidos)
 
 
 def evaluar_corrida(caso: Dict, corrida: Dict) -> List[Dict]:

@@ -134,3 +134,19 @@ def test_limpia_notas_internas(texto, esperado):
 def test_limpieza_que_deja_vacio_devuelve_none():
     assert limpiar_respuesta_llm("(Esperando respuesta del cliente)") is None
     assert limpiar_respuesta_llm(None) is None
+
+
+@pytest.mark.parametrize("texto, esperado", [
+    ("¿Cuánto pesa aproximadamente en kg? 📦", True),
+    ("¡Claro! 😊 Cuéntame qué producto quieres traer, su precio en USD y cuánto pesa.", True),
+    ("Para ver el estado necesito tu código de tracking.", True),
+    ("¿Cuál es el precio del producto?", True),
+    ("¡Hola! 👋 Soy Globix. ¿En qué te ayudo?", False),
+    ("¿Me indicas tu nombre y apellido?", False),
+    ("¿Te ayudo con algo más? 😊", False),
+    ("El flete cuesta USD 9 por kg. ¿Quieres cotizar?", False),
+    ("", False),
+])
+def test_pide_dato_indispensable(texto, esperado):
+    from validaciones import pide_dato_indispensable
+    assert pide_dato_indispensable(texto) is esperado

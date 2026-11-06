@@ -297,3 +297,33 @@ def revisar_respuesta_libre(
         if not any(_cerca(v, n) for v in _interpretar_numero(token) for n in numeros_cliente):
             return "monto_no_dado"
     return None
+
+
+# ------------------------------------------------- KPI: pedir un dato indispensable
+
+# Definición del E3 (y de H1 del E4): cuenta como primera atención útil una respuesta
+# que atiende la consulta O que solicita información específica para avanzar.
+# Aquí se reconoce la segunda: una pregunta o pedido por el producto, el precio,
+# el peso o el código de seguimiento. Un saludo, el menú o pedir el nombre no cuentan.
+_DATOS_INDISPENSABLES = re.compile(
+    r"\b(pes[ao]s?|kg|kilos?|precio|cuesta|valor|usd|dolares|producto|articulo"
+    r"|tracking|codigo de (seguimiento|rastreo)|numero de (seguimiento|rastreo))\b"
+)
+_PEDIDO = re.compile(
+    r"^\s*(cuentame|indicame|dime|enviame|compart[ei]me|confirmame|pasame|escribeme)\b|\bnecesit(o|amos) (tu|el|la|saber)\b"
+)
+_FRASE = re.compile(r"[^.!?\n]*[.!?\n]?")
+
+
+def pide_dato_indispensable(texto: Optional[str]) -> bool:
+    """True si el mensaje pide al cliente un dato necesario para cotizar o rastrear."""
+    if not texto:
+        return False
+    for frase in _FRASE.findall(_sin_tildes(texto).lower()):
+        frase = re.sub(r"^[^a-z0-9]+", "", frase)  # quita "¡Claro! 😊" y signos iniciales
+        if not frase:
+            continue
+        es_pedido = frase.rstrip().endswith("?") or _PEDIDO.search(frase)
+        if es_pedido and _DATOS_INDISPENSABLES.search(frase):
+            return True
+    return False

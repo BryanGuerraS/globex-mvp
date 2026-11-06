@@ -189,13 +189,15 @@ def _fecha(valor) -> Optional[datetime]:
 
 def kpi_primera_atencion(
     chats: Iterable[Dict], momento: datetime, desde: Optional[datetime] = None,
-    plazo_min: int = PLAZO_ATENCION_MIN,
+    plazo_min: int = PLAZO_ATENCION_MIN, campo: str = "primera_util",
 ) -> Dict:
     """% de leads con primera atención útil en <= plazo_min, con IC 95 % (Clopper-Pearson).
 
     Lead = chat con primer mensaje registrado (desde `desde`, si se indica).
     Se evalúan los leads cuya ventana ya cerró o que ya recibieron atención útil;
     los que aún están dentro del plazo sin atención quedan como "en curso".
+    campo: "primera_util" (definición del E3) o "primera_resolutiva" (estricta:
+    solo cotización, FAQ, aviso de restricción o mensaje del asesor).
     """
     evaluables, a_tiempo, en_curso, sin_atencion = 0, 0, 0, 0
     minutos: List[float] = []
@@ -204,7 +206,7 @@ def kpi_primera_atencion(
         inicio = _fecha(chat.get("primer_mensaje_at"))
         if inicio is None or (desde is not None and inicio < desde):
             continue
-        util = _fecha(chat.get("primera_util_at"))
+        util = _fecha(chat.get(f"{campo}_at"))
         if util is None:
             if (momento - inicio).total_seconds() / 60 <= plazo_min:
                 en_curso += 1
@@ -215,7 +217,7 @@ def kpi_primera_atencion(
         evaluables += 1
         espera = max(0.0, (util - inicio).total_seconds() / 60)
         minutos.append(espera)
-        actor = chat.get("primera_util_actor") or "bot"
+        actor = chat.get(f"{campo}_actor") or "bot"
         cuenta = por_actor.setdefault(actor, {"atendidos": 0, "a_tiempo": 0})
         cuenta["atendidos"] += 1
         if espera <= plazo_min:

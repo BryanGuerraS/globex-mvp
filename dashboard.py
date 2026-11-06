@@ -728,6 +728,7 @@ NOMBRES_TIPO = {
     "menu": "Bienvenida",
     "fuera_de_alcance": "Fuera de alcance",
     "libre": "Respuesta libre",
+    "pide_dato": "Pide dato para cotizar",
     "guardrail": "Restringida",
     "error": "Error",
     "recuperacion": "Recuperación",
@@ -749,7 +750,7 @@ def _seg(ms) -> str:
     return f"{ms / 1000:.1f} s" if ms is not None else "—"
 
 
-def panel_kpi_atencion(kpi: Dict):
+def panel_kpi_atencion(kpi: Dict, estricto: Optional[Dict] = None):
     """KPI de impacto: % de leads con primera atención útil en <= 60 min."""
     plazo = kpi.get("plazo_min", 60)
     with st.container(border=True):
@@ -765,7 +766,8 @@ def panel_kpi_atencion(kpi: Dict):
         with st.container(horizontal=True):
             st.metric("Leads a tiempo", f"{kpi['porcentaje']:.0%}", border=True, icon=":material/task_alt:",
                       help=f"{kpi['a_tiempo']} de {kpi['leads_evaluables']} leads · IC 95 % {li:.0%}–{ls:.0%} "
-                           "(Clopper-Pearson). Un saludo o el menú no cuentan como atención útil.")
+                           "(Clopper-Pearson). Cuenta responder la consulta o pedir un dato indispensable "
+                           "(definición del E3); un saludo o el menú no cuentan.")
             st.metric("Tiempo hasta atención útil · p50",
                       f"{kpi['minutos_p50']:.1f} min" if kpi.get("minutos_p50") is not None else "—",
                       border=True, icon=":material/timer:")
@@ -774,7 +776,12 @@ def panel_kpi_atencion(kpi: Dict):
                       icon=":material/smart_toy:")
             st.metric("Sin atención útil", kpi.get("sin_atencion_util", 0), border=True,
                       icon=":material/report:", help=f"{kpi.get('en_curso', 0)} leads siguen dentro del plazo")
-        st.caption(f"IC 95 %: {li:.0%}–{ls:.0%} sobre {kpi['leads_evaluables']} leads.")
+        nota = f"IC 95 %: {li:.0%}–{ls:.0%} sobre {kpi['leads_evaluables']} leads."
+        if estricto and estricto.get("leads_evaluables"):
+            ei, es = estricto["ic95"]
+            nota += (f" Versión estricta (solo cotización, FAQ, aviso de restricción o asesor): "
+                     f"{estricto['porcentaje']:.0%} (IC {ei:.0%}–{es:.0%}).")
+        st.caption(nota)
 
 
 def panel_revision_asesor(rev: Dict):
@@ -818,7 +825,7 @@ def pagina_metricas():
         )
 
     datos = fetch_metricas(horas)
-    panel_kpi_atencion(datos.get("kpi_atencion") or {})
+    panel_kpi_atencion(datos.get("kpi_atencion") or {}, datos.get("kpi_atencion_resolutiva"))
     panel_revision_asesor(datos.get("revisiones") or {})
     res = datos.get("resumen", {})
     if not res.get("turnos"):

@@ -134,3 +134,33 @@ def test_kpi_filtra_por_periodo():
     viejo = _lead(5, inicio=T0 - timedelta(days=3))
     kpi = kpi_primera_atencion([viejo, _lead(5)], momento=T0 + timedelta(hours=2), desde=T0 - timedelta(days=1))
     assert kpi["leads_evaluables"] == 1
+
+
+# ---------- Definición del E3: pedir un dato indispensable cuenta ----------
+
+def test_pedir_dato_cuenta_como_atencion_util_pero_no_como_resolutiva(turno):
+    chat = turno("PE.k9", "quiero traer una laptop de 650 dólares",
+                 [_respuesta(content="¿Cuánto pesa aproximadamente en kg? 📦")])
+    assert (chat["primera_util_actor"], chat["primera_util_tipo"]) == ("bot", "pide_dato")
+    assert chat["primera_resolutiva_at"] is None  # la versión estricta espera a la cotización
+    chat = turno("PE.k9", "2.5 kg", [_respuesta(tool_calls=[_tool_call(
+        "t1", "calcular_cotizacion", {"valor_producto_usd": 650, "peso_kg": 2.5})])])
+    assert chat["primera_util_tipo"] == "pide_dato"  # no cambia: solo cuenta la primera
+    assert chat["primera_resolutiva_tipo"] == "cotizacion"
+
+
+@pytest.mark.parametrize("respuesta", ["¡Hola! 👋 ¿En qué te ayudo?", "¿Me indicas tu nombre y apellido?",
+                                       "¿Te ayudo con algo más? 😊"])
+def test_saludo_o_pedir_nombre_no_cuentan(turno, respuesta):
+    chat = turno(f"PE.k10_{abs(hash(respuesta))}", "hola", [_respuesta(content=respuesta)])
+    assert chat["primera_util_at"] is None
+
+
+def test_kpi_estricto_aparte(bloquear_meta):
+    datos = TestClient(main.app).get("/api/metricas", headers=API, params={"horas": 0}).json()
+    assert datos["kpi_atencion_resolutiva"]["plazo_min"] == 60
+    lead = {"primer_mensaje_at": str(T0), "primera_util_at": str(T0 + timedelta(minutes=1)),
+            "primera_resolutiva_at": str(T0 + timedelta(minutes=90))}
+    momento = T0 + timedelta(hours=3)
+    assert kpi_primera_atencion([lead], momento)["a_tiempo"] == 1
+    assert kpi_primera_atencion([lead], momento, campo="primera_resolutiva")["a_tiempo"] == 0
