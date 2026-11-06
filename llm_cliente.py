@@ -143,7 +143,7 @@ class ClienteGroqConRespaldo:
 
 def keys_de_respaldo(entorno) -> List[str]:
     """GROQ_API_KEY_RESPALDO, GROQ_API_KEY_RESPALDO_2, _3... en ese orden (sin vacías)."""
-    nombres = ["GROQ_API_KEY_RESPALDO"] + [f"GROQ_API_KEY_RESPALDO_{i}" for i in range(2, 10)]
+    nombres = ["GROQ_API_KEY_RESPALDO"] + [f"GROQ_API_KEY_RESPALDO_{i}" for i in range(2, 21)]
     return [entorno.get(n) for n in nombres if entorno.get(n)]
 
 
