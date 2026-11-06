@@ -3,6 +3,8 @@
 Alineado con las fichas F28, F30, F31 y casuísticas CE11, CE12 de SUNAT/DIGEMID.
 """
 
+import re
+import unicodedata
 from typing import Dict, Optional
 
 # Palabras clave de productos sensibles y su tratamiento
@@ -70,14 +72,32 @@ RESTRICCIONES_ADUANA = {
 }
 
 
+def _normalizar(texto: str) -> str:
+    """Minúsculas y sin tildes, para que "cosméticos" y "cosmeticos" coincidan."""
+    sin_tildes = unicodedata.normalize("NFKD", texto.lower())
+    return "".join(c for c in sin_tildes if not unicodedata.combining(c))
+
+
+def _patron(palabra: str) -> "re.Pattern":
+    # Palabra completa: "pod" no debe coincidir con "podrías" ni "iPod", ni "arma" con "armario".
+    # Se acepta el plural ("medicamentos", "municiones", "vapeadores").
+    return re.compile(r"(?<![a-z0-9])" + re.escape(_normalizar(palabra)) + r"(?:s|es)?(?![a-z0-9])")
+
+
+_PATRONES = {
+    tipo: [(palabra, _patron(palabra)) for palabra in datos["palabras"]]
+    for tipo, datos in RESTRICCIONES_ADUANA.items()
+}
+
+
 def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
     """Analiza si el texto menciona algún producto prohibido o restringido."""
-    texto_lower = texto.lower()
+    texto_normalizado = _normalizar(texto)
 
     for tipo, datos in RESTRICCIONES_ADUANA.items():
-        for palabra in datos["palabras"]:
-            # Búsqueda exacta de palabra
-            if palabra in texto_lower:
+        for palabra, patron in _PATRONES[tipo]:
+            # Búsqueda de la palabra completa (no como parte de otra palabra)
+            if patron.search(texto_normalizado):
                 return {
                     "restringido": True,
                     "tipo": tipo,

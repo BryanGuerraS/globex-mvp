@@ -151,3 +151,15 @@ def test_reporte_pdf(tmp_path, monkeypatch):
                                str(tmp_path / "r.pdf"))
     contenido = open(ruta, "rb").read()
     assert contenido.startswith(b"%PDF") and len(contenido) > 5_000
+
+
+def test_falso_positivo_solo_si_bloquea_el_guardrail():
+    """K5 sin falsos positivos: no cotizar por otra razón no es un bloqueo del guardrail."""
+    no_cotizo = {"turnos": [{"tipo_respuesta": "libre"}], "checks": [
+        {"check": "cotiza", "ok": False}, {"check": "no_contiene:DIGEMID", "ok": True}]}
+    bloqueado = {"turnos": [{"tipo_respuesta": "guardrail"}], "checks": []}
+    texto_bloqueo = {"turnos": [{"tipo_respuesta": "libre"}], "checks": [
+        {"check": "no_contiene:no transporta", "ok": False}]}
+    assert not ev._bloqueado_por_guardrail(no_cotizo)
+    assert ev._bloqueado_por_guardrail(bloqueado)
+    assert ev._bloqueado_por_guardrail(texto_bloqueo)

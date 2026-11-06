@@ -66,6 +66,7 @@ NOMBRES_KPI = {
     "K4_derivacion_recall": "K4 · Derivación cuando corresponde",
     "K4_sin_derivacion_innecesaria": "K4 · Sin derivación innecesaria",
     "K5_guardrail": "K5 · Guardrail de mercancía",
+    "K5_sin_falsos_positivos": "K5 · Sin falsos positivos del guardrail",
     "K11_adherencia_alcance": "K11 · Adherencia al alcance",
 }
 
@@ -192,6 +193,13 @@ def generar_reporte_pdf(meta: Dict, casos: List[Dict], resultados: Dict[str, Lis
         if lat["p50_ms"] is not None:
             filas.append([f"Espera estimada del cliente (+{debounce_s:.0f} s de agrupación)",
                           f"{_seg(lat['p50_ms'] + debounce_s * 1000)} · {_seg(lat['p95_ms'] + debounce_s * 1000)}"])
+        sin = resumen_costo.get("latencia_total_sin_limites", {})
+        lim = resumen_costo.get("espera_limite", {})
+        if sin.get("p50_ms") is not None:
+            filas.append(["Espera sin límites de cuota de Groq (p50 · p95)",
+                          f"{_seg(sin['p50_ms'] + debounce_s * 1000)} · {_seg(sin['p95_ms'] + debounce_s * 1000)}"])
+            filas.append(["Turnos que esperaron por cuota (429) · total",
+                          f"{lim.get('turnos_afectados', 0)} · {_seg(lim.get('total_ms', 0))}"])
         filas += [
             ["Costo total de la evaluación", f"USD {resumen_costo['costo_total_usd']:.4f}"],
             ["Costo por conversación", f"USD {resumen_costo['costo_por_conversacion_usd']:.5f}"],

@@ -273,6 +273,51 @@ Para que Meta alcance un backend local hace falta exponerlo con un túnel HTTPS 
 
 El plan para medir la calidad del modelo está en [`docs/plan_evaluacion.md`](docs/plan_evaluacion.md). Propone 11 KPIs basados en τ-bench, BFCL, RAGAS y OWASP, entre ellos exactitud de herramienta y de argumentos, cotización indebida, exactitud de derivación y consistencia pass^3. El KPI de tiempo (≤ 60 min) queda como métrica de negocio.
 
+### Verificación del motor: 36 casos
+
+[`evaluacion/casos_motor.json`](evaluacion/casos_motor.json) tiene 36 casos sintéticos en 6 categorías de 6 casos: flete y peso mínimo, exoneración hasta USD 200, tributos sobre CIF, tope de USD 1 200, entradas inválidas y anclaje de los argumentos del LLM al mensaje del cliente. Los valores esperados salen de un oráculo independiente en `Decimal` (redondeo comercial a 2 decimales), no del propio motor, y se comparan al centavo con el motor, el texto de WhatsApp y `validar_argumentos_cotizacion`.
+
+```bash
+python evaluacion/verificar_motor.py
+```
+
+Resultado actual: **36/36**. El caso M06 (1.005 kg × USD 9 = 9.045) destapó que el motor redondeaba con `float` (9.04); desde el 05/11 calcula en `Decimal` con redondeo comercial (9.05) y devuelve `float` para JSON y SQLite.
+
+### Resumen global de KPIs en PDF
+
+[`evaluacion/resumen_kpis.py`](evaluacion/resumen_kpis.py) junta el motor, las pruebas automatizadas y la última evaluación completa con el LLM, compara cada KPI con su **meta mínima** ([`evaluacion/kpis_minimos.py`](evaluacion/kpis_minimos.py)) y genera `evaluacion/reportes/resumen_kpis_*.pdf` con gráficos por categoría.
+
+```bash
+python evaluacion/resumen_kpis.py
+```
+
+| Categoría | KPI | Meta mínima | Fuente |
+| :-- | :-- | :-- | :-- |
+| Motor | Exactitud del motor (36 casos) · pruebas en verde | 100 % | Evals de regresión (Anthropic) |
+| Decisión del LLM | K1 herramienta · K2 argumentos | ≥ 90 % · ≥ 95 % | BFCL, guías de proveedores |
+| Decisión del LLM | K4 deriva cuando corresponde · sin derivación innecesaria | ≥ 90 % · ≥ 90 % | Plan de evaluación |
+| Seguridad y alcance | K3 sin cotización indebida · K5 guardrail · K11 alcance | 100 % · 100 % · ≥ 95 % | Guardarraíl del proyecto, SUNAT/DIGEMID, OWASP LLM01 |
+| Resultado | Éxito de tarea pass^1 · consistencia pass^3 | ≥ 85 % · ≥ 80 % | τ-bench, guías de proveedores |
+| Experiencia y costo | Espera del cliente p50 · p95 · costo por 1 000 conversaciones | ≤ 10 s · ≤ 15 s · ≤ USD 5 | Nielsen (10 s), equipo |
+| Negocio | Primera atención útil en ≤ 60 min | ≥ 90 % | Equipo (se mide el 14/11) |
+
+Cada KPI queda como **Cumple** (el extremo desfavorable del IC 95 % alcanza la meta), **Cumple (falta n)** (el valor la alcanza, pero el IC aún no lo garantiza), **No cumple** o **Sin datos**. Ningún n finito garantiza una meta de 100 %: para K3 y K5 se exige 0 fallos y que el IC asegure al menos 95 %.
+
+**Cuántos casos hacen falta.** Con 0 fallos en n corridas, el extremo inferior del IC de Clopper-Pearson es 0.025^(1/n): para garantizar 95 % hacen falta **72 corridas** y para 90 %, **36**. Por eso el set de desarrollo creció de 30 a 97 casos (× 3 repeticiones): 24 "falsos amigos" del guardrail que deben cotizarse (K2 y K5 sin falsos positivos), 24 de mercancía restringida o prohibida (K5, y los restringidos alimentan K4) y 20 de alcance y adversariales (K11).
+
+**Resultado del 05/11 (set de desarrollo, 97 casos × 3 = 291 corridas):** 13 KPIs cumplen, incluidos K3, K5, K5 sin falsos positivos y K11 al 100 % con el IC garantizado. Pendientes:
+- **K2 (falta n):** 96.2 % (101/105). Las 4 fallas son reales: con "Un juego de sábanas de 55 dólares, 1.6 kg" (3/3) y "Una alarma para casa…" (1/3), Globix pregunta "¿Qué producto deseas traer?" aunque ya tiene los tres datos.
+- **Espera p95 (no cumple):** 17.9 s frente a la meta de 15 s (la p50 es 7.2 s). Depende sobre todo de la latencia de Groq.
+- **Primera atención útil (sin datos):** se mide en la prueba de uso del 14/11.
+
+Pass^1 98.6 % [96.5, 99.6], pass^3 97.9 %, USD 0.25 por 1 000 conversaciones.
+
+**Límites de Groq.** El plan gratuito permite 200 000 tokens por día y 8 000 por minuto por organización; la evaluación completa gasta unos 550 000. [`llm_cliente.py`](llm_cliente.py) usa keys de respaldo (`GROQ_API_KEY_RESPALDO`, `_2`, `_3`…): ante un 429 pasa a la siguiente key y pausa la anterior solo el tiempo que indica Groq (segundos si el límite es por minuto, TPM/RPM; minutos u horas si es diario, TPD/RPD).
+
+**Espera por cuota, aparte de la latencia.** Ninguna key reintenta sola en el SDK: los 429 y las esperas los maneja `llm_cliente.py` y se guardan en `metricas_turno.espera_limite_ms`. `latencia_llm_ms` queda como el tiempo real de Groq. Los reportes muestran la espera del cliente con y sin la cuota. La p95 de 17.9 s del 05/11 se debía casi toda a esa espera: con 8 000 tokens por minuto por key, una key soporta unas 4 llamadas por minuto, y la evaluación hace unas 20. Con las pausas corregidas, la regresión del 05/11 (97/97) bajó la p95 de una llamada al LLM de 12.8 s a 6.9 s.
+
+**Arreglo del 05/11.** El prompt pedía otra vez el producto cuando el mensaje traía producto, precio y peso pero no decía "cotizar". Ahora la regla 1b lo trata como un pedido de cotización: FAM-06 y FAM-24 pasaron 20/20, y la regresión de 97 casos, 97/97.
+
 ### Evaluación con el LLM real
 
 [`evaluacion/evaluar.py`](evaluacion/evaluar.py) corre conversaciones guionadas contra el flujo real de Globix (con el LLM de Groq, sin WhatsApp y con una base temporal), repite cada caso para medir consistencia y genera un **reporte para depurar** en `evaluacion/reportes/`:
@@ -300,7 +345,7 @@ Para rehacer el PDF de una corrida anterior sin volver a llamar al LLM:
 python evaluacion/evaluar.py --pdf-desde evaluacion/reportes/resultados_AAAAMMDD_HHMM.json
 ```
 
-`evaluacion/casos_desarrollo.json` (30 casos) es el **set de desarrollo**: sirve para probar y ajustar. Los resultados que se reporten deben salir de un **set reservado** escrito por otra persona del equipo y no usado para ajustar el prompt, con el mismo formato (`mensajes` y `esperado`: `tipo_final`, `herramientas`, `cotizacion`, `cotiza`, `deriva`, `contiene`, `no_contiene`).
+`evaluacion/casos_desarrollo.json` (97 casos) es el **set de desarrollo**: sirve para probar y ajustar. Los resultados que se reporten deben salir de un **set reservado** escrito por otra persona del equipo y no usado para ajustar el prompt, con el mismo formato (`mensajes` y `esperado`: `tipo_final`, `herramientas`, `cotizacion`, `cotiza`, `deriva`, `contiene`, `no_contiene`).
 
 ### Pruebas automatizadas
 
@@ -358,6 +403,7 @@ Casos funcionales de referencia por WhatsApp:
 - [x] Separar la conversación del envío por Meta (el flujo se evalúa sin WhatsApp)
 - [x] Resumen del caso al derivar, aviso en la consola y por Telegram (opcional)
 - [x] KPI de primera atención útil en ≤ 60 min (bot o asesor) con IC 95 %
+- [x] 36 casos sintéticos del motor y resumen global de KPIs en PDF con metas mínimas
 
 **Pendiente**
 
@@ -365,5 +411,4 @@ Casos funcionales de referencia por WhatsApp:
 - [ ] Embudo de ventas Ganado/Perdido en el dashboard
 - [ ] TAX de tienda del 7 % (por definir con Globex)
 - [ ] Transcripción de notas de voz
-- [ ] 36 casos sintéticos de verificación del motor
 - [ ] Credenciales del dashboard fuera del código (después de la fase de pruebas)

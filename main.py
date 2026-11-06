@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 import httpx
-from openai import OpenAI
+from llm_cliente import crear_cliente, keys_de_respaldo, tomar_espera_ms
 
 # ✅ AHORA (Con todos los métodos necesarios):
 from database import (
@@ -63,9 +63,9 @@ init_db()
 app = FastAPI(title="Globex Atiende - Servidor Oficial Meta Cloud API")
 
 # 1. Configuración de Groq (LLM 120B)
-client = OpenAI(
-    api_key=os.getenv("GROQ_API_KEY"), base_url="https://api.groq.com/openai/v1"
-)
+# Con GROQ_API_KEY_RESPALDO (y _2, _3...), ante un 429 la llamada pasa a la
+# siguiente key (llm_cliente.py).
+client = crear_cliente(os.getenv("GROQ_API_KEY"), keys_de_respaldo(os.environ))
 MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
 # 2. Configuración de Meta Cloud API
@@ -127,6 +127,8 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
      a) Si el cliente quiere cotizar pero no dio datos, pide los tres en un solo mensaje, con este texto:
         "¡Claro! Cuéntame qué producto quieres traer, su precio en USD y cuánto pesa en kg. Por ejemplo: _Laptop Lenovo, USD 650, 2.5 kg_."
      b) Con producto, precio y peso: llama de inmediato a 'calcular_cotizacion' e incluye el nombre del producto.
+        Esto vale aunque el cliente no diga "cotizar" ni "quiero traer": un mensaje como "Unas zapatillas de 90 dólares, 1 kg" ya es un pedido de cotización.
+        Cualquier artículo cuenta como producto (ropa, hogar, decoración, etc.), no solo tecnología. Nunca vuelvas a pedir un dato que el cliente ya dio.
      c) Si dio producto y precio pero NO el peso: llama a 'consultar_peso_producto'.
         - Si el catálogo encuentra el producto, cotiza con ese peso.
         - Si no lo encuentra, pide solo el peso, con este texto exacto: "¿Cuánto pesa aproximadamente en kg?"
@@ -827,19 +829,36 @@ def _es_tool_use_failed(error: Exception) -> bool:
     return "tool_use_failed" in str(error)
 
 
+def _crear_y_medir(**kwargs):
+    """Corre en un hilo: llama al LLM y devuelve (respuesta, ms perdidos por límites de Groq)."""
+    tomar_espera_ms()  # descarta lo que hubiera quedado en este hilo
+    try:
+        return client.chat.completions.create(**kwargs), tomar_espera_ms()
+    except Exception as e:
+        e.espera_limite_ms = tomar_espera_ms()
+        raise
+
+
 async def _llamar_llm(history: List[Dict], intentos: int = 2):
-    """Llama al LLM; si Groq rechaza la llamada a herramienta por formato, reintenta."""
+    """Llama al LLM; si Groq rechaza la llamada a herramienta por formato, reintenta.
+
+    Devuelve (respuesta, espera_limite_ms): la espera por cuota se reporta aparte
+    de la latencia del LLM (ver llm_cliente.py).
+    """
+    espera_ms = 0.0
     for intento in range(intentos):
         try:
-            return await asyncio.to_thread(
-                client.chat.completions.create,
+            respuesta, espera = await asyncio.to_thread(
+                _crear_y_medir,
                 model=MODEL,
                 messages=history,
                 tools=TOOLS,
                 tool_choice="auto",
                 temperature=0.2,
             )
+            return respuesta, espera_ms + espera
         except Exception as e:
+            espera_ms += getattr(e, "espera_limite_ms", 0.0)
             if intento == intentos - 1 or not _es_tool_use_failed(e):
                 raise
             print(f"🔁 [LLM] Llamada a herramienta mal formada; reintento ({e.__class__.__name__})")
@@ -963,8 +982,10 @@ async def _procesar_turno(
 
         for _ in range(MAX_RONDAS_HERRAMIENTAS):
             inicio_llm = time.perf_counter()
-            ai_response = await _llamar_llm(history)
-            medidor.registrar_llamada_llm(ai_response, (time.perf_counter() - inicio_llm) * 1000)
+            ai_response, espera_limite_ms = await _llamar_llm(history)
+            medidor.registrar_llamada_llm(
+                ai_response, (time.perf_counter() - inicio_llm) * 1000, espera_limite_ms
+            )
             response_message = ai_response.choices[0].message
 
             if not response_message.tool_calls:

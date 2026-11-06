@@ -55,6 +55,8 @@ Se mantienen como **KPIs de negocio**, separados de los de calidad del modelo: e
 
 Las metas son orientativas: vienen de reglas prácticas de proveedores y del criterio del equipo, no de un estándar.
 
+**Actualización 05/11:** las metas mínimas quedaron fijadas en [`evaluacion/kpis_minimos.py`](../evaluacion/kpis_minimos.py), junto con el motor (100 %), la espera del cliente (p50 ≤ 10 s y p95 ≤ 15 s, según el límite de atención de Nielsen), el costo (≤ USD 5 por 1 000 conversaciones) y el KPI de negocio (≥ 90 % de leads con atención útil en ≤ 60 min). Un KPI solo se declara **cumplido** cuando el extremo desfavorable de su IC 95 % alcanza la meta; si solo el valor puntual la alcanza, queda como *cumple (falta n)*. `python evaluacion/resumen_kpis.py` genera el PDF con el estado de cada uno.
+
 ---
 
 ## 3. Cómo medirlo con lo que ya tenemos

@@ -37,12 +37,17 @@ class MedidorTurno:
         self.tokens_entrada = 0
         self.tokens_salida = 0
         self.latencia_llm_ms = 0.0
+        self.espera_limite_ms = 0.0
         self.herramientas: List[Dict] = []
         self.tipo_respuesta = "libre"
 
-    def registrar_llamada_llm(self, respuesta, ms: float):
+    def registrar_llamada_llm(self, respuesta, ms: float, espera_limite_ms: float = 0.0):
+        """ms: tiempo total de la llamada; espera_limite_ms: parte perdida por límites de
+        Groq (429 y esperas). latencia_llm_ms guarda solo el tiempo real del LLM."""
         self.llamadas_llm += 1
-        self.latencia_llm_ms += ms
+        espera = min(max(espera_limite_ms, 0.0), ms)
+        self.espera_limite_ms += espera
+        self.latencia_llm_ms += ms - espera
         uso = getattr(respuesta, "usage", None)
         if uso is not None:
             self.tokens_entrada += int(getattr(uso, "prompt_tokens", 0) or 0)
@@ -62,6 +67,7 @@ class MedidorTurno:
             "tokens_salida": self.tokens_salida,
             "costo_usd": costo_usd(self.tokens_entrada, self.tokens_salida),
             "latencia_llm_ms": round(self.latencia_llm_ms, 1),
+            "espera_limite_ms": round(self.espera_limite_ms, 1),
             "latencia_procesamiento_ms": round(latencia_procesamiento_ms, 1),
             "latencia_total_ms": round(latencia_total_ms, 1),
             "herramientas": json.dumps(self.herramientas, ensure_ascii=False, default=str),
@@ -113,6 +119,15 @@ def resumir(filas: Iterable[Dict]) -> Dict:
         "latencia_llm": _resumen_latencia([f["latencia_llm_ms"] for f in con_llm]),
         "latencia_procesamiento": _resumen_latencia([f["latencia_procesamiento_ms"] for f in filas]),
         "latencia_total_cliente": _resumen_latencia([f["latencia_total_ms"] for f in filas]),
+        # Lo mismo descontando la espera por límites de Groq (cuota del plan, no velocidad)
+        "latencia_total_sin_limites": _resumen_latencia(
+            [f["latencia_total_ms"] - (f.get("espera_limite_ms") or 0) for f in filas]
+        ),
+        "espera_limite": {
+            "turnos_afectados": sum(1 for f in filas if (f.get("espera_limite_ms") or 0) > 0),
+            "total_ms": sum(f.get("espera_limite_ms") or 0 for f in filas),
+            **_resumen_latencia([f["espera_limite_ms"] for f in filas if (f.get("espera_limite_ms") or 0) > 0]),
+        },
         "tipos_respuesta": tipos,
         "precio_usd_por_millon": {"entrada": PRECIO_ENTRADA_USD_M, "salida": PRECIO_SALIDA_USD_M},
     }

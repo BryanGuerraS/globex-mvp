@@ -1,0 +1,559 @@
+{
+  "descripcion": "Genera evaluacion/casos_motor.json con un oráculo independiente en Decimal.\n\nReglas (CLAUDE.md, confirmadas 04/11): USD 9/kg, mínimo 1 kg facturable, USD 9 de\ntrámite, tributos 22.71957 % sobre CIF (valor + envío) si el valor supera USD 200,\ntope USD 1 200 para el cálculo automático. Redondeo comercial a 2 decimales\n(ROUND_HALF_UP) en flete, envío, tributos y total.",
+  "casos": [
+    {
+      "id": "M01",
+      "categoria": "Flete y peso mínimo",
+      "descripcion": "0.3 kg se cobra como 1 kg",
+      "tipo": "calculo",
+      "valor": 100,
+      "peso": 0.3,
+      "esperado": {
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 118.0,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M02",
+      "categoria": "Flete y peso mínimo",
+      "descripcion": "0.999 kg, justo bajo el mínimo",
+      "tipo": "calculo",
+      "valor": 100,
+      "peso": 0.999,
+      "esperado": {
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 118.0,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M03",
+      "categoria": "Flete y peso mínimo",
+      "descripcion": "Exactamente 1 kg",
+      "tipo": "calculo",
+      "valor": 100,
+      "peso": 1,
+      "esperado": {
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 118.0,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M04",
+      "categoria": "Flete y peso mínimo",
+      "descripcion": "1.5 kg proporcional",
+      "tipo": "calculo",
+      "valor": 100,
+      "peso": 1.5,
+      "esperado": {
+        "peso_facturable_kg": 1.5,
+        "costo_flete": 13.5,
+        "costo_envio": 22.5,
+        "tributos_aprox": 0.0,
+        "costo_total": 122.5,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M05",
+      "categoria": "Flete y peso mínimo",
+      "descripcion": "10 kg proporcional",
+      "tipo": "calculo",
+      "valor": 100,
+      "peso": 10,
+      "esperado": {
+        "peso_facturable_kg": 10.0,
+        "costo_flete": 90.0,
+        "costo_envio": 99.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 199.0,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M06",
+      "categoria": "Flete y peso mínimo",
+      "descripcion": "1.005 kg (1005 g): redondeo de 9.045 a 9.05",
+      "tipo": "calculo",
+      "valor": 100,
+      "peso": 1.005,
+      "esperado": {
+        "peso_facturable_kg": 1.005,
+        "costo_flete": 9.05,
+        "costo_envio": 18.05,
+        "tributos_aprox": 0.0,
+        "costo_total": 118.05,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M07",
+      "categoria": "Exoneración hasta USD 200",
+      "descripcion": "USD 50, sin tributos",
+      "tipo": "calculo",
+      "valor": 50,
+      "peso": 1,
+      "esperado": {
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 68.0,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M08",
+      "categoria": "Exoneración hasta USD 200",
+      "descripcion": "USD 199.99, sin tributos",
+      "tipo": "calculo",
+      "valor": 199.99,
+      "peso": 1,
+      "esperado": {
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 217.99,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M09",
+      "categoria": "Exoneración hasta USD 200",
+      "descripcion": "USD 200 exactos, aún exonerado",
+      "tipo": "calculo",
+      "valor": 200,
+      "peso": 2,
+      "esperado": {
+        "peso_facturable_kg": 2.0,
+        "costo_flete": 18.0,
+        "costo_envio": 27.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 227.0,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M10",
+      "categoria": "Exoneración hasta USD 200",
+      "descripcion": "USD 200.01, ya paga tributos",
+      "tipo": "calculo",
+      "valor": 200.01,
+      "peso": 1,
+      "esperado": {
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 49.53,
+        "costo_total": 267.54,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M11",
+      "categoria": "Exoneración hasta USD 200",
+      "descripcion": "USD 120 y 0.5 kg (zapatillas)",
+      "tipo": "calculo",
+      "valor": 120,
+      "peso": 0.5,
+      "esperado": {
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 138.0,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M12",
+      "categoria": "Exoneración hasta USD 200",
+      "descripcion": "USD 201 y 3 kg",
+      "tipo": "calculo",
+      "valor": 201,
+      "peso": 3,
+      "esperado": {
+        "peso_facturable_kg": 3.0,
+        "costo_flete": 27.0,
+        "costo_envio": 36.0,
+        "tributos_aprox": 53.85,
+        "costo_total": 290.85,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M13",
+      "categoria": "Tributos sobre CIF",
+      "descripcion": "Laptop USD 1 000, 2.5 kg (CP01)",
+      "tipo": "calculo",
+      "valor": 1000,
+      "peso": 2.5,
+      "esperado": {
+        "peso_facturable_kg": 2.5,
+        "costo_flete": 22.5,
+        "costo_envio": 31.5,
+        "tributos_aprox": 234.35,
+        "costo_total": 1265.85,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M14",
+      "categoria": "Tributos sobre CIF",
+      "descripcion": "Laptop USD 650, 2.5 kg (ejemplo de Globix)",
+      "tipo": "calculo",
+      "valor": 650,
+      "peso": 2.5,
+      "esperado": {
+        "peso_facturable_kg": 2.5,
+        "costo_flete": 22.5,
+        "costo_envio": 31.5,
+        "tributos_aprox": 154.83,
+        "costo_total": 836.33,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M15",
+      "categoria": "Tributos sobre CIF",
+      "descripcion": "USD 300, 1 kg",
+      "tipo": "calculo",
+      "valor": 300,
+      "peso": 1,
+      "esperado": {
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 72.25,
+        "costo_total": 390.25,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M16",
+      "categoria": "Tributos sobre CIF",
+      "descripcion": "USD 500 con peso mínimo (0.4 kg)",
+      "tipo": "calculo",
+      "valor": 500,
+      "peso": 0.4,
+      "esperado": {
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 117.69,
+        "costo_total": 635.69,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M17",
+      "categoria": "Tributos sobre CIF",
+      "descripcion": "USD 899.99, 4.2 kg",
+      "tipo": "calculo",
+      "valor": 899.99,
+      "peso": 4.2,
+      "esperado": {
+        "peso_facturable_kg": 4.2,
+        "costo_flete": 37.8,
+        "costo_envio": 46.8,
+        "tributos_aprox": 215.11,
+        "costo_total": 1161.9,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M18",
+      "categoria": "Tributos sobre CIF",
+      "descripcion": "USD 1 200 (en el tope), 5 kg",
+      "tipo": "calculo",
+      "valor": 1200,
+      "peso": 5,
+      "esperado": {
+        "peso_facturable_kg": 5.0,
+        "costo_flete": 45.0,
+        "costo_envio": 54.0,
+        "tributos_aprox": 284.9,
+        "costo_total": 1538.9,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M19",
+      "categoria": "Tope de USD 1 200",
+      "descripcion": "USD 1 199.99 se cotiza",
+      "tipo": "tope",
+      "valor": 1199.99,
+      "esperado": {
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M20",
+      "categoria": "Tope de USD 1 200",
+      "descripcion": "USD 1 200 se cotiza",
+      "tipo": "tope",
+      "valor": 1200,
+      "esperado": {
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M21",
+      "categoria": "Tope de USD 1 200",
+      "descripcion": "USD 1 200.01 se deriva",
+      "tipo": "tope",
+      "valor": 1200.01,
+      "esperado": {
+        "requiere_asesor": true
+      }
+    },
+    {
+      "id": "M22",
+      "categoria": "Tope de USD 1 200",
+      "descripcion": "USD 1 500 se deriva",
+      "tipo": "tope",
+      "valor": 1500,
+      "esperado": {
+        "requiere_asesor": true
+      }
+    },
+    {
+      "id": "M23",
+      "categoria": "Tope de USD 1 200",
+      "descripcion": "USD 5 000 se deriva",
+      "tipo": "tope",
+      "valor": 5000,
+      "esperado": {
+        "requiere_asesor": true
+      }
+    },
+    {
+      "id": "M24",
+      "categoria": "Tope de USD 1 200",
+      "descripcion": "USD 999.99 se cotiza",
+      "tipo": "tope",
+      "valor": 999.99,
+      "esperado": {
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M25",
+      "categoria": "Entradas inválidas",
+      "descripcion": "Peso 0 kg: el motor rechaza",
+      "tipo": "error_motor",
+      "valor": 100,
+      "peso": 0,
+      "esperado": {
+        "error": true
+      }
+    },
+    {
+      "id": "M26",
+      "categoria": "Entradas inválidas",
+      "descripcion": "Peso negativo: el motor rechaza",
+      "tipo": "error_motor",
+      "valor": 100,
+      "peso": -1,
+      "esperado": {
+        "error": true
+      }
+    },
+    {
+      "id": "M27",
+      "categoria": "Entradas inválidas",
+      "descripcion": "Valor negativo: el motor rechaza",
+      "tipo": "error_motor",
+      "valor": -5,
+      "peso": 1,
+      "esperado": {
+        "error": true
+      }
+    },
+    {
+      "id": "M28",
+      "categoria": "Entradas inválidas",
+      "descripcion": "Valor 0: la validación rechaza",
+      "tipo": "validacion",
+      "args": {
+        "valor_producto_usd": 0,
+        "peso_kg": 1
+      },
+      "textos": [
+        "producto de 100 dólares, 1 kg"
+      ],
+      "catalogo": [],
+      "esperado": {
+        "acepta": false
+      }
+    },
+    {
+      "id": "M29",
+      "categoria": "Entradas inválidas",
+      "descripcion": "Falta el peso",
+      "tipo": "validacion",
+      "args": {
+        "valor_producto_usd": 100,
+        "peso_kg": null
+      },
+      "textos": [
+        "producto de 100 dólares, 1 kg"
+      ],
+      "catalogo": [],
+      "esperado": {
+        "acepta": false
+      }
+    },
+    {
+      "id": "M30",
+      "categoria": "Entradas inválidas",
+      "descripcion": "Peso no numérico",
+      "tipo": "validacion",
+      "args": {
+        "valor_producto_usd": 100,
+        "peso_kg": "abc"
+      },
+      "textos": [
+        "producto de 100 dólares, 1 kg"
+      ],
+      "catalogo": [],
+      "esperado": {
+        "acepta": false
+      }
+    },
+    {
+      "id": "M31",
+      "categoria": "Anclaje al mensaje del cliente",
+      "descripcion": "\"mil dólares\" y \"medio kilo\" en palabras",
+      "tipo": "validacion",
+      "args": {
+        "valor_producto_usd": 1000,
+        "peso_kg": 0.5
+      },
+      "textos": [
+        "un celular de mil dólares que pesa medio kilo"
+      ],
+      "catalogo": [],
+      "esperado": {
+        "acepta": true
+      }
+    },
+    {
+      "id": "M32",
+      "categoria": "Anclaje al mensaje del cliente",
+      "descripcion": "Valor y peso dichos por el cliente",
+      "tipo": "validacion",
+      "args": {
+        "valor_producto_usd": 120,
+        "peso_kg": 1.5
+      },
+      "textos": [
+        "zapatillas de 120 dólares, 1.5 kg"
+      ],
+      "catalogo": [],
+      "esperado": {
+        "acepta": true
+      }
+    },
+    {
+      "id": "M33",
+      "categoria": "Anclaje al mensaje del cliente",
+      "descripcion": "Valor inventado por el LLM",
+      "tipo": "validacion",
+      "args": {
+        "valor_producto_usd": 150,
+        "peso_kg": 1.5
+      },
+      "textos": [
+        "zapatillas de 120 dólares, 1.5 kg"
+      ],
+      "catalogo": [],
+      "esperado": {
+        "acepta": false
+      }
+    },
+    {
+      "id": "M34",
+      "categoria": "Anclaje al mensaje del cliente",
+      "descripcion": "Peso tomado del catálogo",
+      "tipo": "validacion",
+      "args": {
+        "valor_producto_usd": 1100,
+        "peso_kg": 0.6
+      },
+      "textos": [
+        "quiero un iphone de 1100 dólares"
+      ],
+      "catalogo": [
+        0.6
+      ],
+      "esperado": {
+        "acepta": true
+      }
+    },
+    {
+      "id": "M35",
+      "categoria": "Anclaje al mensaje del cliente",
+      "descripcion": "Peso inventado por el LLM",
+      "tipo": "validacion",
+      "args": {
+        "valor_producto_usd": 300,
+        "peso_kg": 2
+      },
+      "textos": [
+        "un reloj de 300 dólares"
+      ],
+      "catalogo": [],
+      "esperado": {
+        "acepta": false
+      }
+    },
+    {
+      "id": "M36",
+      "categoria": "Anclaje al mensaje del cliente",
+      "descripcion": "Peso en gramos (500 g = 0.5 kg)",
+      "tipo": "validacion",
+      "args": {
+        "valor_producto_usd": 80,
+        "peso_kg": 0.5
+      },
+      "textos": [
+        "un perfume de 80 dólares que pesa 500 gramos"
+      ],
+      "catalogo": [],
+      "esperado": {
+        "acepta": true
+      }
+    }
+  ]
+}

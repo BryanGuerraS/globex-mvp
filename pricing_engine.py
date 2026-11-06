@@ -3,13 +3,28 @@
 Fórmulas basadas en la calculadora oficial y normativa aduanera SUNAT.
 """
 
+from decimal import ROUND_HALF_UP, Decimal
 from typing import Dict
+
+_CENTAVO = Decimal("0.01")
+
+
+def _dec(valor) -> Decimal:
+    """Convierte sin arrastrar el error binario del float (1.005 -> Decimal('1.005'))."""
+    return valor if isinstance(valor, Decimal) else Decimal(str(valor))
+
+
+def _centavos(valor: Decimal) -> Decimal:
+    """Redondeo comercial a 2 decimales (9.045 -> 9.05)."""
+    return valor.quantize(_CENTAVO, rounding=ROUND_HALF_UP)
 
 
 class GlobexPricingEngine:
-    FLETE_POR_KG: float = 9.0  # $9 por kilo
-    TRAMITE_ADUANERO: float = 9.0  # $9 tarifa fija de trámite
-    TASA_IMPUESTO_SUNAT: float = 0.2271957  # ~22.72% (Ad-Valorem 4% + IGV/IPM 18%)
+    """Las cuentas se hacen en Decimal; el resultado se devuelve en float (JSON, SQLite)."""
+
+    FLETE_POR_KG: float = 9.0  # USD 9 por kilo
+    TRAMITE_ADUANERO: float = 9.0  # USD 9 tarifa fija de trámite
+    TASA_IMPUESTO_SUNAT: float = 0.2271957  # ~22.72 % (simulador web de Globex)
     UMBRAL_EXONERACION_SUNAT: float = 200.0  # Hasta USD 200 no pagan tributos
     PESO_MINIMO_KG: float = 1.0  # Bajo 1 kg se cobra 1 kg; desde ahí, proporcional
     LIMITE_COTIZACION_AUTOMATICA: float = 1200.0  # Por encima, cotiza un asesor
@@ -17,40 +32,42 @@ class GlobexPricingEngine:
     @classmethod
     def requiere_asesor(cls, valor_producto: float) -> bool:
         """True si el valor supera el límite del cálculo automático."""
-        return valor_producto > cls.LIMITE_COTIZACION_AUTOMATICA
+        return _dec(valor_producto) > _dec(cls.LIMITE_COTIZACION_AUTOMATICA)
 
     @classmethod
     def calcular(cls, valor_producto: float, peso_kg: float) -> Dict[str, float]:
         """Calcula el desglose financiero exacto de la importación."""
-        if valor_producto < 0 or peso_kg <= 0:
+        valor, peso = _dec(valor_producto), _dec(peso_kg)
+        if valor < 0 or peso <= 0:
             raise ValueError(
                 "El valor del producto y el peso deben ser mayores a cero."
             )
 
         # 1. Costo de flete y envío (con peso mínimo facturable)
-        peso_facturable = max(peso_kg, cls.PESO_MINIMO_KG)
-        costo_flete = round(peso_facturable * cls.FLETE_POR_KG, 2)
-        costo_envio = round(costo_flete + cls.TRAMITE_ADUANERO, 2)
+        peso_facturable = max(peso, _dec(cls.PESO_MINIMO_KG))
+        costo_flete = _centavos(peso_facturable * _dec(cls.FLETE_POR_KG))
+        costo_envio = _centavos(costo_flete + _dec(cls.TRAMITE_ADUANERO))
 
-        # 2. Tributos e impuestos de importación
-        if valor_producto <= cls.UMBRAL_EXONERACION_SUNAT:
-            tributos = 0.0
-        else:
-            base_cif = valor_producto + costo_envio
-            tributos = round(base_cif * cls.TASA_IMPUESTO_SUNAT, 2)
+        # 2. Tributos e impuestos de importación (sobre CIF = valor + envío)
+        aplica_impuesto = valor > _dec(cls.UMBRAL_EXONERACION_SUNAT)
+        tributos = (
+            _centavos((valor + costo_envio) * _dec(cls.TASA_IMPUESTO_SUNAT))
+            if aplica_impuesto
+            else Decimal("0")
+        )
 
         # 3. Costo total de la operación
-        costo_total = round(valor_producto + costo_envio + tributos, 2)
+        costo_total = _centavos(valor + costo_envio + tributos)
 
         return {
             "valor_producto": valor_producto,
             "peso_kg": peso_kg,
-            "peso_facturable_kg": peso_facturable,
-            "costo_flete": costo_flete,
-            "costo_envio": costo_envio,
-            "tributos_aprox": tributos,
-            "costo_total": costo_total,
-            "aplica_impuesto": valor_producto > cls.UMBRAL_EXONERACION_SUNAT,
+            "peso_facturable_kg": float(peso_facturable),
+            "costo_flete": float(costo_flete),
+            "costo_envio": float(costo_envio),
+            "tributos_aprox": float(tributos),
+            "costo_total": float(costo_total),
+            "aplica_impuesto": aplica_impuesto,
         }
 
     @classmethod

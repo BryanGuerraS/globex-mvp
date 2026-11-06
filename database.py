@@ -127,6 +127,10 @@ def init_db():
             )
         """
         )
+        # Espera por límites de Groq (429), aparte de la latencia del LLM
+        cursor.execute("PRAGMA table_info(metricas_turno)")
+        if "espera_limite_ms" not in [row["name"] for row in cursor.fetchall()]:
+            cursor.execute("ALTER TABLE metricas_turno ADD COLUMN espera_limite_ms REAL DEFAULT 0")
 
         # 3c. Valores antiguos: nombres de tipo de contacto y asesor de ejemplo
         cursor.execute("UPDATE chats SET tipo_contacto = 'Nuevo prospecto' WHERE tipo_contacto LIKE '%Prospecto Nuevo%'")
@@ -508,8 +512,8 @@ def registrar_metrica_turno(metrica: Dict):
             INSERT INTO metricas_turno (
                 chat_id, timestamp, tipo_respuesta, llamadas_llm, tokens_entrada,
                 tokens_salida, costo_usd, latencia_llm_ms, latencia_procesamiento_ms,
-                latencia_total_ms, herramientas
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                latencia_total_ms, herramientas, espera_limite_ms
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 metrica["chat_id"],
@@ -523,6 +527,7 @@ def registrar_metrica_turno(metrica: Dict):
                 metrica["latencia_procesamiento_ms"],
                 metrica["latencia_total_ms"],
                 metrica["herramientas"],
+                metrica.get("espera_limite_ms", 0.0),
             ),
         )
         conn.commit()

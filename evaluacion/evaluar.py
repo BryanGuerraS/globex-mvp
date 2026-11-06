@@ -117,6 +117,13 @@ def evaluar_corrida(caso: Dict, corrida: Dict) -> List[Dict]:
 
 # ---------------------------------------------------------------- KPIs
 
+def _bloqueado_por_guardrail(r: Dict) -> bool:
+    """La corrida fue bloqueada por el guardrail (respuesta guardrail o texto de bloqueo)."""
+    if any(t.get("tipo_respuesta") == "guardrail" for t in r.get("turnos", [])):
+        return True
+    return any(c["check"].startswith("no_contiene:") and not c["ok"] for c in r.get("checks", []))
+
+
 def calcular_kpis(casos: List[Dict], resultados: Dict[str, List[Dict]]) -> Dict:
     """KPIs del plan de evaluación a partir de las corridas verificadas."""
     por_id = {c["id"]: c for c in casos}
@@ -153,6 +160,11 @@ def calcular_kpis(casos: List[Dict], resultados: Dict[str, List[Dict]]) -> Dict:
         "K4_derivacion_recall": contar(lambda c: esp(c).get("deriva") is True, "deriva"),
         "K4_sin_derivacion_innecesaria": contar(lambda c: esp(c).get("deriva") is False, "no_deriva"),
         "K5_guardrail": contar(lambda c: c.get("categoria") == "guardrail", pred=lambda r: r["exito"]),
+        # Falso positivo = el guardrail bloqueó un producto permitido (respuesta de tipo
+        # guardrail o texto de bloqueo). Si el LLM no cotiza por otra razón, eso cuenta
+        # en K1/K2 y pass^1, no aquí.
+        "K5_sin_falsos_positivos": contar(lambda c: c.get("categoria") == "falso_amigo",
+                                          pred=lambda r: not _bloqueado_por_guardrail(r)),
         "K11_adherencia_alcance": contar(lambda c: c.get("categoria") in ("alcance", "adversarial"),
                                           pred=lambda r: r["exito"]),
     }
@@ -182,6 +194,9 @@ class _ClienteConReintentos:
                     raise
                 print(f"   ⏳ {nombre}: reintento en {espera:.0f} s")
                 time.sleep(espera)
+                if nombre == "RateLimitError":  # cuenta como espera por cuota, no como latencia
+                    from llm_cliente import sumar_espera_ms
+                    sumar_espera_ms(espera * 1000)
                 espera = min(espera * 2, 60)
 
 
@@ -208,6 +223,7 @@ async def correr_caso(main, caso: Dict, repeticion: int, enviados: Dict[str, Lis
             "tokens_salida": m.get("tokens_salida"),
             "costo_usd": m.get("costo_usd"),
             "latencia_llm_ms": m.get("latencia_llm_ms"),
+            "espera_limite_ms": m.get("espera_limite_ms") or 0.0,
             "latencia_procesamiento_ms": m.get("latencia_procesamiento_ms"),
         })
     chat = main.obtener_chat(chat_id) or {}
@@ -218,6 +234,10 @@ async def correr_caso(main, caso: Dict, repeticion: int, enviados: Dict[str, Lis
 def _cuerpo(payload: Dict) -> Optional[str]:
     if payload.get("type") == "text":
         return payload["text"]["body"]
+    if payload.get("type") == "proforma":  # contenido de la imagen, ver evaluar()
+        return "[Proforma en imagen]\n" + payload["texto"]
+    if payload.get("type") == "image":
+        return payload["image"].get("caption")
     if payload.get("type") == "interactive":
         inter = payload["interactive"]
         cuerpo = inter["body"]["text"]
@@ -240,6 +260,16 @@ async def evaluar(main, casos: List[Dict], repeticiones: int, pausa: float = 0.0
         return True
 
     main._post_meta = post_falso  # nunca sale nada a Meta
+
+    # La cotización llega como imagen: se registra su contenido en texto para los checks
+    generar_imagen = main.generar_imagen_proforma
+
+    def imagen_registrada(resultado, producto, nombre_cliente, chat_id, **kwargs):
+        enviados.setdefault(chat_id, []).append(
+            {"type": "proforma", "texto": main.GlobexPricingEngine.formatear_mensaje_whatsapp(resultado)})
+        return generar_imagen(resultado, producto, nombre_cliente, chat_id, **kwargs)
+
+    main.generar_imagen_proforma = imagen_registrada
     resultados: Dict[str, List[Dict]] = {}
     for i, caso in enumerate(casos, 1):
         resultados[caso["id"]] = []
@@ -293,6 +323,13 @@ def generar_reporte(meta: Dict, casos: List[Dict], resultados: Dict[str, List[Di
         if lat["p50_ms"] is not None:
             L.append(f"| **Espera estimada del cliente** (+{DEBOUNCE_S:.0f} s de debounce, p50 · p95) | "
                      f"{_s(lat['p50_ms'] + DEBOUNCE_S * 1000)} · {_s(lat['p95_ms'] + DEBOUNCE_S * 1000)} |")
+        sin = resumen_costo.get("latencia_total_sin_limites", {})
+        lim = resumen_costo.get("espera_limite", {})
+        if sin.get("p50_ms") is not None:
+            L.append(f"| Espera del cliente **sin límites de cuota de Groq** (p50 · p95) | "
+                     f"{_s(sin['p50_ms'] + DEBOUNCE_S * 1000)} · {_s(sin['p95_ms'] + DEBOUNCE_S * 1000)} |")
+            L.append(f"| Turnos que esperaron por cuota (429) · espera total | "
+                     f"{lim.get('turnos_afectados', 0)} · {_s(lim.get('total_ms', 0))} |")
         L.append(f"| Costo total de la evaluación | USD {resumen_costo['costo_total_usd']:.4f} |")
         L.append(f"| Costo por conversación | USD {resumen_costo['costo_por_conversacion_usd']:.5f} |")
         L.append(f"| Costo por 1 000 conversaciones | USD {resumen_costo['costo_por_1000_conversaciones_usd']:.2f} |")
@@ -327,7 +364,8 @@ def generar_reporte(meta: Dict, casos: List[Dict], resultados: Dict[str, List[Di
                 continue
             L.append(f"- tipo: `{t.get('tipo_respuesta')}` · LLM x{t.get('llamadas_llm')} · "
                      f"{t.get('tokens_entrada')}+{t.get('tokens_salida')} tokens · "
-                     f"LLM {_s(t.get('latencia_llm_ms'))} · total {_s(t.get('latencia_procesamiento_ms'))}")
+                     f"LLM {_s(t.get('latencia_llm_ms'))} · total {_s(t.get('latencia_procesamiento_ms'))}"
+                     + (f" · espera por cuota {_s(t.get('espera_limite_ms'))}" if t.get("espera_limite_ms") else ""))
             for h in t.get("herramientas", []):
                 L.append(f"- 🔧 `{h['nombre']}({h.get('argumentos', '')})` → `{json.dumps(h.get('resultado'), ensure_ascii=False)}`")
             for resp in t.get("respuestas", []):
