@@ -89,6 +89,8 @@ def test_rechaza_no_numericos(valor, peso):
         ("pesa medio kilo", 0.5),
         ("pesa un kilo y medio", 1.5),
         ("pesa 1 kilo y medio", 1.5),
+        ("pesa kilo y medio", 1.5),
+        ("un kilogramo y medio", 1.5),
         ("pesa dos kilos y medio", 2.5),
         ("pesa tres kilos", 3),
     ],

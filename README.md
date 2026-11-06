@@ -312,6 +312,12 @@ Cada KPI queda como **Cumple** (el extremo desfavorable del IC 95 % alcanza la m
 
 Pass^1 98.6 % [96.5, 99.6], pass^3 97.9 %, USD 0.25 por 1 000 conversaciones.
 
+**Resultado del 06/11 (set de desarrollo ampliado a 122 casos × 3 = 366 corridas):** 15 de 16 KPIs cumplen; el de primera atención en ≤ 60 min se medirá el 14/11.
+- K2 (argumentos): 100 % (180/180) [98.0, 100]. Se agregaron 25 casos de cotización (COT-V01 a V25) para que K2 siga garantizado aunque haya hasta 3 fallos.
+- Pass^1 y K1: 99.2 % [97.6, 99.8]. Pass^3: 99.2 %.
+- Espera del cliente: p50 6.8 s y p95 8.2 s (7.8 s sin la espera por cuota). Costo: USD 0.30 por 1 000 conversaciones.
+- Única falla: COT-V09 ("pesa kilo y medio"). El LLM entendió 1.5 kg, pero la validación no leía "kilo" sin número; ya está corregida en `validaciones.py` y el caso pasó 5/5.
+
 **Límites de Groq.** El plan gratuito permite 200 000 tokens por día y 8 000 por minuto por organización; la evaluación completa gasta unos 550 000. [`llm_cliente.py`](llm_cliente.py) usa keys de respaldo (`GROQ_API_KEY_RESPALDO`, `_2`, `_3`…): ante un 429 pasa a la siguiente key y pausa la anterior solo el tiempo que indica Groq (segundos si el límite es por minuto, TPM/RPM; minutos u horas si es diario, TPD/RPD).
 
 **Espera por cuota, aparte de la latencia.** Ninguna key reintenta sola en el SDK: los 429 y las esperas los maneja `llm_cliente.py` y se guardan en `metricas_turno.espera_limite_ms`. `latencia_llm_ms` queda como el tiempo real de Groq. Los reportes muestran la espera del cliente con y sin la cuota. La p95 de 17.9 s del 05/11 se debía casi toda a esa espera: con 8 000 tokens por minuto por key, una key soporta unas 4 llamadas por minuto, y la evaluación hace unas 20. Con las pausas corregidas, la regresión del 05/11 (97/97) bajó la p95 de una llamada al LLM de 12.8 s a 6.9 s.

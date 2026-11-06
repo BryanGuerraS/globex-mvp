@@ -1,6 +1,6 @@
 {
   "descripcion": "Set de DESARROLLO (escrito por el equipo técnico para probar el script y ajustar el prompt). No usar para reportar resultados finales: para eso está el set reservado, escrito por otra persona y no usado para ajustar.",
-  "version": "2026-11-05b",
+  "version": "2026-11-06",
   "casos": [
     {
       "id": "COT-01",
@@ -1873,6 +1873,485 @@
           "descuento aplicado",
           "90% de descuento aplicado"
         ]
+      }
+    },
+    {
+      "id": "COT-V01",
+      "categoria": "cotizacion",
+      "descripcion": "Pregunta directa con los tres datos",
+      "mensajes": [
+        "Hola, cuánto me sale traer un monitor LG de 280 dólares? pesa 6 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 280,
+          "peso": 6
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V02",
+      "categoria": "cotizacion",
+      "descripcion": "Sin tildes ni signos, unidades pegadas",
+      "mensajes": [
+        "necesito cotizar una silla gamer 210 usd 18kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 210,
+          "peso": 18
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V03",
+      "categoria": "cotizacion",
+      "descripcion": "Precio con signo $",
+      "mensajes": [
+        "Cuánto pagaría por unas zapatillas Adidas de $95, pesan 1.1 kg?"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 95,
+          "peso": 1.1
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V04",
+      "categoria": "cotizacion",
+      "descripcion": "Precio con centavos",
+      "mensajes": [
+        "Una consola Nintendo Switch OLED de 349.99 dólares, 1.8 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 349.99,
+          "peso": 1.8
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V05",
+      "categoria": "cotizacion",
+      "descripcion": "Peso menor al mínimo facturable",
+      "mensajes": [
+        "Quiero traer un drone DJI Mini de 459 dólares que pesa 0.9 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 459,
+          "peso": 0.9
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V06",
+      "categoria": "cotizacion",
+      "descripcion": "Dos mensajes: precio y luego peso",
+      "mensajes": [
+        "Me interesa un parlante JBL de 150 dólares",
+        "pesa 2 kilos"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 150,
+          "peso": 2
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V07",
+      "categoria": "cotizacion",
+      "descripcion": "Tres mensajes: producto, precio, peso",
+      "mensajes": [
+        "Cotízame una bicicleta plegable",
+        "cuesta 520 dólares",
+        "y pesa 14 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 520,
+          "peso": 14
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V08",
+      "categoria": "cotizacion",
+      "descripcion": "Precio y peso en palabras",
+      "mensajes": [
+        "un reloj garmin de mil dólares, medio kilo"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 1000,
+          "peso": 0.5
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V09",
+      "categoria": "cotizacion",
+      "descripcion": "Peso en palabras (kilo y medio)",
+      "mensajes": [
+        "Una freidora de aire de 120 dólares, pesa kilo y medio"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 120,
+          "peso": 1.5
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V10",
+      "categoria": "cotizacion",
+      "descripcion": "Cotización con saludo y pedido de ayuda",
+      "mensajes": [
+        "Hola! quiero traer una cámara Canon de 780 dólares, 1.3 kg, me ayudas?"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 780,
+          "peso": 1.3
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V11",
+      "categoria": "cotizacion",
+      "descripcion": "Saludo y datos sin verbo",
+      "mensajes": [
+        "Buenas noches, una mochila North Face 85 dólares 0.8 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 85,
+          "peso": 0.8
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V12",
+      "categoria": "cotizacion",
+      "descripcion": "Justo debajo del umbral de tributos",
+      "mensajes": [
+        "Cuánto cuesta el envío de una tablet de 199 dólares que pesa 0.5 kg?"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 199,
+          "peso": 0.5
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V13",
+      "categoria": "cotizacion",
+      "descripcion": "Justo encima del umbral de tributos",
+      "mensajes": [
+        "Una tablet de 201 dólares, 0.5 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 201,
+          "peso": 0.5
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V14",
+      "categoria": "cotizacion",
+      "descripcion": "Producto pesado de hogar",
+      "mensajes": [
+        "Un set de ollas de 300 dólares que pesa 9.5 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 300,
+          "peso": 9.5
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V15",
+      "categoria": "cotizacion",
+      "descripcion": "USD en mayúsculas",
+      "mensajes": [
+        "Quiero importar unos audífonos Sony de 348 USD, pesan 0.25 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 348,
+          "peso": 0.25
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V16",
+      "categoria": "cotizacion",
+      "descripcion": "Pregunta con verbo 'cotizas'",
+      "mensajes": [
+        "Me cotizas un juego de Lego de 160 dólares? pesa 2.2 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 160,
+          "peso": 2.2
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V17",
+      "categoria": "cotizacion",
+      "descripcion": "Detalle extra irrelevante",
+      "mensajes": [
+        "Un vestido de 70 dólares, 0.4 kg, es para regalo"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 70,
+          "peso": 0.4
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V18",
+      "categoria": "cotizacion",
+      "descripcion": "Cerca del tope de USD 1 200",
+      "mensajes": [
+        "Necesito traer una impresora 3D de 1150 dólares que pesa 11 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 1150,
+          "peso": 11
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V19",
+      "categoria": "cotizacion",
+      "descripcion": "Combo de dos productos con un solo precio",
+      "mensajes": [
+        "Teclado + mouse inalámbricos por 89 dólares, 1 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 89,
+          "peso": 1
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V20",
+      "categoria": "cotizacion",
+      "descripcion": "Sin tilde en dólares",
+      "mensajes": [
+        "Una guitarra acústica Yamaha 230 dolares 3.5kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 230,
+          "peso": 3.5
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V21",
+      "categoria": "cotizacion",
+      "descripcion": "Forma indirecta de pedir cotización",
+      "mensajes": [
+        "Quisiera saber cuánto me cobran por un microondas de 140 dólares que pesa 12 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 140,
+          "peso": 12
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V22",
+      "categoria": "cotizacion",
+      "descripcion": "Pregunta por el total al final",
+      "mensajes": [
+        "Unas gafas Ray-Ban de 180 dólares, 0.2 kg. Cuánto sería en total?"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 180,
+          "peso": 0.2
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V23",
+      "categoria": "cotizacion",
+      "descripcion": "Artículo de bebé",
+      "mensajes": [
+        "Un coche para bebé de 400 dólares, 9 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 400,
+          "peso": 9
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V24",
+      "categoria": "cotizacion",
+      "descripcion": "Precio bajo, total mínimo",
+      "mensajes": [
+        "Una lámpara de escritorio 45 usd, pesa 1.2 kg, cuánto sale?"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 45,
+          "peso": 1.2
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COT-V25",
+      "categoria": "cotizacion",
+      "descripcion": "Peso aproximado en segundo mensaje",
+      "mensajes": [
+        "Quiero traer un Kindle de 140 dólares",
+        "pesa como 0.3 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 140,
+          "peso": 0.3
+        },
+        "cotiza": true,
+        "deriva": false
       }
     }
   ]

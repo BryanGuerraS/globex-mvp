@@ -107,6 +107,9 @@ def _numeros_en_palabras(texto: str) -> List[float]:
             # "1 kilo y medio", "un kilo y medio"
             if ultimo is not None and i >= 2 and tokens[i - 1] == "y":
                 numeros.append(ultimo + 0.5)
+            # "pesa kilo y medio": "kilo" en singular ya es uno
+            if i >= 2 and tokens[i - 1] == "y" and tokens[i - 2] in ("kilo", "kilogramo"):
+                numeros.append(1.5)
         elif tok in _PALABRAS_NUMERO:
             actual += _PALABRAS_NUMERO[tok]
             activo = True
