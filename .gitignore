@@ -24,3 +24,10 @@ CLAUDE.md
 
 # Reportes generados por la evaluación
 evaluacion/reportes/
+
+# Documento de alineación del equipo (solo local)
+docs/alineacion_equipo.txt
+
+# Set reservado (casos reales del equipo): no subir ni usar para ajustar
+evaluacion/reservado/
+docs/actualizacion_resultados.txt

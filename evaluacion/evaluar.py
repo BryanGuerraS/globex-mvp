@@ -399,6 +399,8 @@ def main_cli(argv=None):
     parser.add_argument("--solo", default="", help="IDs separados por coma")
     parser.add_argument("--pausa", type=float, default=0.0, help="Segundos entre corridas (límites de Groq)")
     parser.add_argument("--salida", default=os.path.join(REPO, "evaluacion", "reportes"))
+    parser.add_argument("--reglas", action="store_true",
+                        help="Baseline sin LLM: reemplaza el LLM por reglas (evaluacion/baseline_reglas.py)")
     parser.add_argument("--pdf-desde", default="",
                         help="Regenera el PDF desde un resultados_*.json ya guardado (no llama al LLM)")
     args = parser.parse_args(argv)
@@ -421,9 +423,15 @@ def main_cli(argv=None):
     import main  # noqa: E402  (carga el .env del repo: GROQ_API_KEY)
     from metricas import resumir  # noqa: E402
 
-    if not os.getenv("GROQ_API_KEY"):
-        sys.exit("Falta GROQ_API_KEY en el .env")
-    main.client = _ClienteConReintentos(main.client)
+    if args.reglas:
+        # Baseline "modelo simple": el mismo sistema con reglas en vez del LLM
+        from evaluacion.baseline_reglas import ClienteReglas
+        main.client = ClienteReglas()
+        main.MODEL = "reglas (sin LLM)"
+    else:
+        if not os.getenv("GROQ_API_KEY"):
+            sys.exit("Falta GROQ_API_KEY en el .env")
+        main.client = _ClienteConReintentos(main.client)
 
     inicio = time.time()
     resultados = asyncio.run(evaluar(main, casos, args.repeticiones, args.pausa))
@@ -431,7 +439,13 @@ def main_cli(argv=None):
 
     kpis = calcular_kpis(casos, resultados)
     resumen_costo = resumir(main.obtener_metricas())
-    marca = datetime.now().strftime("%Y%m%d_%H%M")
+    # Con segundos y sin pisar archivos: dos corridas que terminan en el mismo minuto
+    # se sobrescribían (pasó el 09/11 con el set reservado y sus pendientes).
+    marca = datetime.now().strftime("%Y%m%d_%H%M%S")
+    sufijo = 2
+    while os.path.exists(os.path.join(salida, f"resultados_{marca}.json")):
+        marca = f"{datetime.now():%Y%m%d_%H%M%S}_{sufijo}"
+        sufijo += 1
     meta = {"fecha": datetime.now().strftime("%d/%m/%Y %H:%M"), "archivo_casos": os.path.relpath(archivo_casos, REPO),
             "repeticiones": args.repeticiones, "modelo": main.MODEL, "duracion_s": duracion}
 
