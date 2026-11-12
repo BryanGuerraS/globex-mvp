@@ -36,3 +36,13 @@ def test_exito_de_csv(tmp_path):
     ruta = tmp_path / "oficial.csv"
     ruta.write_text("a;✅\nb;❌\n", encoding="utf-8")
     assert fr.exito_de_csv(str(ruta)) == {"a": True, "b": False}
+
+
+def test_juez_solo_listos_excluye_parciales_pero_los_checks_no():
+    casos = [{"id": "a", "banco": {"estado_referencia": "Listo"}},
+             {"id": "b", "banco": {"estado_referencia": "Validación parcial"}}]
+    todos_si = {"a": True, "b": True}
+    texto = fr.ficha(casos, None, [todos_si], [todos_si], {"a": False, "b": False}, {"a": False, "b": False},
+                     juez_solo_listos=True)
+    assert "| Éxito de tarea (checks) | 0.0 % (0/2) | 100.0 % |" in texto
+    assert "| Atención correcta (juez) | 0.0 % (0/1) | 100.0 % |" in texto

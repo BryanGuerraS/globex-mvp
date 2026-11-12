@@ -99,10 +99,13 @@ def _pp(x: Optional[float]) -> str:
 
 
 def ficha(casos: List[Dict], banco: Optional[str], v0_exito: List[Dict], v0_juez: List[Dict],
-          base_exito: Dict, base_juez: Optional[Dict]) -> str:
+          base_exito: Dict, base_juez: Optional[Dict], juez_solo_listos: bool = False) -> str:
     ids = sorted(c["id"] for c in casos)
-    # Métrica del juez: solo casos con veredicto en el baseline, para comparar lo mismo
-    ids_juez = [i for i in ids if base_juez is None or base_juez.get(i) is not None]
+    # Métrica del juez: solo casos con veredicto en el baseline, para comparar lo mismo;
+    # con juez_solo_listos, además solo los de referencia "Listo" (regla pre-registrada del lote nuevo)
+    listos = {c["id"] for c in casos if c.get("banco", {}).get("estado_referencia", "Listo") == "Listo"}
+    ids_juez = [i for i in ids if (base_juez is None or base_juez.get(i) is not None)
+                and (not juez_solo_listos or i in listos)]
     L = [f"# Ficha de modelamiento · Globix v0 contra baseline · {datetime.now():%d/%m/%Y %H:%M}", ""]
     if banco:
         L += [f"Banco: `{os.path.basename(banco)}` · SHA-256 `{sha256(banco)}` · {len(ids)} casos.", ""]
@@ -139,6 +142,8 @@ def main(argv=None):
     p.add_argument("--juez-v0", nargs="*", default=[], help="carpetas del juez, una por corrida de Globix")
     p.add_argument("--baseline", required=True)
     p.add_argument("--juez-baseline")
+    p.add_argument("--juez-solo-listos", action="store_true",
+                   help="El juez solo cuenta casos con referencia 'Listo' (los parciales van en los checks)")
     p.add_argument("--salida", default=os.path.join(REPO, "evaluacion", "reportes"))
     a = p.parse_args(argv)
     with open(a.casos, encoding="utf-8") as f:
@@ -146,7 +151,8 @@ def main(argv=None):
     v0_exito = [exito_de_csv(r) for r in a.exito_csv] + [exito_de_resultados(r) for r in a.v0]
     v0_juez = [juez_de_carpeta(d) for d in a.juez_v0]
     base_juez = juez_de_carpeta(a.juez_baseline) if a.juez_baseline else None
-    texto = ficha(casos, a.banco, v0_exito, v0_juez, exito_de_resultados(a.baseline), base_juez)
+    texto = ficha(casos, a.banco, v0_exito, v0_juez, exito_de_resultados(a.baseline), base_juez,
+                  a.juez_solo_listos)
     os.makedirs(a.salida, exist_ok=True)
     ruta = os.path.join(a.salida, f"ficha_repeticiones_{datetime.now():%Y%m%d_%H%M%S}.md")
     with open(ruta, "w", encoding="utf-8") as f:

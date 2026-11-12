@@ -51,6 +51,8 @@ def main(argv=None):
     p.add_argument("--salida", default=os.path.join(REPO, "evaluacion", "reportes",
                                                     f"reproduccion_{datetime.now():%Y%m%d_%H%M%S}"))
     p.add_argument("--sin-juez", action="store_true", help="Solo checks automáticos (sin el LLM juez)")
+    p.add_argument("--incluir-parciales", action="store_true",
+                   help="Casos 'Validación parcial' en los checks; el juez los excluye (lote nuevo)")
     a = p.parse_args(argv)
     banco = os.path.abspath(a.banco)
     salida = os.path.abspath(a.salida)
@@ -58,7 +60,8 @@ def main(argv=None):
     casos = os.path.join(os.path.dirname(banco), "casos_reservados.json")
 
     print("1. Convertir el banco")
-    correr([os.path.join(REPO, "evaluacion", "convertir_banco.py"), banco], os.path.join(salida, "1_convertir.log"))
+    correr([os.path.join(REPO, "evaluacion", "convertir_banco.py"), banco,
+            *(["--incluir-parciales"] if a.incluir_parciales else [])], os.path.join(salida, "1_convertir.log"))
 
     print("2. Baseline de reglas sin LLM")
     carpeta_b = os.path.join(salida, "baseline")
@@ -93,6 +96,8 @@ def main(argv=None):
             "--v0", *jsons_g, "--baseline", json_b, "--salida", salida]
     if jueces_g:
         args += ["--juez-v0", *jueces_g, "--juez-baseline", juez_b]
+        if a.incluir_parciales:
+            args.append("--juez-solo-listos")
     correr(args, os.path.join(salida, "4_ficha.log"))
     print(f"Listo. Ficha y registros en {salida}")
 

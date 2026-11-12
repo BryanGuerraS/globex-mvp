@@ -2,6 +2,7 @@
 
 Uso:
     python evaluacion/convertir_banco.py evaluacion/reservado/Globex_Banco_Pruebas_v3_Pendientes_Depurados.txt
+    python evaluacion/convertir_banco.py <lote>.txt --incluir-parciales   # "Validación parcial" al principal
 
 Genera, junto al banco (carpeta ignorada por git):
 - casos_reservados.json            -> casos con "Estado de referencia: Listo" (se reportan)
@@ -113,11 +114,19 @@ def a_caso_evaluar(c: Dict) -> Dict:
     }
 
 
-def convertir(ruta_banco: str) -> Dict[str, str]:
+# Estados que entran al archivo principal. "Validación parcial" (lote nuevo del 12/11):
+# la referencia tiene una parte abierta (p. ej. el total de tributos), pero los checks
+# automáticos (tipo de respuesta, si cotiza, si deriva, precio y peso) sí son evaluables.
+ESTADO_LISTO = "Listo"
+ESTADO_PARCIAL = "Validación parcial"
+
+
+def convertir(ruta_banco: str, incluir_parciales: bool = False) -> Dict[str, str]:
     with open(ruta_banco, encoding="utf-8") as f:
         banco = leer_banco(f.read())
-    listos = [a_caso_evaluar(c) for c in banco if c["estado_referencia"] == "Listo"]
-    pendientes = [a_caso_evaluar(c) for c in banco if c["estado_referencia"] != "Listo"]
+    principales = {ESTADO_LISTO} | ({ESTADO_PARCIAL} if incluir_parciales else set())
+    listos = [a_caso_evaluar(c) for c in banco if c["estado_referencia"] in principales]
+    pendientes = [a_caso_evaluar(c) for c in banco if c["estado_referencia"] not in principales]
     carpeta = os.path.dirname(os.path.abspath(ruta_banco))
     rutas = {}
     for nombre, casos, desc in (
@@ -134,8 +143,9 @@ def convertir(ruta_banco: str) -> Dict[str, str]:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
+    argumentos = [a for a in sys.argv[1:] if a != "--incluir-parciales"]
+    if len(argumentos) != 1:
         sys.exit(__doc__)
-    for nombre, ruta in convertir(sys.argv[1]).items():
+    for nombre, ruta in convertir(argumentos[0], "--incluir-parciales" in sys.argv).items():
         with open(ruta, encoding="utf-8") as f:
             print(f"{nombre}: {len(json.load(f)['casos'])} casos -> {ruta}")

@@ -68,3 +68,21 @@ def test_separa_pendientes_y_evaluar_los_acepta(tmp_path):
 def test_etiqueta_desconocida_falla():
     with pytest.raises(ValueError):
         cb.a_caso_evaluar({**cb.leer_banco(BANCO)[0], "resultado": "inventada"})
+
+
+def test_incluir_parciales_los_pasa_al_archivo_principal(tmp_path):
+    banco = (_bloque("P1", "cotiza", "Emitir cotización preliminar", "Zapatillas de USD 75 y 500 g",
+                     valor="75", peso="0.5", estado_ref="Validación parcial")
+             + _bloque("L1", "deriva", "Derivar", "Quiero un asesor")
+             + _bloque("X1", "faq", "Responder información", "¿Dónde queda?", estado_ref="Referencia por validar"))
+    ruta = tmp_path / "lote.txt"
+    ruta.write_text(banco, encoding="utf-8")
+
+    def ids(rutas, nombre):
+        return [c["id"] for c in json.loads(open(rutas[nombre], encoding="utf-8").read())["casos"]]
+
+    sin = cb.convertir(str(ruta))
+    assert ids(sin, "casos_reservados.json") == ["L1"]
+    con = cb.convertir(str(ruta), incluir_parciales=True)
+    assert ids(con, "casos_reservados.json") == ["P1", "L1"]
+    assert ids(con, "casos_reservados_pendientes.json") == ["X1"]  # "por validar" sigue aparte
