@@ -100,7 +100,8 @@ def main(argv=None):
     commit_v0 = verificar_checkout(v0_repo, COMMIT_V0)
     os.makedirs(salida, exist_ok=True)
     with open(os.path.join(salida, "0_versiones.txt"), "w", encoding="utf-8") as f:
-        f.write(f"lote_sha256={SHA_LOTE}\nv1={commit_v1}\nv0={commit_v0}\nherramientas={git(REPO, 'rev-parse', 'HEAD')}\nrepeticiones={a.repeticiones}\n"
+        f.write(f"lote_sha256={SHA_LOTE}\nv1={commit_v1}\nv0={commit_v0}\nherramientas={git(REPO, 'rev-parse', 'HEAD')}\n"
+                f"modelo_juez={os.getenv('GROQ_MODELO_JUEZ', 'qwen/qwen3.8-27b')}\nrepeticiones={a.repeticiones}\n"
                 f"inicio={datetime.now():%d/%m/%Y %H:%M:%S}\n")
     print(f"   v1 {commit_v1[:7]} · v0 {commit_v0[:7]} · lote {SHA_LOTE[:12]}…")
 
