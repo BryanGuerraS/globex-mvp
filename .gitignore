@@ -38,3 +38,6 @@ docs/respuesta_metodologia_v2.txt
 # Base de conocimiento del equipo (contiene extractos de chats reales): solo local
 Globex_Base_Conocimiento_Integral_20261112/
 docs/pendientes_por_validar.txt
+
+# Worktrees locales para correr versiones anteriores (v0 del lote nuevo)
+.worktrees/

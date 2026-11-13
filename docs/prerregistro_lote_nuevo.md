@@ -19,10 +19,12 @@ Fijado el 12/11/2026, **antes de ejecutar ningún bot sobre el lote y sin abrir 
 | Opción | Código |
 | --- | --- |
 | Globix v0 | Bot del commit `9acff1f` (idéntico en `92859b0`), el evaluado en el banco v3 |
-| Globix v1 | Commit que se congele con las correcciones de la v1; se anota aquí antes de correr |
+| Globix v1 | Bot del commit `acbd1d6` (congelado el 13/11/2026) |
 | Baseline de reglas sin LLM | `evaluacion/baseline_reglas.py`, mismas herramientas de evaluación |
 
-Las tres opciones se corren con las **mismas herramientas de evaluación** (conversor, checks, juez y ficha), del commit que se anota aquí antes de correr.
+Las tres opciones se corren con las **mismas herramientas de evaluación** (conversor, checks, juez y comparación), del commit que agrega `evaluacion/correr_lote_nuevo.py` (el siguiente a `acbd1d6`; su hash queda en `0_versiones.txt` de la corrida). `evaluacion/evaluar.py` es idéntico en `92859b0` y en `acbd1d6`; para la v0 se ejecuta desde un worktree en `92859b0` para que importe el bot de la v0.
+
+Comando: `python evaluacion/correr_lote_nuevo.py --repeticiones 3` (verifica la huella del lote y los commits antes de llamar al LLM).
 
 ## Reglas de medición
 
@@ -54,3 +56,4 @@ Las tres opciones se corren con las **mismas herramientas de evaluación** (conv
 | 13/11/2026 | El límite de cotización automática pasa de USD 1 200 a USD 2 000 (valor declarado del producto) en la rúbrica y el prompt del juez | Decisión del usuario, alineada con la base de conocimiento del equipo del 12/11. Se fija antes de ejecutar y se aplica igual a v0, v1 y reglas. La v0 (commit 92859b0) conserva USD 1 200 en su código: en el lote nuevo derivará productos de USD 1 200 a 2 000 que la regla vigente permite cotizar, y se informará así. |
 | 13/11/2026 | La fórmula de cotización pasa a la del Excel de Globex (hoja COURIER): TAX de tienda 7 % de referencia (0 en Amazon/eBay o si el precio lo incluye), tributos 24 % sobre producto + TAX si suma USD 200 o más, y tope de USD 2 000 sobre producto + TAX. El envío dentro de EE. UU. queda fuera del alcance. Se actualizan la rúbrica y el prompt del juez | Decisión del usuario. Se fija antes de ejecutar y la rúbrica se aplica igual a v0, v1 y reglas. La v0 (commit 92859b0) conserva 22.72 % sobre CIF: el juez no recalcula montos (solo revisa producto, precio y peso), pero si una respuesta cita la tasa o el total puede diferir; se informará así. |
 | 13/11/2026 | Se confirma el desaduanaje de USD 9 (el USD 7 de la hoja COURIER era una prueba) y se agrega precio = unitario × cantidad, como la celda H7 del Excel; la rúbrica y el prompt del juez lo mencionan | Decisión del usuario, antes de ejecutar; se aplica igual a v0, v1 y reglas. La v0 no recibe cantidad: con varias unidades a precio unitario cotiza una o pide el precio de nuevo. |
+| 13/11/2026 | Se congela la v1 en `acbd1d6` y se agregan `evaluacion/correr_lote_nuevo.py` (corre todo y verifica huella y commits) y `evaluacion/comparar_lote_nuevo.py` (reglas 1 a 6 de este documento: checks sobre 60, juez sobre los Listo con veredicto en todas las corridas, K2, mín.–máx., bootstrap de casos con 5 000 remuestreos y semilla 17, contrapeso) | Antes de ejecutar y sin abrir los casos; el lote solo se convirtió para comprobar que entran 60 casos (54 Listo y 6 de validación parcial, marcados). El baseline de reglas usa el código del commit de la v1 (FAQ, guardrail y motor vigentes), igual que en el banco v3, donde usaba el del commit evaluado. |
