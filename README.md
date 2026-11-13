@@ -75,22 +75,25 @@ Implementado en [`pricing_engine.py`](pricing_engine.py). Reglas vigentes en el 
 | Concepto | Regla |
 | :-- | :-- |
 | Flete | `peso_kg × USD 9`, con mínimo de 1 kg (bajo 1 kg se cobra 1 kg; desde ahí, proporcional) |
-| Trámite | USD 9 fijo |
+| Trámite (desaduanaje) | USD 9 fijo |
 | Costo de envío | Flete + trámite |
-| Tributos | USD 0 si el valor del producto es ≤ USD 200 |
-| | Si supera USD 200: `≈ 22.72 % × (valor + costo de envío)` |
-| Total | Valor + costo de envío + tributos |
-| Tope automático | Si el valor supera USD 1 200, no se cotiza: el chat pasa a un asesor |
+| Precio | Precio unitario × cantidad |
+| TAX de tienda | El que indica el cliente; 0 en Amazon/eBay con almacén Globex o si el precio ya lo incluye; si no, 7 % del precio |
+| Boleta | Valor + TAX de tienda (el envío dentro de EE. UU. está fuera de alcance) |
+| Tributos | USD 0 si la boleta es menor a USD 200 |
+| | Si es de USD 200 o más: `24 % × boleta` |
+| Total | Boleta + costo de envío + tributos |
+| Tope automático | Si la boleta supera USD 2 000 (antes USD 1 200 sobre el producto), no se cotiza: el chat pasa a un asesor |
 
 Ejemplos verificados con el motor:
 
-| Valor | Peso | Envío | Tributos | Total |
-| --: | --: | --: | --: | --: |
-| USD 150 | 0.45 kg (se cobra 1 kg) | USD 18.00 | USD 0.00 | **USD 168.00** |
-| USD 150 | 1.2 kg | USD 19.80 | USD 0.00 | **USD 169.80** |
-| USD 1 000 | 2.5 kg | USD 31.50 | USD 234.35 | **USD 1 265.85** |
+| Valor | Peso | TAX (7 %) | Envío | Tributos | Total |
+| --: | --: | --: | --: | --: | --: |
+| USD 150 | 0.45 kg (se cobra 1 kg) | USD 10.50 | USD 18.00 | USD 0.00 | **USD 178.50** |
+| USD 150 | 1.2 kg | USD 10.50 | USD 19.80 | USD 0.00 | **USD 180.30** |
+| USD 1 000 | 2.5 kg | USD 70.00 | USD 31.50 | USD 256.80 | **USD 1 358.30** |
 
-> La tasa de 22.72 % coincide con el simulador de la web de Globex. La cotización tiene vigencia de 24 h. Queda pendiente de confirmar el TAX de tienda (7 %).
+> Fórmula del Excel de cotización de Globex (hoja COURIER), adoptada el 13/11/2026 en lugar del 22.72 % sobre CIF del simulador web. El desaduanaje es USD 9 (confirmado el 13/11; el USD 7 de la hoja COURIER era una prueba; la hoja "Courier Comi." tiene USD 9). La cotización tiene vigencia de 24 h.
 
 ---
 
@@ -106,7 +109,7 @@ Ejemplos verificados con el motor:
 - **Datos para cotizar:** pide en un solo mensaje producto, precio en USD y peso en kg, con un ejemplo ("Laptop Lenovo, USD 650, 2.5 kg"). Si el cliente no da el peso, se busca en el catálogo; si el producto no está, pregunta solo "¿Cuánto pesa aproximadamente en kg?" (nunca el modelo ni la marca) y explica que basta un estimado únicamente si el cliente duda. Las notas internas del LLM, como "(Esperando respuesta del cliente)", se filtran antes de enviar.
 - **Proforma como imagen:** la cotización llega como una imagen de proforma con el logo de Globex (número, fecha, producto, flete, trámite aduanero, tributos, total y vigencia de 24 h; generada por [`proforma_imagen.py`](proforma_imagen.py) con los montos del motor). Si el peso viene del catálogo se marca como *estimado*. La leyenda dice *"Te envío adjunto tu cotización **referencial**."* y luego llegan los botones con el total. Si la imagen no se puede enviar, se usa el mensaje de texto.
 - **Después de la proforma:** llega *"Total estimado: **USD 836.33**. ¿Qué deseas hacer ahora? 😊"* con los botones *Hablar con asesor*, *Cotizar otro* y *¿Cómo compro?*. Lo que entendió el bot (producto, precio y peso) queda registrado para el asesor en el dashboard.
-- **Derivación con resumen:** cada vez que Globix pasa un caso al asesor (pedido del cliente, compra de más de USD 1,200, seguimiento, viajero o mercancía restringida) guarda un **resumen del caso**: motivo, cliente, última cotización (producto, precio, peso y total) y últimos mensajes. Se arma con datos del sistema, sin LLM. El asesor lo ve arriba del detalle del chat en la consola, que además muestra un aviso cuando entra un caso nuevo. Si se configura Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`), el resumen llega al instante al grupo de asesores ([`notificaciones.py`](notificaciones.py) explica cómo crearlo).
+- **Derivación con resumen:** cada vez que Globix pasa un caso al asesor (pedido del cliente, compra de más de USD 2,000, seguimiento, viajero o mercancía restringida) guarda un **resumen del caso**: motivo, cliente, última cotización (producto, precio, peso y total) y últimos mensajes. Se arma con datos del sistema, sin LLM. El asesor lo ve arriba del detalle del chat en la consola, que además muestra un aviso cuando entra un caso nuevo. Si se configura Telegram (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`), el resumen llega al instante al grupo de asesores ([`notificaciones.py`](notificaciones.py) explica cómo crearlo).
 - **Recuperación:** si el bot falla dos veces seguidas, ofrece las opciones y el asesor en vez de repetir el error.
 - **Alcance limitado a Globex (dos capas):**
   1. *Herramienta `fuera_de_alcance`:* ante temas ajenos (matemáticas, programación, recetas, política…) el LLM no responde el tema; Globix envía un texto fijo y los botones del menú.
@@ -121,7 +124,7 @@ Ejemplos verificados con el motor:
 - **Escape a humano:** el LLM decide si el cliente realmente pide hablar con una persona (herramienta `derivar_a_asesor`), en lugar de buscar palabras sueltas: "quiero hablar con un asesor" deriva, "es para uso personal" no. Al derivar, el bot se silencia (`bot_activo = 0`) y marca el chat como *Listo para Asesor*.
 - **Montos en palabras:** el cliente puede escribir "mil dólares" o "medio kilo"; el LLM lo convierte a número y la validación lo reconoce.
 - **Interruptor de silencio:** mientras un asesor atiende desde la consola, el bot no responde encima.
-- **Guardrail de mercancía:** perfumes, cosméticos o vitaminas (DIGEMID) y vapes, armas o pirotecnia (prohibidos) no se cotizan automáticamente; se derivan.
+- **Guardrail de mercancía** (lista de Diego, 13/11): vapes, armas, municiones, pirotecnia, semillas, sprays, chupones, biberones y pegamento de pestañas no se transportan; medicinas, vitaminas, proteínas y suplementos (receta médica visada), perfumes, maquillaje, cremas y The Ordinary (máximo por DNI; la lista por producto solo si el cliente pregunta cuántos puede traer), TV box y artículos médicos no se cotizan automáticamente y se derivan al asesor. Ropa, juguetes y repuestos usados: se informa que solo entran nuevos y el bot sigue atendiendo. Calzado (5 pares), juguetes (4) y shampoo (2) se cotizan, salvo que la cantidad supere el máximo por DNI.
 - **Deduplicación:** los reintentos de Meta con el mismo `wamid` se ignoran. Los mensajes que llegan con retraso (por ejemplo, tras un reinicio) se responden igual.
 - **Memoria de la conversación:** el contexto del LLM se reconstruye desde SQLite en cada turno (últimas 12 h, hasta 40 mensajes), así que sobrevive a reinicios e incluye lo que escribió el asesor.
 - **Recordatorio a los 20 min:** si una cotización queda sin respuesta, se envía un mensaje de seguimiento.
@@ -178,6 +181,7 @@ El resumen (p50/p95 de latencia, costo por conversación y por 1 000 conversacio
 | Webhook de Meta | Solo acepta POST con firma `X-Hub-Signature-256` válida (`META_APP_SECRET`) |
 | Verificación del webhook | Requiere `META_VERIFY_TOKEN`; sin valor por defecto en el código |
 | API del dashboard | Todo `/api/*` exige el header `X-API-Key` (`DASHBOARD_API_KEY`) |
+| API de chat de prueba | `/api/chat` exige su propia clave (`CHAT_API_KEY`, no da acceso al dashboard) y la key de Groq de quien llama (`X-Groq-Key`, no se guarda); máximo 30 mensajes por minuto; nada sale a Meta. Guía: [`docs/api_chat.md`](docs/api_chat.md) |
 | Falla cerrada | Si falta una de estas variables, el endpoint rechaza la petición y el arranque lo avisa en los logs |
 | Proformas PDF | El nombre del archivo usa un identificador hasheado, no el teléfono del cliente |
 | Secretos y datos | `.env`, `globex.db` y `cotizaciones_pdf/` están en `.gitignore` |
@@ -239,6 +243,7 @@ Copiar `.env.example` a `.env` y completar:
 | `META_VERIFY_TOKEN` | Token que se registra en Meta al configurar el webhook |
 | `META_APP_SECRET` | App Secret de Meta (App settings → Basic), valida la firma de los webhooks |
 | `DASHBOARD_API_KEY` | Clave compartida entre backend y dashboard |
+| `CHAT_API_KEY`, `CHAT_API_LIMITE_POR_MINUTO` | Opcionales: clave de `/api/chat` para conversar con Globix desde otra IA, y su límite (30 por defecto) |
 | `GROQ_PRECIO_ENTRADA_USD_M`, `GROQ_PRECIO_SALIDA_USD_M` | Opcionales: precio de Groq por millón de tokens (por defecto 0.15 y 0.60) |
 | `BACKEND_URL` | URL del backend que usa el dashboard |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Opcionales: aviso al grupo de asesores por Telegram al derivar |
@@ -274,9 +279,9 @@ Para que Meta alcance un backend local hace falta exponerlo con un túnel HTTPS 
 
 El plan para medir la calidad del modelo está en [`docs/plan_evaluacion.md`](docs/plan_evaluacion.md). Propone 11 KPIs basados en τ-bench, BFCL, RAGAS y OWASP, entre ellos exactitud de herramienta y de argumentos, cotización indebida, exactitud de derivación y consistencia pass^3. El KPI de tiempo (≤ 60 min) queda como métrica de negocio.
 
-### Verificación del motor: 36 casos
+### Verificación del motor: 54 casos
 
-[`evaluacion/casos_motor.json`](evaluacion/casos_motor.json) tiene 36 casos sintéticos en 6 categorías de 6 casos: flete y peso mínimo, exoneración hasta USD 200, tributos sobre CIF, tope de USD 1 200, entradas inválidas y anclaje de los argumentos del LLM al mensaje del cliente. Los valores esperados salen de un oráculo independiente en `Decimal` (redondeo comercial a 2 decimales), no del propio motor, y se comparan al centavo con el motor, el texto de WhatsApp y `validar_argumentos_cotizacion`.
+[`evaluacion/casos_motor.json`](evaluacion/casos_motor.json) tiene 54 casos sintéticos en 9 categorías de 6 casos: flete y peso mínimo, exoneración (producto + TAX menor a USD 200), tributos de 24 % sobre producto + TAX, TAX de tienda, tope de USD 2 000 sobre producto + TAX, entradas inválidas, anclaje de los argumentos del LLM al mensaje del cliente anclaje del TAX y cantidad (precio × unidades). Los valores esperados salen de un oráculo independiente en `Decimal` ([`evaluacion/generar_casos_motor.py`](evaluacion/generar_casos_motor.py), redondeo comercial a 2 decimales), no del propio motor, y se comparan al centavo con el motor, el texto de WhatsApp y `validar_argumentos_cotizacion`.
 
 ```bash
 python evaluacion/verificar_motor.py
@@ -294,7 +299,7 @@ python evaluacion/resumen_kpis.py
 
 | Categoría | KPI | Meta mínima | Fuente |
 | :-- | :-- | :-- | :-- |
-| Motor | Exactitud del motor (36 casos) · pruebas en verde | 100 % | Evals de regresión (Anthropic) |
+| Motor | Exactitud del motor (54 casos) · pruebas en verde | 100 % | Evals de regresión (Anthropic) |
 | Decisión del LLM | K1 herramienta · K2 argumentos | ≥ 90 % · ≥ 95 % | BFCL, guías de proveedores |
 | Decisión del LLM | K4 deriva cuando corresponde · sin derivación innecesaria | ≥ 90 % · ≥ 90 % | Plan de evaluación |
 | Seguridad y alcance | K3 sin cotización indebida · K5 guardrail · K11 alcance | 100 % · 100 % · ≥ 95 % | Guardarraíl del proyecto, SUNAT/DIGEMID, OWASP LLM01 |
@@ -371,10 +376,10 @@ Casos funcionales de referencia por WhatsApp:
 | CP02 | Peso referencial | *"Quiero cotizar un iPhone 15 Pro Max de 1100 dólares"* | Toma el peso del catálogo y cotiza sin repreguntar |
 | CP03 | Dirección en Miami | *"¿Cuál es la dirección del almacén para poner en Amazon?"* | Devuelve la dirección oficial del almacén |
 | CP04 | Plazos y provincias | *"¿Cuánto demora y envían a Trujillo?"* | Informa plazo de entrega y envío a provincias |
-| CP05 | Guardrail DIGEMID | *"Quiero traer 3 perfumes por $150"* | No cotiza, explica la restricción y deriva al asesor |
+| CP05 | Guardrail de máximo por DNI | *"Quiero traer 3 perfumes por $150"* | No cotiza, explica la restricción y deriva al asesor |
 | CP06 | Mercancía prohibida | *"Quiero importar unos vapes"* | Rechaza el envío por normativa |
 | CP07 | Escape a humano | *"Quiero hablar con un asesor"* | Silencia el bot y marca el chat como *Listo para Asesor* |
-| CP10 | Tope de USD 1 200 | *"Una laptop de 1500 dólares que pesa 2 kg"* | No cotiza; deriva al asesor |
+| CP10 | Tope de USD 2 000 | *"Una laptop de 2500 dólares que pesa 2 kg"* | No cotiza; deriva al asesor |
 | CP11 | Monto en palabras | *"Un celular de mil dólares que pesa medio kilo"* | Cotiza con valor USD 1 000 y cobra el mínimo de 1 kg |
 | CP12 | Bienvenida | *"Hola"* | Globix se presenta como asistente virtual y muestra 3 botones |
 | CP13 | Botón *Otras consultas* | Tocar el botón | Llega una lista con 7 temas; al elegir uno, responde la ficha aprobada |
@@ -393,7 +398,7 @@ Casos funcionales de referencia por WhatsApp:
 - [x] Migración de GREEN-API a Meta WhatsApp Cloud API
 - [x] Seguridad: firma de webhooks, API key del dashboard, PDFs sin teléfono
 - [x] Manejar todas las llamadas a herramientas del LLM y validar valor y peso antes del motor
-- [x] Peso mínimo de 1 kg y tope de USD 1 200 para la cotización automática
+- [x] Peso mínimo de 1 kg y tope de USD 2 000 para la cotización automática (USD 1 200 hasta el 12/11)
 - [x] Responder también los mensajes que llegan con más de 10 min de retraso
 - [x] Reconstruir el historial de conversación desde SQLite tras un reinicio
 - [x] Experiencia de usuario: Globix, botones y listas de WhatsApp, "escribiendo…"
@@ -410,7 +415,7 @@ Casos funcionales de referencia por WhatsApp:
 - [x] Separar la conversación del envío por Meta (el flujo se evalúa sin WhatsApp)
 - [x] Resumen del caso al derivar, aviso en la consola y por Telegram (opcional)
 - [x] KPI de primera atención útil en ≤ 60 min (bot o asesor) con IC 95 %
-- [x] 36 casos sintéticos del motor y resumen global de KPIs en PDF con metas mínimas
+- [x] 54 casos sintéticos del motor y resumen global de KPIs en PDF con metas mínimas
 
 **Pendiente**
 

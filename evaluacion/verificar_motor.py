@@ -1,7 +1,7 @@
-"""Verificación del motor de cotización con los 36 casos sintéticos.
+"""Verificación del motor de cotización con los casos sintéticos de casos_motor.json.
 
 Los valores esperados de `casos_motor.json` salen de un oráculo independiente en
-Decimal (redondeo comercial a 2 decimales), no del propio motor. Cada caso compara
+Decimal (`generar_casos_motor.py`, redondeo comercial a 2 decimales), no del propio motor. Cada caso compara
 el resultado de `GlobexPricingEngine` (o de `validar_argumentos_cotizacion`) contra
 lo esperado, al centavo.
 
@@ -19,10 +19,10 @@ if REPO not in sys.path:
 
 from metricas import clopper_pearson  # noqa: E402
 from pricing_engine import GlobexPricingEngine  # noqa: E402
-from validaciones import validar_argumentos_cotizacion  # noqa: E402
+from validaciones import validar_argumentos_cotizacion, validar_cantidad, validar_tax_tienda  # noqa: E402
 
 CASOS_MOTOR = os.path.join(REPO, "evaluacion", "casos_motor.json")
-CAMPOS_MONTO = ("peso_facturable_kg", "costo_flete", "costo_envio", "tributos_aprox", "costo_total")
+CAMPOS_MONTO = ("tax_tienda", "boleta", "peso_facturable_kg", "costo_flete", "costo_envio", "tributos_aprox", "costo_total")
 
 
 def cargar_casos(ruta: str = CASOS_MOTOR) -> List[Dict]:
@@ -36,19 +36,19 @@ def verificar_caso(caso: Dict) -> Dict:
     diferencias: List[str] = []
     obtenido: Dict = {}
     if tipo == "calculo":
-        obtenido = GlobexPricingEngine.calcular(caso["valor"], caso["peso"])
+        obtenido = GlobexPricingEngine.calcular(caso["valor"], caso["peso"], caso.get("tax"), caso.get("cantidad", 1))
         for campo in CAMPOS_MONTO:
             if abs(obtenido[campo] - esperado[campo]) > 0.0049:
                 diferencias.append(f"{campo}: esperado {esperado[campo]:.2f}, motor {obtenido[campo]:.2f}")
         if obtenido["aplica_impuesto"] != esperado["aplica_impuesto"]:
             diferencias.append("aplica_impuesto distinto")
-        if GlobexPricingEngine.requiere_asesor(caso["valor"]) != esperado["requiere_asesor"]:
+        if GlobexPricingEngine.requiere_asesor(caso["valor"], caso.get("tax"), caso.get("cantidad", 1)) != esperado["requiere_asesor"]:
             diferencias.append("requiere_asesor distinto")
         total = f"USD {esperado['costo_total']:,.2f}"
         if total not in GlobexPricingEngine.formatear_mensaje_whatsapp(obtenido):
             diferencias.append(f"el mensaje no muestra {total}")
     elif tipo == "tope":
-        obtenido = {"requiere_asesor": GlobexPricingEngine.requiere_asesor(caso["valor"])}
+        obtenido = {"requiere_asesor": GlobexPricingEngine.requiere_asesor(caso["valor"], caso.get("tax"), caso.get("cantidad", 1))}
         if obtenido != esperado:
             diferencias.append(f"requiere_asesor: esperado {esperado['requiere_asesor']}, motor {obtenido['requiere_asesor']}")
     elif tipo == "error_motor":
@@ -64,6 +64,16 @@ def verificar_caso(caso: Dict) -> Dict:
         if obtenido["acepta"] != esperado["acepta"]:
             diferencias.append(f"validación: esperado {'aceptar' if esperado['acepta'] else 'rechazar'}, "
                                f"obtuvo {'aceptar' if obtenido['acepta'] else 'rechazar'}")
+    elif tipo == "validacion_cantidad":
+        r = validar_cantidad(caso["args"], caso["textos"])
+        obtenido = {"resultado": "rechaza" if isinstance(r, str) else r}
+        if obtenido != esperado:
+            diferencias.append(f"cantidad: esperado {esperado['resultado']}, obtuvo {obtenido['resultado']}")
+    elif tipo == "validacion_tax":
+        r = validar_tax_tienda(caso["args"], caso["textos"])
+        obtenido = {"resultado": "rechaza" if isinstance(r, str) else r}
+        if obtenido != esperado:
+            diferencias.append(f"TAX: esperado {esperado['resultado']}, obtuvo {obtenido['resultado']}")
     else:
         raise ValueError(f"Tipo de caso desconocido: {tipo}")
     return {"id": caso["id"], "categoria": caso["categoria"], "descripcion": caso["descripcion"],

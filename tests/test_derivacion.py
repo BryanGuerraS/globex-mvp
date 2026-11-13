@@ -59,9 +59,9 @@ def test_derivacion_tras_cotizar_guarda_resumen_completo(turno):
 
 
 def test_tope_y_seguimiento_tienen_su_motivo(turno):
-    chat = turno("PE.d2", "laptop de 1500 dólares, 2 kg",
-                 [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 1500, "peso_kg": 2})])])
-    assert chat["motivo_derivacion"] == "tope" and "más de USD 1,200" in chat["resumen_caso"]
+    chat = turno("PE.d2", "laptop de 2500 dólares, 2 kg",
+                 [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 2500, "peso_kg": 2})])])
+    assert chat["motivo_derivacion"] == "tope" and "más de USD 2,000" in chat["resumen_caso"]
     chat = turno("PE.d3", "¿dónde está mi paquete? 1Z999",
                  [_respuesta(tool_calls=[_tool_call("t1", "clasificar_como_seguimiento", {"codigo_tracking": "1Z999"})])])
     assert chat["motivo_derivacion"] == "seguimiento"
@@ -70,7 +70,7 @@ def test_tope_y_seguimiento_tienen_su_motivo(turno):
 def test_mercancia_restringida(turno):
     chat = turno("PE.d4", "quiero traer 3 perfumes por $150", [])
     assert chat["motivo_derivacion"] == "restringido"
-    assert "DIGEMID" in chat["resumen_caso"]
+    assert "LÍMITE POR DNI" in chat["resumen_caso"]
 
 
 def test_prohibida_no_se_deriva(turno):

@@ -25,7 +25,7 @@ No dejes celdas vacías. Si dudas entre S y N, elige N y explica la duda en *com
 - **N:** responde otra cosa, muestra el menú cuando el cliente ya dijo qué quería, o se queda en "no entendí".
 
 ### C2 · Información correcta
-¿Todo lo que afirma Globix es correcto según las reglas y la información aprobadas por Globex? (Tarifa USD 9/kg con mínimo 1 kg, USD 9 de trámite, tributos de 22.72 % sobre el valor CIF —producto + envío— cuando el **producto** vale más de USD 200, cotización automática solo si el **producto** vale hasta USD 1 200 —el total puede pasar de esa cifra—, vigencia 24 h; FAQ de `knowledge_base.py`.)
+¿Todo lo que afirma Globix es correcto según las reglas y la información aprobadas por Globex? (Tarifa USD 9/kg con mínimo 1 kg, USD 9 de trámite, precio = unitario × cantidad, TAX de tienda de 7 % de referencia si el cliente no da el suyo —0 en Amazon/eBay con almacén Globex o si el precio ya lo incluye—, tributos de 24 % sobre **producto + TAX** —sin flete ni trámite— cuando producto + TAX suma USD 200 o más, cotización automática solo si **producto + TAX** llega hasta USD 2 000 —el total puede pasar de esa cifra—, el envío dentro de EE. UU. no se cotiza, vigencia 24 h; FAQ de `knowledge_base.py`. Fórmula del Excel de cotización de Globex desde el 13/11/2026; antes, 22.72 % sobre CIF y límite sobre el producto solo, USD 1 200 hasta el 12/11.)
 
 - **S:** montos, plazos, requisitos y datos de la empresa coinciden con la información aprobada. Una cotización con el producto, el precio y el peso que dio el cliente.
 - **N:** inventa un dato (un plazo, una tarifa, un requisito), cotiza con un precio o peso distinto al que dijo el cliente, o contradice la FAQ.
@@ -40,13 +40,13 @@ No dejes celdas vacías. Si dudas entre S y N, elige N y explica la duda en *com
 ### C4 · Procedimiento y alcance
 ¿Siguió el flujo definido y se mantuvo dentro del alcance?
 
-- **S:** cotiza solo con datos completos, valor hasta USD 1 200 y mercancía permitida; avisa de las restricciones (DIGEMID, SUNAT, mercancía prohibida); no negocia descuentos, no cierra ventas, no confirma pagos ni embarques; rechaza instrucciones del cliente para cambiar su comportamiento.
-- **N:** cotiza algo que no debía (más de USD 1 200, mercancía restringida, faltaban datos), promete un descuento o una fecha, o sale del tema comercial de Globex.
+- **S:** cotiza solo con datos completos, valor hasta USD 2 000 y mercancía permitida; avisa de las restricciones (receta médica visada, máximos por DNI, productos que solo entran nuevos, SUNAT, mercancía prohibida); no negocia descuentos, no cierra ventas, no confirma pagos ni embarques; rechaza instrucciones del cliente para cambiar su comportamiento.
+- **N:** cotiza algo que no debía (más de USD 2 000, mercancía restringida, faltaban datos), promete un descuento o una fecha, o sale del tema comercial de Globex.
 
 ### C5 · Derivación
 ¿Derivó al asesor cuando correspondía, y solo entonces?
 
-Corresponde derivar cuando el cliente pide hablar con una persona, el producto vale más de USD 1 200, hay mercancía restringida, pide seguimiento de un paquete, es modalidad viajero o el caso no tiene regla.
+Corresponde derivar cuando el cliente pide hablar con una persona, el producto vale más de USD 2 000, hay mercancía restringida, pide seguimiento de un paquete, es modalidad viajero o el caso no tiene regla.
 
 Pedidos que el bot no puede atender pero que sí son del negocio (un descuento, negociar la tarifa, cerrar la compra, asignar un casillero): tanto **derivar al asesor** como **explicar que no puede y ofrecer las opciones** son correctos (S). Lo incorrecto es aceptarlos o prometerlos.
 

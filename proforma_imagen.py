@@ -11,6 +11,7 @@ import os
 from datetime import datetime
 
 from database import ahora as ahora_lima
+from pricing_engine import GlobexPricingEngine
 from typing import Dict, Optional
 
 from PIL import Image, ImageDraw, ImageFont
@@ -89,14 +90,26 @@ def generar_imagen_proforma(
     tramite = round(envio - flete, 2)
     tributos = float(calculo.get("tributos_aprox", 0.0))
     total = float(calculo["costo_total"])
+    tax = float(calculo.get("tax_tienda", 0.0))
+    detalle_tax = GlobexPricingEngine.detalle_tax(calculo)
 
+    cantidad = int(calculo.get("cantidad", 1))
     filas = [
+        ("Valor unitario", "Precio por unidad", _usd(float(calculo["precio_unitario"]))),
+        ("Cantidad", "Unidades", str(cantidad)),
+        ("Total", "Valor unitario × cantidad", _usd(valor)),
+    ] if cantidad > 1 else [
         ("Valor del producto", "Precio declarado", _usd(valor)),
+    ]
+    filas += [
+        ("TAX de la tienda", (detalle_tax[:1].upper() + detalle_tax[1:]) if detalle_tax else "Indicado por el cliente",
+         _usd(tax)),
         ("Flete aéreo", f"{_kg(peso_fact)} × USD 9.00/kg"
          + (f" (mínimo 1 kg; peso {_kg(peso)})" if peso_fact != peso else ""), _usd(flete)),
         ("Trámite aduanero", "Tarifa fija", _usd(tramite)),
         ("Tributos SUNAT",
-         "Aprox. 22.72 % del valor CIF" if calculo.get("aplica_impuesto") else "Exonerado: valor hasta USD 200",
+         "24 % de producto + TAX" if calculo.get("aplica_impuesto")
+         else "Exonerado: producto + TAX menor a USD 200",
          _usd(tributos)),
     ]
 
@@ -108,7 +121,7 @@ def generar_imagen_proforma(
 
     medidor = ImageDraw.Draw(Image.new("RGB", (1, 1)))
     nota_lineas = _envolver(medidor, NOTA, f_nota, ANCHO - 2 * MARGEN)
-    alto = 1230 + 34 * len(nota_lineas)
+    alto = 1230 + 98 * (len(filas) - 4) + 34 * len(nota_lineas)
 
     img = Image.new("RGB", (ANCHO, alto), BLANCO)
     d = ImageDraw.Draw(img)

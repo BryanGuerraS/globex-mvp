@@ -10,10 +10,13 @@ import json
 from typing import Dict, List, Optional
 
 from database import obtener_chat, obtener_mensajes_chat, obtener_metricas_chat
+from pricing_engine import GlobexPricingEngine
+
+_TOPE = f"USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}"
 
 MOTIVOS = {
     "asesor": "Pidió hablar con un asesor",
-    "tope": "Compra de más de USD 1,200 (cotización personalizada)",
+    "tope": f"Compra de más de {_TOPE} (cotización personalizada)",
     "seguimiento": "Consulta de seguimiento de paquete",
     "viajero": "Consulta por modalidad viajero",
     "restringido": "Mercancía restringida: revisar requisitos antes de cotizar",

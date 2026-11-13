@@ -157,6 +157,7 @@ def validar_argumentos_cotizacion(
     args: dict,
     textos_cliente: Iterable[str],
     pesos_referenciales: Iterable[float] = (),
+    cantidad: int = 1,
 ) -> Union[Tuple[float, float], str]:
     """Valida los argumentos que el LLM pasa a calcular_cotizacion.
 
@@ -179,8 +180,10 @@ def validar_argumentos_cotizacion(
             "No lo supongas: pide al cliente que confirme el precio del producto en USD."
         )
 
+    # El peso es el total; también vale el peso por unidad × cantidad ("cada uno pesa 0.3 kg")
     peso_del_cliente = any(
-        _cerca(peso, n * factor) for n in numeros for factor in _FACTORES_A_KG
+        _cerca(peso, n * factor * veces)
+        for n in numeros for factor in _FACTORES_A_KG for veces in {1, cantidad}
     )
     peso_de_catalogo = any(_cerca(peso, p) for p in pesos_referenciales)
     if not (peso_del_cliente or peso_de_catalogo):
@@ -190,6 +193,75 @@ def validar_argumentos_cotizacion(
         )
 
     return valor, peso
+
+
+# ---------------- Cantidad de unidades ----------------
+
+CANTIDAD_MAXIMA = 100
+
+
+def validar_cantidad(args: dict, textos_cliente: Iterable[str]) -> Union[int, str]:
+    """Unidades del producto (1 si el LLM no la pasa) o el motivo del rechazo.
+
+    La cantidad tiene que estar en el texto del cliente (en dígitos o en palabras).
+    """
+    bruto = args.get("cantidad")
+    if bruto is None:
+        return 1
+    cantidad = _a_numero(bruto)
+    if cantidad is None or cantidad != int(cantidad) or not 1 <= cantidad <= CANTIDAD_MAXIMA:
+        return f"La cantidad debe ser un número entero entre 1 y {CANTIDAD_MAXIMA}."
+    cantidad = int(cantidad)
+    if cantidad > 1 and not any(_cerca(cantidad, n) for n in numeros_en_texto(textos_cliente)):
+        return (
+            f"La cantidad {cantidad} no aparece en los mensajes del cliente. "
+            "No la supongas: deja cantidad vacía si el cliente dio el precio total."
+        )
+    return cantidad
+
+
+# ---------------- TAX de la tienda ----------------
+
+_MENCIONA_TAX = re.compile(r"\b(tax|taxes|impuestos?|sales)\b")
+_SIN_TAX = re.compile(
+    r"\b(amazon|ebay)\b"
+    r"|\binclu\w*\W+(?:\w+\W+){0,3}?(?:tax|taxes|impuestos?)\b"
+    r"|\b(?:tax|taxes|impuestos?)\W+(?:\w+\W+){0,3}?inclu\w*"
+    r"|\b(?:sin|no\s+(?:me\s+)?(?:cobra|cobran|paga|pague|pago|hay|tiene))\s+(?:el\s+)?(?:tax|taxes|impuestos?)\b"
+)
+
+
+def validar_tax_tienda(args: dict, textos_cliente: Iterable[str]) -> Union[Optional[float], str]:
+    """Decide el TAX de tienda que se pasa al motor.
+
+    Devuelve el TAX en USD que dijo el cliente, 0.0 si no aplica (Amazon/eBay con almacén
+    Globex o precio con TAX incluido), None para usar el 7 % de referencia, o un texto
+    con el motivo del rechazo. Lo que diga el LLM tiene que estar en el texto del cliente.
+    """
+    textos = list(textos_cliente)
+    texto = _sin_tildes(" ".join(textos).lower())
+    tax = args.get("tax_tienda_usd")
+    if tax is not None:
+        tax = _a_numero(tax)
+        if tax is None or tax < 0:
+            return "El TAX de la tienda debe ser un número mayor o igual a cero, en USD."
+        if tax == 0:
+            args = {**args, "sin_tax": True}
+        elif not (_MENCIONA_TAX.search(texto) and any(_cerca(tax, n) for n in numeros_en_texto(textos))):
+            return (
+                f"El TAX {tax} USD no aparece en los mensajes del cliente. "
+                "No lo supongas: deja tax_tienda_usd vacío y el motor usa el 7 % de referencia."
+            )
+        else:
+            return tax
+    if args.get("sin_tax") is True:
+        if not _SIN_TAX.search(texto):
+            return (
+                "El cliente no dijo que compra en Amazon/eBay ni que su precio incluye el TAX. "
+                "Deja sin_tax vacío y el motor usa el 7 % de referencia."
+            )
+        return 0.0
+    return None
 
 
 # ---------------- Nombre que da el cliente ----------------
@@ -266,6 +338,12 @@ _CODIGO = re.compile(
     re.MULTILINE,
 )
 _ENLACE = re.compile(r"https?://|www\.", re.IGNORECASE)
+# Direcciones de calle: Globix solo puede dar la dirección aprobada (FAQ), nunca una inventada
+_DIRECCION = re.compile(
+    r"\b(av|avda|avenida|jr|jir[oó]n|calle|ca|psje|pasaje|carretera|urb)\.?\s+[^\n,.;]{2,40}?\s\d{2,5}\b"
+    r"|\b(suite|oficina|of\.|dpto|interior|int\.)\s*\d+|\b\d{3,5}\s+(nw|ne|sw|se)\b",
+    re.IGNORECASE,
+)
 # Montos en dólares: "$640", "640 USD", "640 dólares"
 _MONTO = re.compile(
     r"\$\s?(\d+(?:[.,]\d+)*)|(\d+(?:[.,]\d+)*)\s?(?:usd|d[oó]lares)\b", re.IGNORECASE
@@ -277,7 +355,7 @@ def revisar_respuesta_libre(
 ) -> Optional[str]:
     """Revisa una respuesta libre del LLM antes de enviarla.
 
-    Devuelve el motivo del bloqueo ("codigo", "enlace", "muy_larga",
+    Devuelve el motivo del bloqueo ("codigo", "enlace", "direccion", "muy_larga",
     "monto_no_dado") o None si la respuesta puede enviarse. No aplica a los
     textos armados por código (cotización, FAQ, derivaciones).
     `montos_permitidos` son montos que el propio sistema usa en ejemplos
@@ -289,6 +367,8 @@ def revisar_respuesta_libre(
         return "codigo"
     if _ENLACE.search(texto):
         return "enlace"
+    if _DIRECCION.search(texto):
+        return "direccion"
     if len(texto) > LARGO_MAXIMO_RESPUESTA:
         return "muy_larga"
     numeros_cliente = numeros_en_texto(textos_cliente) + [float(m) for m in montos_permitidos]

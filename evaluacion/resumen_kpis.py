@@ -52,7 +52,7 @@ ESTADOS = {  # color de fondo y de texto de cada estado (siempre con su etiqueta
 }
 NOMBRES_CATEGORIA_EVAL = {
     "cotizacion": "Cotización directa", "catalogo": "Peso de catálogo", "palabras": "Montos en palabras",
-    "datos_faltantes": "Datos faltantes", "tope": "Tope USD 1 200", "guardrail": "Mercancía restringida",
+    "datos_faltantes": "Datos faltantes", "tope": "Tope USD 2 000", "guardrail": "Mercancía restringida",
     "faq": "Preguntas frecuentes", "seguimiento": "Seguimiento", "viajero": "Viajero",
     "asesor": "Pedido de asesor", "alcance": "Fuera de alcance", "adversarial": "Adversarial",
     "multiturno": "Varios turnos", "saludo": "Saludo", "derivacion": "Debe derivar",

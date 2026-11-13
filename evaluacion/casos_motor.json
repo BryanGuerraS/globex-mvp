@@ -1,5 +1,5 @@
 {
-  "descripcion": "Genera evaluacion/casos_motor.json con un oráculo independiente en Decimal.\n\nReglas (CLAUDE.md, confirmadas 04/11): USD 9/kg, mínimo 1 kg facturable, USD 9 de\ntrámite, tributos 22.71957 % sobre CIF (valor + envío) si el valor supera USD 200,\ntope USD 1 200 para el cálculo automático. Redondeo comercial a 2 decimales\n(ROUND_HALF_UP) en flete, envío, tributos y total.",
+  "descripcion": "Genera evaluacion/casos_motor.json con un oráculo independiente en Decimal.\n\nEl oráculo NO importa el motor: reescribe las reglas desde el Excel de cotización de\nGlobex (hoja COURIER, adoptado el 13/11/2026) para que un error del motor no se copie\na los valores esperados.\n\nReglas:\n  precio         = precio unitario × cantidad (celda H7 = C7*F7)\n  TAX de tienda  = 7 % del precio si no se conoce; el monto dado por el cliente; 0 si no aplica\n  boleta         = precio + TAX (el envío dentro de EE. UU. queda fuera del alcance)\n  flete          = máx(peso, 1 kg) × USD 9\n  envío          = flete + USD 9 de desaduanaje (confirmado 13/11; el USD 7 de la hoja COURIER era una prueba,\n                   la hoja 'Courier Comi.' tiene USD 9)\n  tributos       = 24 % de la boleta si la boleta es de USD 200 o más\n  total          = boleta + envío + tributos\n  tope           = boleta > USD 2 000 se deriva al asesor\nRedondeo comercial a 2 decimales (ROUND_HALF_UP) en TAX, flete, envío, tributos y total.",
   "casos": [
     {
       "id": "M01",
@@ -8,12 +8,15 @@
       "tipo": "calculo",
       "valor": 100,
       "peso": 0.3,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 7.0,
+        "boleta": 107.0,
         "peso_facturable_kg": 1.0,
         "costo_flete": 9.0,
         "costo_envio": 18.0,
         "tributos_aprox": 0.0,
-        "costo_total": 118.0,
+        "costo_total": 125.0,
         "aplica_impuesto": false,
         "requiere_asesor": false
       }
@@ -25,12 +28,15 @@
       "tipo": "calculo",
       "valor": 100,
       "peso": 0.999,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 7.0,
+        "boleta": 107.0,
         "peso_facturable_kg": 1.0,
         "costo_flete": 9.0,
         "costo_envio": 18.0,
         "tributos_aprox": 0.0,
-        "costo_total": 118.0,
+        "costo_total": 125.0,
         "aplica_impuesto": false,
         "requiere_asesor": false
       }
@@ -42,12 +48,15 @@
       "tipo": "calculo",
       "valor": 100,
       "peso": 1,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 7.0,
+        "boleta": 107.0,
         "peso_facturable_kg": 1.0,
         "costo_flete": 9.0,
         "costo_envio": 18.0,
         "tributos_aprox": 0.0,
-        "costo_total": 118.0,
+        "costo_total": 125.0,
         "aplica_impuesto": false,
         "requiere_asesor": false
       }
@@ -59,12 +68,15 @@
       "tipo": "calculo",
       "valor": 100,
       "peso": 1.5,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 7.0,
+        "boleta": 107.0,
         "peso_facturable_kg": 1.5,
         "costo_flete": 13.5,
         "costo_envio": 22.5,
         "tributos_aprox": 0.0,
-        "costo_total": 122.5,
+        "costo_total": 129.5,
         "aplica_impuesto": false,
         "requiere_asesor": false
       }
@@ -76,12 +88,15 @@
       "tipo": "calculo",
       "valor": 100,
       "peso": 10,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 7.0,
+        "boleta": 107.0,
         "peso_facturable_kg": 10.0,
         "costo_flete": 90.0,
         "costo_envio": 99.0,
         "tributos_aprox": 0.0,
-        "costo_total": 199.0,
+        "costo_total": 206.0,
         "aplica_impuesto": false,
         "requiere_asesor": false
       }
@@ -93,41 +108,50 @@
       "tipo": "calculo",
       "valor": 100,
       "peso": 1.005,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 7.0,
+        "boleta": 107.0,
         "peso_facturable_kg": 1.005,
         "costo_flete": 9.05,
         "costo_envio": 18.05,
         "tributos_aprox": 0.0,
-        "costo_total": 118.05,
+        "costo_total": 125.05,
         "aplica_impuesto": false,
         "requiere_asesor": false
       }
     },
     {
       "id": "M07",
-      "categoria": "Exoneración hasta USD 200",
+      "categoria": "Exoneración: producto + TAX menor a USD 200",
       "descripcion": "USD 50, sin tributos",
       "tipo": "calculo",
       "valor": 50,
       "peso": 1,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 3.5,
+        "boleta": 53.5,
         "peso_facturable_kg": 1.0,
         "costo_flete": 9.0,
         "costo_envio": 18.0,
         "tributos_aprox": 0.0,
-        "costo_total": 68.0,
+        "costo_total": 71.5,
         "aplica_impuesto": false,
         "requiere_asesor": false
       }
     },
     {
       "id": "M08",
-      "categoria": "Exoneración hasta USD 200",
-      "descripcion": "USD 199.99, sin tributos",
+      "categoria": "Exoneración: producto + TAX menor a USD 200",
+      "descripcion": "USD 186.91 + TAX 13.08 = 199.99, sin tributos",
       "tipo": "calculo",
-      "valor": 199.99,
+      "valor": 186.91,
       "peso": 1,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 13.08,
+        "boleta": 199.99,
         "peso_facturable_kg": 1.0,
         "costo_flete": 9.0,
         "costo_envio": 18.0,
@@ -139,236 +163,392 @@
     },
     {
       "id": "M09",
-      "categoria": "Exoneración hasta USD 200",
-      "descripcion": "USD 200 exactos, aún exonerado",
+      "categoria": "Exoneración: producto + TAX menor a USD 200",
+      "descripcion": "USD 186.92 + TAX 13.08 = 200.00, ya paga (Excel: menor a 200 exonera)",
       "tipo": "calculo",
-      "valor": 200,
+      "valor": 186.92,
       "peso": 2,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 13.08,
+        "boleta": 200.0,
         "peso_facturable_kg": 2.0,
         "costo_flete": 18.0,
         "costo_envio": 27.0,
-        "tributos_aprox": 0.0,
-        "costo_total": 227.0,
-        "aplica_impuesto": false,
+        "tributos_aprox": 48.0,
+        "costo_total": 275.0,
+        "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M10",
-      "categoria": "Exoneración hasta USD 200",
-      "descripcion": "USD 200.01, ya paga tributos",
+      "categoria": "Exoneración: producto + TAX menor a USD 200",
+      "descripcion": "USD 199.99 + TAX estimado supera 200: paga",
       "tipo": "calculo",
-      "valor": 200.01,
+      "valor": 199.99,
       "peso": 1,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 14.0,
+        "boleta": 213.99,
         "peso_facturable_kg": 1.0,
         "costo_flete": 9.0,
         "costo_envio": 18.0,
-        "tributos_aprox": 49.53,
-        "costo_total": 267.54,
+        "tributos_aprox": 51.36,
+        "costo_total": 283.35,
         "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M11",
-      "categoria": "Exoneración hasta USD 200",
-      "descripcion": "USD 120 y 0.5 kg (zapatillas)",
+      "categoria": "Exoneración: producto + TAX menor a USD 200",
+      "descripcion": "USD 199.99 sin TAX (Amazon): sin tributos",
       "tipo": "calculo",
-      "valor": 120,
-      "peso": 0.5,
+      "valor": 199.99,
+      "peso": 1,
+      "tax": 0,
       "esperado": {
+        "tax_tienda": 0.0,
+        "boleta": 199.99,
         "peso_facturable_kg": 1.0,
         "costo_flete": 9.0,
         "costo_envio": 18.0,
         "tributos_aprox": 0.0,
-        "costo_total": 138.0,
+        "costo_total": 217.99,
         "aplica_impuesto": false,
         "requiere_asesor": false
       }
     },
     {
       "id": "M12",
-      "categoria": "Exoneración hasta USD 200",
-      "descripcion": "USD 201 y 3 kg",
+      "categoria": "Exoneración: producto + TAX menor a USD 200",
+      "descripcion": "USD 120 y 0.5 kg (zapatillas)",
       "tipo": "calculo",
-      "valor": 201,
-      "peso": 3,
+      "valor": 120,
+      "peso": 0.5,
+      "tax": null,
       "esperado": {
-        "peso_facturable_kg": 3.0,
-        "costo_flete": 27.0,
-        "costo_envio": 36.0,
-        "tributos_aprox": 53.85,
-        "costo_total": 290.85,
-        "aplica_impuesto": true,
+        "tax_tienda": 8.4,
+        "boleta": 128.4,
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 146.4,
+        "aplica_impuesto": false,
         "requiere_asesor": false
       }
     },
     {
       "id": "M13",
-      "categoria": "Tributos sobre CIF",
-      "descripcion": "Laptop USD 1 000, 2.5 kg (CP01)",
+      "categoria": "Tributos: 24 % de producto + TAX",
+      "descripcion": "iPhone USD 1 199, 1 kg (ejemplo del Excel)",
       "tipo": "calculo",
-      "valor": 1000,
-      "peso": 2.5,
+      "valor": 1199,
+      "peso": 1,
+      "tax": null,
       "esperado": {
-        "peso_facturable_kg": 2.5,
-        "costo_flete": 22.5,
-        "costo_envio": 31.5,
-        "tributos_aprox": 234.35,
-        "costo_total": 1265.85,
+        "tax_tienda": 83.93,
+        "boleta": 1282.93,
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 307.9,
+        "costo_total": 1608.83,
         "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M14",
-      "categoria": "Tributos sobre CIF",
-      "descripcion": "Laptop USD 650, 2.5 kg (ejemplo de Globix)",
+      "categoria": "Tributos: 24 % de producto + TAX",
+      "descripcion": "Laptop USD 1 000, 2.5 kg (CP01)",
       "tipo": "calculo",
-      "valor": 650,
+      "valor": 1000,
       "peso": 2.5,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 70.0,
+        "boleta": 1070.0,
         "peso_facturable_kg": 2.5,
         "costo_flete": 22.5,
         "costo_envio": 31.5,
-        "tributos_aprox": 154.83,
-        "costo_total": 836.33,
+        "tributos_aprox": 256.8,
+        "costo_total": 1358.3,
         "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M15",
-      "categoria": "Tributos sobre CIF",
-      "descripcion": "USD 300, 1 kg",
+      "categoria": "Tributos: 24 % de producto + TAX",
+      "descripcion": "Laptop USD 650, 2.5 kg (ejemplo de Globix)",
       "tipo": "calculo",
-      "valor": 300,
-      "peso": 1,
+      "valor": 650,
+      "peso": 2.5,
+      "tax": null,
       "esperado": {
-        "peso_facturable_kg": 1.0,
-        "costo_flete": 9.0,
-        "costo_envio": 18.0,
-        "tributos_aprox": 72.25,
-        "costo_total": 390.25,
+        "tax_tienda": 45.5,
+        "boleta": 695.5,
+        "peso_facturable_kg": 2.5,
+        "costo_flete": 22.5,
+        "costo_envio": 31.5,
+        "tributos_aprox": 166.92,
+        "costo_total": 893.92,
         "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M16",
-      "categoria": "Tributos sobre CIF",
-      "descripcion": "USD 500 con peso mínimo (0.4 kg)",
+      "categoria": "Tributos: 24 % de producto + TAX",
+      "descripcion": "USD 300, 1 kg",
       "tipo": "calculo",
-      "valor": 500,
-      "peso": 0.4,
+      "valor": 300,
+      "peso": 1,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 21.0,
+        "boleta": 321.0,
         "peso_facturable_kg": 1.0,
         "costo_flete": 9.0,
         "costo_envio": 18.0,
-        "tributos_aprox": 117.69,
-        "costo_total": 635.69,
+        "tributos_aprox": 77.04,
+        "costo_total": 416.04,
         "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M17",
-      "categoria": "Tributos sobre CIF",
-      "descripcion": "USD 899.99, 4.2 kg",
+      "categoria": "Tributos: 24 % de producto + TAX",
+      "descripcion": "USD 500 con peso mínimo (0.4 kg)",
       "tipo": "calculo",
-      "valor": 899.99,
-      "peso": 4.2,
+      "valor": 500,
+      "peso": 0.4,
+      "tax": null,
       "esperado": {
-        "peso_facturable_kg": 4.2,
-        "costo_flete": 37.8,
-        "costo_envio": 46.8,
-        "tributos_aprox": 215.11,
-        "costo_total": 1161.9,
+        "tax_tienda": 35.0,
+        "boleta": 535.0,
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 128.4,
+        "costo_total": 681.4,
         "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M18",
-      "categoria": "Tributos sobre CIF",
-      "descripcion": "USD 1 200 (en el tope), 5 kg",
+      "categoria": "Tributos: 24 % de producto + TAX",
+      "descripcion": "USD 899.99, 4.2 kg",
       "tipo": "calculo",
-      "valor": 1200,
-      "peso": 5,
+      "valor": 899.99,
+      "peso": 4.2,
+      "tax": null,
       "esperado": {
-        "peso_facturable_kg": 5.0,
-        "costo_flete": 45.0,
-        "costo_envio": 54.0,
-        "tributos_aprox": 284.9,
-        "costo_total": 1538.9,
+        "tax_tienda": 63.0,
+        "boleta": 962.99,
+        "peso_facturable_kg": 4.2,
+        "costo_flete": 37.8,
+        "costo_envio": 46.8,
+        "tributos_aprox": 231.12,
+        "costo_total": 1240.91,
         "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M19",
-      "categoria": "Tope de USD 1 200",
-      "descripcion": "USD 1 199.99 se cotiza",
-      "tipo": "tope",
-      "valor": 1199.99,
+      "categoria": "TAX de la tienda",
+      "descripcion": "Amazon/eBay con almacén Globex: TAX 0",
+      "tipo": "calculo",
+      "valor": 650,
+      "peso": 2.5,
+      "tax": 0,
       "esperado": {
+        "tax_tienda": 0.0,
+        "boleta": 650.0,
+        "peso_facturable_kg": 2.5,
+        "costo_flete": 22.5,
+        "costo_envio": 31.5,
+        "tributos_aprox": 156.0,
+        "costo_total": 837.5,
+        "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M20",
-      "categoria": "Tope de USD 1 200",
-      "descripcion": "USD 1 200 se cotiza",
-      "tipo": "tope",
-      "valor": 1200,
+      "categoria": "TAX de la tienda",
+      "descripcion": "TAX que indica el cliente (USD 45.50)",
+      "tipo": "calculo",
+      "valor": 650,
+      "peso": 2.5,
+      "tax": 45.5,
       "esperado": {
+        "tax_tienda": 45.5,
+        "boleta": 695.5,
+        "peso_facturable_kg": 2.5,
+        "costo_flete": 22.5,
+        "costo_envio": 31.5,
+        "tributos_aprox": 166.92,
+        "costo_total": 893.92,
+        "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M21",
-      "categoria": "Tope de USD 1 200",
-      "descripcion": "USD 1 200.01 se deriva",
-      "tipo": "tope",
-      "valor": 1200.01,
+      "categoria": "TAX de la tienda",
+      "descripcion": "TAX del cliente que deja la boleta bajo 200",
+      "tipo": "calculo",
+      "valor": 150,
+      "peso": 1,
+      "tax": 10,
       "esperado": {
-        "requiere_asesor": true
+        "tax_tienda": 10.0,
+        "boleta": 160.0,
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 178.0,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
       }
     },
     {
       "id": "M22",
-      "categoria": "Tope de USD 1 200",
-      "descripcion": "USD 1 500 se deriva",
-      "tipo": "tope",
-      "valor": 1500,
+      "categoria": "TAX de la tienda",
+      "descripcion": "TAX del cliente que lleva la boleta sobre 200",
+      "tipo": "calculo",
+      "valor": 190,
+      "peso": 1,
+      "tax": 15,
       "esperado": {
-        "requiere_asesor": true
+        "tax_tienda": 15.0,
+        "boleta": 205.0,
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 49.2,
+        "costo_total": 272.2,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
       }
     },
     {
       "id": "M23",
-      "categoria": "Tope de USD 1 200",
-      "descripcion": "USD 5 000 se deriva",
-      "tipo": "tope",
-      "valor": 5000,
+      "categoria": "TAX de la tienda",
+      "descripcion": "Precio con TAX incluido: TAX 0",
+      "tipo": "calculo",
+      "valor": 250,
+      "peso": 1,
+      "tax": 0,
       "esperado": {
-        "requiere_asesor": true
+        "tax_tienda": 0.0,
+        "boleta": 250.0,
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 60.0,
+        "costo_total": 328.0,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
       }
     },
     {
       "id": "M24",
-      "categoria": "Tope de USD 1 200",
-      "descripcion": "USD 999.99 se cotiza",
-      "tipo": "tope",
-      "valor": 999.99,
+      "categoria": "TAX de la tienda",
+      "descripcion": "USD 1 200, 5 kg con TAX estimado",
+      "tipo": "calculo",
+      "valor": 1200,
+      "peso": 5,
+      "tax": null,
       "esperado": {
+        "tax_tienda": 84.0,
+        "boleta": 1284.0,
+        "peso_facturable_kg": 5.0,
+        "costo_flete": 45.0,
+        "costo_envio": 54.0,
+        "tributos_aprox": 308.16,
+        "costo_total": 1646.16,
+        "aplica_impuesto": true,
         "requiere_asesor": false
       }
     },
     {
       "id": "M25",
+      "categoria": "Tope de USD 2 000 (producto + TAX)",
+      "descripcion": "USD 1 869.15 + TAX = 1 999.99 se cotiza",
+      "tipo": "tope",
+      "valor": 1869.15,
+      "tax": null,
+      "esperado": {
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M26",
+      "categoria": "Tope de USD 2 000 (producto + TAX)",
+      "descripcion": "USD 1 869.16 + TAX = 2 000.00 se cotiza",
+      "tipo": "tope",
+      "valor": 1869.16,
+      "tax": null,
+      "esperado": {
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M27",
+      "categoria": "Tope de USD 2 000 (producto + TAX)",
+      "descripcion": "USD 1 869.17 + TAX = 2 000.01 se deriva",
+      "tipo": "tope",
+      "valor": 1869.17,
+      "tax": null,
+      "esperado": {
+        "requiere_asesor": true
+      }
+    },
+    {
+      "id": "M28",
+      "categoria": "Tope de USD 2 000 (producto + TAX)",
+      "descripcion": "USD 1 999.99 + TAX estimado se deriva",
+      "tipo": "tope",
+      "valor": 1999.99,
+      "tax": null,
+      "esperado": {
+        "requiere_asesor": true
+      }
+    },
+    {
+      "id": "M29",
+      "categoria": "Tope de USD 2 000 (producto + TAX)",
+      "descripcion": "USD 2 000 sin TAX (Amazon) se cotiza",
+      "tipo": "tope",
+      "valor": 2000,
+      "tax": 0,
+      "esperado": {
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M30",
+      "categoria": "Tope de USD 2 000 (producto + TAX)",
+      "descripcion": "USD 2 000.01 sin TAX se deriva",
+      "tipo": "tope",
+      "valor": 2000.01,
+      "tax": 0,
+      "esperado": {
+        "requiere_asesor": true
+      }
+    },
+    {
+      "id": "M31",
       "categoria": "Entradas inválidas",
       "descripcion": "Peso 0 kg: el motor rechaza",
       "tipo": "error_motor",
@@ -379,7 +559,7 @@
       }
     },
     {
-      "id": "M26",
+      "id": "M32",
       "categoria": "Entradas inválidas",
       "descripcion": "Peso negativo: el motor rechaza",
       "tipo": "error_motor",
@@ -390,7 +570,7 @@
       }
     },
     {
-      "id": "M27",
+      "id": "M33",
       "categoria": "Entradas inválidas",
       "descripcion": "Valor negativo: el motor rechaza",
       "tipo": "error_motor",
@@ -401,7 +581,7 @@
       }
     },
     {
-      "id": "M28",
+      "id": "M34",
       "categoria": "Entradas inválidas",
       "descripcion": "Valor 0: la validación rechaza",
       "tipo": "validacion",
@@ -418,7 +598,7 @@
       }
     },
     {
-      "id": "M29",
+      "id": "M35",
       "categoria": "Entradas inválidas",
       "descripcion": "Falta el peso",
       "tipo": "validacion",
@@ -435,7 +615,7 @@
       }
     },
     {
-      "id": "M30",
+      "id": "M36",
       "categoria": "Entradas inválidas",
       "descripcion": "Peso no numérico",
       "tipo": "validacion",
@@ -452,7 +632,7 @@
       }
     },
     {
-      "id": "M31",
+      "id": "M37",
       "categoria": "Anclaje al mensaje del cliente",
       "descripcion": "\"mil dólares\" y \"medio kilo\" en palabras",
       "tipo": "validacion",
@@ -469,7 +649,7 @@
       }
     },
     {
-      "id": "M32",
+      "id": "M38",
       "categoria": "Anclaje al mensaje del cliente",
       "descripcion": "Valor y peso dichos por el cliente",
       "tipo": "validacion",
@@ -486,7 +666,7 @@
       }
     },
     {
-      "id": "M33",
+      "id": "M39",
       "categoria": "Anclaje al mensaje del cliente",
       "descripcion": "Valor inventado por el LLM",
       "tipo": "validacion",
@@ -503,7 +683,7 @@
       }
     },
     {
-      "id": "M34",
+      "id": "M40",
       "categoria": "Anclaje al mensaje del cliente",
       "descripcion": "Peso tomado del catálogo",
       "tipo": "validacion",
@@ -522,7 +702,7 @@
       }
     },
     {
-      "id": "M35",
+      "id": "M41",
       "categoria": "Anclaje al mensaje del cliente",
       "descripcion": "Peso inventado por el LLM",
       "tipo": "validacion",
@@ -539,7 +719,7 @@
       }
     },
     {
-      "id": "M36",
+      "id": "M42",
       "categoria": "Anclaje al mensaje del cliente",
       "descripcion": "Peso en gramos (500 g = 0.5 kg)",
       "tipo": "validacion",
@@ -553,6 +733,199 @@
       "catalogo": [],
       "esperado": {
         "acepta": true
+      }
+    },
+    {
+      "id": "M43",
+      "categoria": "Anclaje del TAX al mensaje del cliente",
+      "descripcion": "Sin datos del TAX: se usa el 7 % de referencia",
+      "tipo": "validacion_tax",
+      "args": {},
+      "textos": [
+        "laptop de 650 dólares, 2.5 kg"
+      ],
+      "esperado": {
+        "resultado": null
+      }
+    },
+    {
+      "id": "M44",
+      "categoria": "Anclaje del TAX al mensaje del cliente",
+      "descripcion": "Compra en Amazon: TAX 0",
+      "tipo": "validacion_tax",
+      "args": {
+        "sin_tax": true
+      },
+      "textos": [
+        "laptop de amazon, 650 dólares, 2.5 kg"
+      ],
+      "esperado": {
+        "resultado": 0.0
+      }
+    },
+    {
+      "id": "M45",
+      "categoria": "Anclaje del TAX al mensaje del cliente",
+      "descripcion": "Precio con TAX incluido: TAX 0",
+      "tipo": "validacion_tax",
+      "args": {
+        "sin_tax": true
+      },
+      "textos": [
+        "son 650 dólares con el tax incluido, 2.5 kg"
+      ],
+      "esperado": {
+        "resultado": 0.0
+      }
+    },
+    {
+      "id": "M46",
+      "categoria": "Anclaje del TAX al mensaje del cliente",
+      "descripcion": "sin_tax sin indicio del cliente: rechaza",
+      "tipo": "validacion_tax",
+      "args": {
+        "sin_tax": true
+      },
+      "textos": [
+        "laptop de best buy, 650 dólares, 2.5 kg"
+      ],
+      "esperado": {
+        "resultado": "rechaza"
+      }
+    },
+    {
+      "id": "M47",
+      "categoria": "Anclaje del TAX al mensaje del cliente",
+      "descripcion": "TAX dicho por el cliente",
+      "tipo": "validacion_tax",
+      "args": {
+        "tax_tienda_usd": 45.5
+      },
+      "textos": [
+        "laptop de 650 dólares, el tax fue 45.50, 2.5 kg"
+      ],
+      "esperado": {
+        "resultado": 45.5
+      }
+    },
+    {
+      "id": "M48",
+      "categoria": "Anclaje del TAX al mensaje del cliente",
+      "descripcion": "TAX inventado por el LLM: rechaza",
+      "tipo": "validacion_tax",
+      "args": {
+        "tax_tienda_usd": 45
+      },
+      "textos": [
+        "laptop de 650 dólares, 2.5 kg"
+      ],
+      "esperado": {
+        "resultado": "rechaza"
+      }
+    },
+    {
+      "id": "M49",
+      "categoria": "Cantidad: precio × unidades",
+      "descripcion": "3 polos de USD 20 cada uno, 1 kg en total",
+      "tipo": "calculo",
+      "valor": 20,
+      "peso": 1,
+      "tax": null,
+      "cantidad": 3,
+      "esperado": {
+        "tax_tienda": 4.2,
+        "boleta": 64.2,
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 82.2,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M50",
+      "categoria": "Cantidad: precio × unidades",
+      "descripcion": "2 zapatillas de USD 150: la suma pasa de USD 200 y paga tributos",
+      "tipo": "calculo",
+      "valor": 150,
+      "peso": 2,
+      "tax": null,
+      "cantidad": 2,
+      "esperado": {
+        "tax_tienda": 21.0,
+        "boleta": 321.0,
+        "peso_facturable_kg": 2.0,
+        "costo_flete": 18.0,
+        "costo_envio": 27.0,
+        "tributos_aprox": 77.04,
+        "costo_total": 425.04,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M51",
+      "categoria": "Cantidad: precio × unidades",
+      "descripcion": "4 perfumes de USD 45.50 de Amazon (sin TAX), 1.6 kg",
+      "tipo": "calculo",
+      "valor": 45.5,
+      "peso": 1.6,
+      "tax": 0,
+      "cantidad": 4,
+      "esperado": {
+        "tax_tienda": 0.0,
+        "boleta": 182.0,
+        "peso_facturable_kg": 1.6,
+        "costo_flete": 14.4,
+        "costo_envio": 23.4,
+        "tributos_aprox": 0.0,
+        "costo_total": 205.4,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M52",
+      "categoria": "Cantidad: precio × unidades",
+      "descripcion": "3 × USD 700 + TAX supera USD 2 000: se deriva",
+      "tipo": "tope",
+      "valor": 700,
+      "tax": null,
+      "cantidad": 3,
+      "esperado": {
+        "requiere_asesor": true
+      }
+    },
+    {
+      "id": "M53",
+      "categoria": "Cantidad: precio × unidades",
+      "descripcion": "\"tres polos\" en palabras",
+      "tipo": "validacion_cantidad",
+      "args": {
+        "cantidad": 3
+      },
+      "textos": [
+        "quiero traer tres polos de 20 dólares cada uno, 1 kg"
+      ],
+      "esperado": {
+        "resultado": 3
+      }
+    },
+    {
+      "id": "M54",
+      "categoria": "Cantidad: precio × unidades",
+      "descripcion": "Cantidad inventada por el LLM: rechaza",
+      "tipo": "validacion_cantidad",
+      "args": {
+        "cantidad": 5
+      },
+      "textos": [
+        "quiero traer polos de 20 dólares cada uno, 1 kg"
+      ],
+      "esperado": {
+        "resultado": "rechaza"
       }
     }
   ]

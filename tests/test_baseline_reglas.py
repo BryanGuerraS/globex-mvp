@@ -33,4 +33,4 @@ def test_cotiza_con_el_flujo_real_sin_llm(monkeypatch, bloquear_meta):
     monkeypatch.setattr(main, "client", br.ClienteReglas())
     main.registrar_mensaje_entrante("BASE-1", "Cliente", "Una laptop de USD 650 que pesa 2.5 kg")
     asyncio.run(main.procesar_mensaje_consolidado("BASE-1", "Cliente", "Una laptop de USD 650 que pesa 2.5 kg"))
-    assert main.obtener_chat("BASE-1")["cotizacion_total"] == pytest.approx(836.33)
+    assert main.obtener_chat("BASE-1")["cotizacion_total"] == pytest.approx(893.92)

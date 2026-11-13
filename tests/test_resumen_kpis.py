@@ -44,7 +44,7 @@ EVAL = {
 
 def test_construir_kpis_une_fuentes():
     kpis = {k["clave"]: k for k in construir_kpis(verificar_todos(), {"passed": 10, "failed": 0, "xfailed": 1}, EVAL)}
-    assert kpis["V1_motor"]["detalle"] == "36/36"
+    assert kpis["V1_motor"]["detalle"] == "54/54"
     assert kpis["V2_pruebas"]["estado"] == "Cumple"
     assert kpis["K1_exactitud_herramienta"]["estado"] == "Cumple (falta n)"
     assert kpis["K5_guardrail"]["estado"] == "Sin datos"  # n = 0

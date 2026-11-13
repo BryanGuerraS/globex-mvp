@@ -150,3 +150,17 @@ def test_limpieza_que_deja_vacio_devuelve_none():
 def test_pide_dato_indispensable(texto, esperado):
     from validaciones import pide_dato_indispensable
     assert pide_dato_indispensable(texto) is esperado
+
+
+@pytest.mark.parametrize("texto, bloquea", [
+    ("Nuestra agencia en Lima está en Av. Javier Prado 1234, Miraflores. 📍", True),
+    ("Estamos en Calle Los Pinos 450.", True),
+    ("La oficina queda en 7270 NW 35th Terrace.", True),
+    ("Tenemos la Suite 101 en Miami.", True),
+    ("Realizamos envíos a todas las provincias por agencias de confianza. 📦", False),
+    ("¿Cuánto pesa aproximadamente en kg? 📦", False),
+    ("El plazo es de 5 a 7 días hábiles desde que llega a Miami.", False),
+])
+def test_respuesta_libre_no_puede_dar_direcciones(texto, bloquea):
+    from validaciones import revisar_respuesta_libre
+    assert (revisar_respuesta_libre(texto, []) == "direccion") is bloquea

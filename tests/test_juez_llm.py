@@ -19,7 +19,7 @@ def test_prompt_incluye_rubrica_e_informacion_aprobada():
     p = jz.prompt_sistema()
     assert "C1 · Atiende la necesidad" in p and "Atención correcta" in p
     assert "## Procedimiento" not in p  # solo las secciones que necesita el juez
-    assert "22.72 %" in p and "1 200" in p and "NO recalcules" in p
+    assert "24 %" in p and "TAX" in p and "2 000" in p and "NO recalcules" in p
     assert all(c in p for c in rh.CRITERIOS)
 
 

@@ -26,7 +26,7 @@ Elige la **primera** que aplique, en este orden:
 | --- | --- |
 | `prohibido` | Quiere traer algo prohibido: vapes o vapeadores, pods, cigarrillos electrónicos, armas, municiones, semillas, pirotecnia, spray de pimienta. El bot responde que no se transporta y no deriva. |
 | `restringido` | Perfumes o perfumería, colonias, maquillaje, cosméticos, cremas, vitaminas, suplementos, proteína, medicamentos, baterías sueltas o power banks. El bot avisa del requisito (DIGEMID o baterías) y deriva a un asesor. |
-| `deriva` | Pide un asesor, una persona o que lo llamen; o el producto vale más de USD 1 200; o es un reclamo o algo que solo puede resolver una persona. |
+| `deriva` | Pide un asesor, una persona o que lo llamen; o el producto vale más de USD 2 000; o es un reclamo o algo que solo puede resolver una persona. |
 | `seguimiento` | Pregunta por un paquete que ya está en camino o en el almacén. |
 | `viajero` | Pregunta por la modalidad viajero o por traer cosas en maleta. |
 | `cotiza` | Da producto, precio en dólares y peso. |

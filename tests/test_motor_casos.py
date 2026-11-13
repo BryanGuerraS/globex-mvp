@@ -1,4 +1,4 @@
-"""Los 36 casos sintéticos de verificación del motor (evaluacion/casos_motor.json)."""
+"""Los 54 casos sintéticos de verificación del motor (evaluacion/casos_motor.json)."""
 
 import pytest
 
@@ -11,10 +11,15 @@ CONOCIDOS: dict = {}
 CASOS = cargar_casos()
 
 
-def test_son_36_casos_en_6_categorias():
-    assert len(CASOS) == 36
-    assert len({c["id"] for c in CASOS}) == 36
-    assert len({c["categoria"] for c in CASOS}) == 6
+def test_son_54_casos_en_9_categorias():
+    assert len(CASOS) == 54
+    assert len({c["id"] for c in CASOS}) == 54
+    assert len({c["categoria"] for c in CASOS}) == 9
+
+
+def test_el_json_esta_al_dia_con_el_oraculo():
+    from evaluacion.generar_casos_motor import generar
+    assert generar()["casos"] == CASOS
 
 
 @pytest.mark.parametrize(

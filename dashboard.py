@@ -322,7 +322,9 @@ def barra_lateral() -> Dict:
         servicio = st.selectbox(
             "Servicio",
             ["Todos", "Cotización Courier", "Cotización Courier (alto valor)", "Seguimiento Courier",
-             "Cotización Viajero", "Restringido (DIGEMID)", "Mercancía Prohibida"],
+             "Cotización Viajero", "Restringido (DIGEMID)", "Restringido (RECETA MÉDICA VISADA)",
+             "Restringido (LÍMITE POR DNI)", "Restringido (RESTRINGIDO)", "Restringido (CARGA PELIGROSA (IATA))",
+             "Mercancía Prohibida"],
         )
         st.space("small")
         auto = st.toggle("Actualizar automáticamente", value=True, help="Mensajes del chat abierto cada 5 s; bandeja, KPIs y detalle cada 15 s.")
@@ -471,7 +473,7 @@ def _cambiar_estado(chat_id: str, clave: str):
 
 MOTIVOS_CORTOS = {
     "asesor": "Pidió asesor",
-    "tope": "Compra de más de USD 1,200",
+    "tope": "Compra de más de USD 2,000",
     "seguimiento": "Seguimiento de paquete",
     "viajero": "Modalidad viajero",
     "restringido": "Mercancía restringida",
@@ -740,7 +742,7 @@ def nombre_tipo(tipo: str) -> str:
     if not tipo:
         return "—"
     if tipo.startswith("bloqueado:"):
-        motivo = {"codigo": "código", "enlace": "enlace", "muy_larga": "muy larga",
+        motivo = {"codigo": "código", "enlace": "enlace", "direccion": "dirección", "muy_larga": "muy larga",
                   "monto_no_dado": "monto no dado"}.get(tipo.split(":", 1)[1], tipo.split(":", 1)[1])
         return f"Bloqueado ({motivo})"
     return " + ".join(NOMBRES_TIPO.get(t, t) for t in tipo.split("+"))

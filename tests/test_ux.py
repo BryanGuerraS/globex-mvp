@@ -128,15 +128,15 @@ def test_cotizacion_confirma_datos_y_ofrece_botones(turno):
     assert imagen["image"]["id"] == "media-de-prueba"
     assert imagen["image"]["caption"] == main.LEYENDA_PROFORMA
     (msg,) = _interactivos(enviados)
-    assert msg["interactive"]["body"]["text"].startswith("Total estimado: *USD 836.33*")
+    assert msg["interactive"]["body"]["text"].startswith("Total estimado: *USD 893.92*")
     assert _ids_botones(msg) == ["asesor", "cotizar_otro", "como_compro"]
     # No se manda el desglose en texto (va en la imagen)
     assert _textos(enviados) == []
     # En la BD queda el desglose (dashboard, historial del LLM) y el chat con su cotización
     textos = [m["texto"] for m in main.obtener_mensajes_chat("ux_cot") if m["emisor"] == "bot"]
-    assert "[Proforma enviada como imagen" in textos[-2] and "Entendí: *laptop Lenovo" in textos[-2] and "COTIZACIÓN ESTIMADA" in textos[-2]
+    assert "[Proforma enviada como imagen" in textos[-2] and "· laptop Lenovo" in textos[-2] and "COTIZACIÓN ESTIMADA" in textos[-2]
     assert "[Opciones: Hablar con asesor | Cotizar otro | ¿Cómo compro?]" in textos[-1]
-    assert main.obtener_chat("ux_cot")["cotizacion_total"] == pytest.approx(836.33)
+    assert main.obtener_chat("ux_cot")["cotizacion_total"] == pytest.approx(893.92)
 
 
 def test_si_falla_la_imagen_se_envia_en_texto(turno, monkeypatch):

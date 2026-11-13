@@ -55,9 +55,11 @@ def informacion_aprobada() -> str:
     faq = "\n".join(f"- {tema}: {v['contenido']}" for tema, v in knowledge_base.KB_GLOBEX.items())
     return (
         "Reglas de cotización aprobadas por Globex: USD 9 por kg (mínimo 1 kg facturable), USD 9 de trámite "
-        "aduanero, tributos aproximados de 22.72 % sobre el valor CIF (producto + flete + trámite) solo si el "
-        "PRODUCTO vale más de USD 200, cotización automática solo si el PRODUCTO vale hasta USD 1 200 (el total "
-        "con flete y tributos sí puede superar USD 1 200; si el producto vale más, se deriva al asesor), "
+        "aduanero, precio = precio unitario × cantidad, TAX de tienda de 7 % de referencia sobre el precio si el cliente no da el suyo (0 en Amazon o "
+        "eBay con almacén Globex, o si el precio ya lo incluye), tributos aproximados de 24 % sobre producto + TAX "
+        "(sin flete ni trámite) solo si producto + TAX suma USD 200 o más, cotización automática solo si "
+        "producto + TAX llega hasta USD 2 000 (el total con flete y tributos sí puede superar USD 2 000; si "
+        "producto + TAX pasa de esa cifra, se deriva al asesor), el envío dentro de EE. UU. no se cotiza, "
         "vigencia 24 horas.\n"
         "Los montos de la proforma los calcula un motor de reglas ya verificado: NO recalcules los montos; "
         "revisa solo que el producto, el precio y el peso usados sean los que dijo el cliente.\n"

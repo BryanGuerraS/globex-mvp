@@ -85,4 +85,4 @@ def test_hora_de_lima_aunque_el_servidor_este_en_utc():
 def test_proforma_usa_formato_usd():
     from pricing_engine import GlobexPricingEngine
     texto = GlobexPricingEngine.formatear_mensaje_whatsapp(GlobexPricingEngine.calcular(650, 2.5))
-    assert "USD 836.33" in texto and "US$" not in texto and "$" not in texto.replace("USD", "")
+    assert "USD 893.92" in texto and "US$" not in texto and "$" not in texto.replace("USD", "")

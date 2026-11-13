@@ -3,6 +3,7 @@
 from datetime import datetime
 
 from database import ahora
+from pricing_engine import GlobexPricingEngine
 import hashlib
 import os
 import re
@@ -117,10 +118,24 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
     tramite = round(calculo.get("costo_envio", flete + 9.0) - flete, 2)
     tributos = calculo.get("tributos_aprox", 0.0)
     total = calculo.get("costo_total", 0.0)
+    tax = calculo.get("tax_tienda", 0.0)
+    detalle_tax = GlobexPricingEngine.detalle_tax(calculo)
 
     tabla_cotizacion = [
         ["CONCEPTO", "DETALLE / TASA", "IMPORTE (USD)"],
-        ["Valor Declarado del Producto (FOB)", f"Mercancía declarada ({peso} kg)", f"USD {val_prod:,.2f}"],
+    ]
+    cantidad = int(calculo.get("cantidad", 1))
+    if cantidad > 1:
+        tabla_cotizacion += [
+            ["Valor unitario", "Precio por unidad", f"USD {calculo.get('precio_unitario', 0.0):,.2f}"],
+            ["Cantidad", "Unidades", str(cantidad)],
+        ]
+    tabla_cotizacion += [
+        ["Total" if cantidad > 1 else "Valor Declarado del Producto (FOB)",
+         f"Valor unitario × cantidad ({peso} kg)" if cantidad > 1 else f"Mercancía declarada ({peso} kg)",
+         f"USD {val_prod:,.2f}"],
+        ["TAX de la tienda", (detalle_tax[:1].upper() + detalle_tax[1:]) if detalle_tax else "Indicado por el cliente",
+         f"USD {tax:,.2f}"],
         ["Flete Aéreo Internacional", f"{peso_facturable:g} kg × USD 9.00/kg", f"USD {flete:,.2f}"],
         ["Trámite aduanero", "Tarifa fija", f"USD {tramite:,.2f}"],
     ]
@@ -128,19 +143,19 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
     if calculo.get("aplica_impuesto", False):
         tabla_cotizacion.append([
             "Tributos de Importación SUNAT",
-            "Aplica ~22.72% CIF (valor > USD 200)",
+            "24 % de producto + TAX (USD 200 o más)",
             f"USD {tributos:,.2f}"
         ])
     else:
         tabla_cotizacion.append([
             "Tributos de Importación SUNAT",
-            "Exonerado por ley (valor hasta USD 200)",
-            "$ 0.00"
+            "Exonerado (producto + TAX menor a USD 200)",
+            "USD 0.00"
         ])
 
     tabla_cotizacion.append([
         "TOTAL ESTIMADO DE LA OPERACIÓN",
-        "Producto + Flete + Trámite + Impuestos",
+        "Producto + TAX + Flete + Trámite + Impuestos",
         f"USD {total:,.2f}"
     ])
 

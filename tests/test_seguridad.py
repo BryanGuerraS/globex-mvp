@@ -44,7 +44,9 @@ def test_todas_las_rutas_api_protegidas():
     assert rutas
     for ruta in rutas:
         deps = [d.call for d in ruta.dependant.dependencies]
-        assert main.verificar_api_key in deps, ruta.path
+        # /api/chat usa su propia clave (CHAT_API_KEY): no da acceso al dashboard
+        esperada = main.verificar_chat_key if ruta.path == "/api/chat" else main.verificar_api_key
+        assert esperada in deps, ruta.path
 
 
 def test_api_sin_key_configurada_falla_cerrado(monkeypatch):

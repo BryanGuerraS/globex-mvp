@@ -77,7 +77,7 @@ def test_cotizacion_directa(entorno):
         "laptop de 1000 dólares que pesa 2.5 kg",
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 1000, "peso_kg": 2.5})])],
     )
-    assert "1,265.85" in enviado
+    assert "1,358.30" in enviado
     assert len(llm.llamadas) == 1
     _historial_valido(main.sessions["chat_cot"]["history"])
 
@@ -220,16 +220,87 @@ def test_herramienta_derivar_esta_disponible_para_el_llm():
     assert "derivar_a_asesor" in nombres
 
 
-def test_tope_1200_deriva_sin_cotizar(entorno):
+def test_tope_2000_deriva_sin_cotizar(entorno):
     llm, enviado = entorno(
         "chat_tope",
-        "una laptop de 1500 dólares que pesa 2 kg",
-        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 1500, "peso_kg": 2})])],
+        "una laptop de 2500 dólares que pesa 2 kg",
+        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 2500, "peso_kg": 2})])],
     )
-    assert "supera los USD 1,200" in enviado
+    assert "supera los USD 2,000" in enviado
     assert "COTIZACIÓN" not in enviado
     chat = _estado_chat("chat_tope")
     assert chat["estado"] == "Listo para Asesor" and chat["bot_activo"] == 0
+
+
+def test_tope_cuenta_el_tax_estimado(entorno):
+    # USD 1 950 + 7 % de TAX = 2 086.50: supera el tope aunque el producto solo no lo supere
+    llm, enviado = entorno(
+        "chat_tope_tax",
+        "una laptop de 1950 dólares que pesa 2 kg",
+        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion", {"valor_producto_usd": 1950, "peso_kg": 2})])],
+    )
+    assert "supera los USD 2,000" in enviado and "COTIZACIÓN" not in enviado
+
+
+def test_amazon_cotiza_sin_tax(entorno):
+    llm, enviado = entorno(
+        "chat_amazon",
+        "una laptop de amazon de 650 dólares que pesa 2.5 kg",
+        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
+                                           {"valor_producto_usd": 650, "peso_kg": 2.5, "sin_tax": True})])],
+    )
+    assert "USD 837.50" in enviado  # 650 + 0 TAX + 31.50 + 24 % de 650
+
+
+def test_tax_inventado_vuelve_al_llm(entorno):
+    llm, enviado = entorno(
+        "chat_tax_inv",
+        "una laptop de 650 dólares que pesa 2.5 kg",
+        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
+                                           {"valor_producto_usd": 650, "peso_kg": 2.5, "tax_tienda_usd": 30})]),
+         _respuesta(tool_calls=[_tool_call("t2", "calcular_cotizacion", {"valor_producto_usd": 650, "peso_kg": 2.5})])],
+    )
+    assert "USD 893.92" in enviado  # se reintentó con el 7 % de referencia
+
+
+def test_cantidad_multiplica_el_precio(entorno):
+    # 3 × USD 20 = 60; TAX 4.20; envío 18 -> USD 82.20 (Excel: H7 = precio × cantidad)
+    llm, enviado = entorno(
+        "chat_cant",
+        "quiero traer 3 polos de 20 dólares cada uno, pesan 1 kg",
+        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
+                                           {"valor_producto_usd": 20, "peso_kg": 1, "cantidad": 3})])],
+    )
+    assert "USD 82.20" in enviado
+
+
+def test_cantidad_inventada_vuelve_al_llm(entorno):
+    llm, enviado = entorno(
+        "chat_cant_inv",
+        "quiero traer polos de 20 dólares, pesan 1 kg",
+        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
+                                           {"valor_producto_usd": 20, "peso_kg": 1, "cantidad": 4})]),
+         _respuesta(tool_calls=[_tool_call("t2", "calcular_cotizacion", {"valor_producto_usd": 20, "peso_kg": 1})])],
+    )
+    assert "USD 39.40" in enviado  # 20 + 1.40 de TAX + 18
+
+
+def test_mas_de_5_pares_de_calzado_deriva(entorno):
+    llm, enviado = entorno(
+        "chat_calzado",
+        "quiero traer 6 pares de zapatillas de 50 dólares cada uno, pesan 4 kg",
+        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
+                                           {"valor_producto_usd": 50, "peso_kg": 4, "cantidad": 6})])],
+    )
+    assert "máximo por DNI es de 5 pares" in enviado and "COTIZACIÓN" not in enviado
+    chat = _estado_chat("chat_calzado")
+    assert chat["estado"] == "Listo para Asesor" and chat["bot_activo"] == 0
+
+
+def test_ropa_usada_informa_sin_derivar(entorno):
+    llm, enviado = entorno("chat_usada", "quiero traer ropa usada de 100 dólares, 2 kg", [])
+    assert "solo pueden ingresar a Perú si son *nuevos*" in enviado
+    assert _estado_chat("chat_usada")["bot_activo"] == 1
 
 
 def test_valor_en_palabras_cotiza(entorno):

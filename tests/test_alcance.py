@@ -144,4 +144,4 @@ def test_parametros_opcionales_aceptan_null():
         requeridos = set(params.get("required", []))
         for nombre, spec in params.get("properties", {}).items():
             if nombre not in requeridos and spec.get("type") != "number":
-                assert spec["type"] == ["string", "null"], (tool["function"]["name"], nombre)
+                assert isinstance(spec["type"], list) and "null" in spec["type"], (tool["function"]["name"], nombre)

@@ -1,6 +1,8 @@
 """Base de conocimiento comercial oficial de Globex Courier.
 
 Fichas KB01 a KB08 aprobadas según el Manual Funcional y Operativo.
+Actualizadas el 13/11/2026 con las respuestas de Juan Carlos (A4, A7, A8, A13, A14) y los flyers
+oficiales de Shalom (assets/flyers/): recojo en Lima, solo Shalom, 5 días hábiles, pago por transferencia.
 """
 
 import unicodedata
@@ -25,23 +27,37 @@ KB_GLOBEX = {
         "titulo": "Tiempos y Plazos de Envío (F19 / F20)",
         "contenido": (
             "⏱️ *Plazos de entrega regulares:*\n"
-            "• El tiempo estimado es de *5 a 7 días hábiles* contados a partir de que tu paquete es *recibido en nuestro almacén de Miami* (no desde que compras en la tienda).\n"
+            "• El tiempo estimado es de *5 días hábiles* contados a partir de que tu paquete es *recibido en nuestro almacén de Miami* (no desde que compras en la tienda).\n"
             "• Para envíos a provincias de Perú, se suman de 24 a 48 horas adicionales para el traslado por agencia."
         ),
     },
-    "cobertura_provincias": {
-        "titulo": "Envíos a Provincias de Perú (F26)",
+    "entrega_lima": {
+        "titulo": "Entregas en Lima: recojo en oficina y delivery (A4 / A8)",
         "contenido": (
-            "🇵🇪 *Cobertura a Nivel Nacional:*\n"
-            "• Entregamos en Lima (recojo en oficina o delivery a domicilio).\n"
-            "• Realizamos envíos a *todas las provincias del Perú* a través de agencias de confianza (Olva Courier o Shalom) con recojo en agencia o entrega en tu domicilio."
+            "🏢 *Entregas en Lima:*\n"
+            "• *Recojo en oficina:* Jr. Maracaibo N.º 2016. Horario: 9:00 a. m. a 6:00 p. m. "
+            "(refrigerio de 1:00 a 2:00 p. m.).\n"
+            "• *Delivery a domicilio:* disponible en Lima. La tarifa depende de la zona y del horario, "
+            "y la coordina un asesor cuando tu paquete llega a nuestro almacén de Lima."
+        ),
+    },
+    "cobertura_provincias": {
+        "titulo": "Envíos a Provincias de Perú por Shalom (F26 / A6 / A7, flyers oficiales)",
+        "contenido": (
+            "🇵🇪 *Envíos a provincias:*\n"
+            "• Enviamos a todo el Perú *solo por agencia Shalom*, con recojo en la agencia que elijas.\n"
+            "• *Traslado a la agencia* (incluye traslado desde nuestro almacén, rotulado, embalado básico "
+            "y gestión del despacho): hasta 4 kg, S/ 12.00; más de 5 kg hasta 15 kg, S/ 20.00; "
+            "más de 15 kg hasta 25 kg, S/ 30.00; más de 25 kg, se coordina con un asesor.\n"
+            "• El servicio de Shalom se paga en destino (contraentrega).\n"
+            "• Para el envío necesitamos tu DNI, nombre completo, celular y el *nombre exacto* de la agencia Shalom."
         ),
     },
     "como_funciona": {
         "titulo": "Cómo Funciona el Servicio de Importación (F01 / F02)",
         "contenido": (
             "📦 *Cómo importar con Globex en 4 pasos:*\n"
-            "1. Compras en tu tienda favorita de USA (Amazon, eBay, etc.) usando la dirección de nuestro almacén en Miami.\n"
+            "1. Compras en tu tienda favorita de USA (Amazon, eBay, etc.) usando la dirección de nuestro almacén en Miami, con *GX* junto a tu nombre.\n"
             "2. Nos compartes tu código de tracking de la tienda.\n"
             "3. Recibimos tu paquete en Miami y lo transportamos en vuelo a Perú.\n"
             "4. Te notificamos a su llegada, liquidas el flete y te lo entregamos en tu casa o agencia."
@@ -50,10 +66,12 @@ KB_GLOBEX = {
     "metodos_pago": {
         "titulo": "Formas de Pago y Liquidación (F10 / F11)",
         "contenido": (
-            "💳 *Métodos de pago del servicio:*\n"
-            "• Puedes pagar en *Dólares (USD)* o en *Soles (PEN)* al tipo de cambio oficial del día.\n"
-            "• Aceptamos transferencia bancaria (BCP, Interbank), Yape / Plin y tarjetas.\n"
-            "• El costo del flete se cancela cuando tu paquete llega a Perú, antes de la entrega final."
+            "💳 *Formas de pago:*\n"
+            "• El producto lo compras y lo pagas tú directamente en la tienda.\n"
+            "• El servicio de Globex (flete y desaduanaje) se paga por *transferencia bancaria o interbancaria*, "
+            "en dólares (USD) o en soles (PEN) al tipo de cambio del día.\n"
+            "• Las cuentas y el detalle del pago te los da un asesor cuando tu paquete llega a nuestro almacén, "
+            "antes de la entrega final."
         ),
     },
 }
@@ -65,6 +83,8 @@ TEMAS_FAQ = {
     "plazos_entrega": "plazos_entrega",
     "plazos": "plazos_entrega",
     "provincias": "cobertura_provincias",
+    "entrega_lima": "entrega_lima",
+    "lima": "entrega_lima",
     "como_funciona": "como_funciona",
     "pagos": "metodos_pago",
 }
@@ -92,8 +112,12 @@ def buscar_faq_comercial(consulta: str) -> Optional[Dict[str, str]]:
     if any(p in texto for p in ["demora", "tarda", "plazo", "dias", "días", "tiempo de entrega", "cuanto tiempo"]):
         return KB_GLOBEX["plazos_entrega"]
 
-    if any(p in texto for p in ["provincia", "departamento", "arequipa", "trujillo", "chiclayo", "cusco", "piura", "domicilio", "lima"]):
+    if any(p in texto for p in ["provincia", "departamento", "arequipa", "trujillo", "chiclayo", "cusco", "piura",
+                                "shalom", "olva", "agencia"]):
         return KB_GLOBEX["cobertura_provincias"]
+
+    if any(p in texto for p in ["lima", "recojo", "recoger", "oficina", "delivery", "domicilio"]):
+        return KB_GLOBEX["entrega_lima"]
 
     if any(p in texto for p in ["como funciona", "cómo funciona", "como compro", "pasos", "primera vez", "que hace globex", "qué hace globex"]):
         return KB_GLOBEX["como_funciona"]
