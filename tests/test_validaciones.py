@@ -164,3 +164,16 @@ def test_pide_dato_indispensable(texto, esperado):
 def test_respuesta_libre_no_puede_dar_direcciones(texto, bloquea):
     from validaciones import revisar_respuesta_libre
     assert (revisar_respuesta_libre(texto, []) == "direccion") is bloquea
+
+
+def test_tax_cero_dicho_por_el_cliente():
+    from validaciones import validar_tax_tienda
+    textos = ["Un libro de USD 40,00 y el checkout confirma TAX de USD 0,00. Pesa 1,00 kg."]
+    assert validar_tax_tienda({"tax_tienda_usd": 0}, textos) == 0.0
+    assert isinstance(validar_tax_tienda({"tax_tienda_usd": 0}, ["Un libro de USD 40, pesa 1 kg"]), str)
+
+
+def test_precio_final_que_incluye_un_tax_con_decimales():
+    from validaciones import validar_tax_tienda
+    textos = ["El precio final de la compra es USD 53,00 y ya incluye USD 3,00 de TAX. Pesa 1,00 kg."]
+    assert validar_tax_tienda({"sin_tax": True}, textos) == 0.0

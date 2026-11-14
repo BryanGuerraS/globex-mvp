@@ -22,6 +22,7 @@ MOTIVOS = {
     "viajero": "Consulta por modalidad viajero",
     "restringido": "Mercancía restringida: revisar requisitos antes de cotizar",
     "consulta": "Consulta que requiere revisión del asesor",
+    "sin_derivar": "Sin derivación (vista previa del resumen para el asesor)",
 }
 ULTIMOS_MENSAJES = 3
 

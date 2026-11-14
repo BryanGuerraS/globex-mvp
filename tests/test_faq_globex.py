@@ -16,7 +16,7 @@ def test_lee_las_132_entradas_con_todos_sus_campos():
 
 def test_busqueda_tolera_faltas_de_ortografia():
     assert faq_globex.buscar("k direcsion pongo pa k llegue al almacen", 1)[0]["tema"] == "Dirección del almacén"
-    assert any(c["id"] == "G062" for c in faq_globex.buscar("que es el free tax de amazon", 3))
+    assert not any(c["id"] in faq_globex.EXCLUIDAS for c in faq_globex.buscar("que es el free tax de amazon", 5))
 
 
 def _texto(enviado):

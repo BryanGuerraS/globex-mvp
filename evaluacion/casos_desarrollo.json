@@ -2610,19 +2610,17 @@
     {
       "id": "FAQ-G-02",
       "categoria": "faq",
-      "descripcion": "Free tax de Amazon",
+      "descripcion": "Free tax de Amazon: sin respuesta aprobada desde el 14/11 (no debe afirmar el beneficio)",
       "mensajes": [
         "¿Qué es el free tax de Amazon?"
       ],
       "esperado": {
-        "tipo_final": [
-          "faq"
-        ],
-        "contiene": [
-          "alianza"
-        ],
         "cotiza": false,
-        "deriva": false
+        "deriva": false,
+        "no_contiene": [
+          "alianza",
+          "no pagar sales tax"
+        ]
       }
     },
     {

@@ -34,6 +34,11 @@ CAMPOS = {
 }
 _ENCABEZADO = re.compile(r"^(G\d{3})\s*(.*)$")
 SIN_ASESOR = "No se requiere"
+# Fuera de la búsqueda (14/11, decisión del usuario): hablan del "free tax" de Amazon/eBay por la
+# alianza, que contradice la regla vigente (7 % de TAX en cualquier tienda si el precio no lo incluye).
+# Siguen en el archivo; el equipo actualizará el banco.
+EXCLUIDAS = {f"G{n:03d}" for n in range(61, 83)} | {"G084"}
+
 # Respuestas que siempre terminan en el asesor, decida lo que decida el LLM (pedido del usuario, 14/11)
 DERIVA_SIEMPRE = {"G126", "G127"}  # reempaque y operaciones físicas con las cajas (regla A17)
 
@@ -127,6 +132,8 @@ def _trigramas(texto: str) -> List[str]:
 def _indice():
     docs = {}
     for gid, e in entradas().items():
+        if gid in EXCLUIDAS:
+            continue
         # La pregunta y el tema pesan el doble que la respuesta
         texto = " ".join([e.get("pregunta", "")] * 2 + [e.get("tema", "")] * 2 + [e.get("respuesta", "")])
         docs[gid] = Counter(_trigramas(texto))

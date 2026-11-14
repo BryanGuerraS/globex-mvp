@@ -45,7 +45,10 @@ def test_todas_las_rutas_api_protegidas():
     for ruta in rutas:
         deps = [d.call for d in ruta.dependant.dependencies]
         # /api/chat usa su propia clave (CHAT_API_KEY): no da acceso al dashboard
-        esperada = main.verificar_chat_key if ruta.path == "/api/chat" else main.verificar_api_key
+        # /api/eval/* usa EVAL_API_KEY (gasta nuestra key de pago de Cerebras)
+        esperada = (main.verificar_chat_key if ruta.path == "/api/chat"
+                    else main.verificar_eval_key if ruta.path.startswith("/api/eval/")
+                    else main.verificar_api_key)
         assert esperada in deps, ruta.path
 
 

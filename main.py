@@ -11,6 +11,7 @@ import json
 import os
 import re
 import time
+import uuid
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
@@ -106,6 +107,11 @@ DASHBOARD_API_KEY = os.getenv("DASHBOARD_API_KEY")
 # Quien llama trae su propia key de Groq (header X-Groq-Key): esas consultas no usan nuestra cuota.
 CHAT_API_KEY = os.getenv("CHAT_API_KEY")
 CHAT_API_LIMITE_POR_MINUTO = int(os.getenv("CHAT_API_LIMITE_POR_MINUTO", "30"))
+# API de evaluación (14/11): corre un banco de preguntas con NUESTRA key de pago de Cerebras.
+# Clave propia (EVAL_API_KEY) y topes por minuto y por día para cuidar el saldo.
+EVAL_API_KEY = os.getenv("EVAL_API_KEY")
+EVAL_LIMITE_POR_MINUTO = int(os.getenv("EVAL_LIMITE_POR_MINUTO", "60"))
+EVAL_MAX_CASOS_DIA = int(os.getenv("EVAL_MAX_CASOS_DIA", "1500"))
 
 _faltantes = [
     nombre
@@ -137,6 +143,14 @@ def verificar_chat_key(x_api_key: str = Header(None, alias="X-API-Key")):
     if not CHAT_API_KEY:
         raise HTTPException(status_code=503, detail="API de chat no configurada")
     if not x_api_key or not hmac.compare_digest(x_api_key, CHAT_API_KEY):
+        raise HTTPException(status_code=401, detail="API key inválida")
+
+
+def verificar_eval_key(x_api_key: str = Header(None, alias="X-API-Key")):
+    """Autentica /api/eval/* con EVAL_API_KEY. Falla cerrado si no está configurada."""
+    if not EVAL_API_KEY:
+        raise HTTPException(status_code=503, detail="API de evaluación no configurada")
+    if not x_api_key or not hmac.compare_digest(x_api_key, EVAL_API_KEY):
         raise HTTPException(status_code=401, detail="API key inválida")
 
 
@@ -1049,12 +1063,16 @@ def _es_tool_use_failed(error: Exception) -> bool:
 
 # Cliente de Groq de quien llama a /api/chat (su key); None = el nuestro
 _cliente_externo: contextvars.ContextVar = contextvars.ContextVar("cliente_externo", default=None)
+# Modelo de ese cliente, si usa otro nombre que el nuestro (Cerebras: "gpt-oss-120b")
+_modelo_externo: contextvars.ContextVar = contextvars.ContextVar("modelo_externo", default=None)
 
 
 def _crear_y_medir(**kwargs):
     """Corre en un hilo: llama al LLM y devuelve (respuesta, ms perdidos por límites de Groq)."""
     tomar_espera_ms()  # descarta lo que hubiera quedado en este hilo
     cliente = _cliente_externo.get() or client  # to_thread copia el contexto del turno
+    if _modelo_externo.get():
+        kwargs = {**kwargs, "model": _modelo_externo.get()}
     try:
         return cliente.chat.completions.create(**kwargs), tomar_espera_ms()
     except Exception as e:
@@ -1950,6 +1968,197 @@ async def api_chat(payload: ChatPruebaPayload, x_groq_key: str = Header(None, al
     return {"sesion_id": payload.sesion_id, "bot_activo": bool(esta_bot_activo(chat_id)),
             "respuestas": [r for r in map(_respuesta_legible, capturado) if r],
             "tipo_respuesta": filas[-1]["tipo_respuesta"] if filas else None}
+
+
+class EvalCasoPayload(BaseModel):
+    corrida_id: str
+    id: str
+    pregunta: Optional[str] = None  # un solo mensaje (bancos de FAQ y cotizaciones)
+    mensajes: Optional[List[str]] = None  # varios turnos en la misma sesión (recopilación de datos)
+    banco_id: Optional[str] = None
+
+
+MAX_TURNOS_EVAL = 6
+
+
+_ID_EVAL = re.compile(r"^[A-Za-z0-9_-]{1,30}$")
+_llamadas_eval: deque = deque()
+_casos_eval_dia: Dict[str, int] = {}
+_cliente_eval = None
+
+
+def _cliente_cerebras_eval():
+    """Cliente de Cerebras con nuestras keys de pago (la principal y sus respaldos)."""
+    global _cliente_eval
+    if _cliente_eval is None:
+        key = os.getenv("CEREBRAS_API_KEY")
+        if not key:
+            raise HTTPException(status_code=503, detail="Falta CEREBRAS_API_KEY en el servidor")
+        _cliente_eval = crear_cliente(key, keys_de_respaldo(os.environ, "CEREBRAS_API_KEY"), CEREBRAS_BASE_URL)
+    return _cliente_eval
+
+
+def _prefijo_eval(corrida_id: str) -> str:
+    return f"{PREFIJO_CHAT_PRUEBA}EVAL-{corrida_id}-"
+
+
+def _controlar_cupo_eval():
+    instante = time.monotonic()
+    while _llamadas_eval and instante - _llamadas_eval[0] > 60:
+        _llamadas_eval.popleft()
+    if len(_llamadas_eval) >= EVAL_LIMITE_POR_MINUTO:
+        raise HTTPException(status_code=429, detail=f"Máximo {EVAL_LIMITE_POR_MINUTO} casos por minuto")
+    dia = ahora().strftime("%Y-%m-%d")
+    if _casos_eval_dia.get(dia, 0) >= EVAL_MAX_CASOS_DIA:
+        raise HTTPException(status_code=429, detail=f"Máximo {EVAL_MAX_CASOS_DIA} casos por día")
+    _llamadas_eval.append(instante)
+    _casos_eval_dia[dia] = _casos_eval_dia.get(dia, 0) + 1
+
+
+def _texto_respuestas(respuestas: List[Dict]) -> str:
+    return "\n\n".join(r["texto"] + (f"\n[Opciones: {' | '.join(r['opciones'])}]" if r["opciones"] else "")
+                       for r in respuestas)
+
+
+def _datos_recopilados(chat: Dict, herramientas: List[Dict]) -> Dict:
+    """Lo último que entendió Globix del pedido (argumentos de calcular_cotizacion), en campos."""
+    from resumen_caso import _productos_de
+    ultima = next((h for h in reversed(herramientas) if h["nombre"] == "calcular_cotizacion"), None)
+    args = {}
+    if ultima:
+        try:
+            args = json.loads(ultima.get("argumentos") or "{}")
+        except json.JSONDecodeError:
+            args = {}
+    productos = []
+    brutos = args.get("productos") if isinstance(args.get("productos"), list) else None
+    for i, item in enumerate(_productos_de(args) if args else []):
+        original = (brutos[i] if brutos and i < len(brutos) and isinstance(brutos[i], dict) else args)
+        productos.append({**item, "tax_tienda_usd": original.get("tax_tienda_usd"),
+                          "sin_tax": original.get("sin_tax")})
+    return {"productos": productos, "peso_total_kg": args.get("peso_total_kg"),
+            "cotizacion_aceptada": bool(ultima) and not (isinstance(ultima.get("resultado"), dict)
+                                                         and "error" in ultima["resultado"]),
+            "nombre_cliente": chat.get("nombre_cliente")}
+
+
+def _registro_eval(chat_id: str, turnos: List[Dict], error: Optional[str]) -> Dict:
+    """Respuesta, registros de acciones y de tiempo de un caso, con el contrato del juez v2."""
+    from resumen_caso import campos_faltantes
+    chat = obtener_chat(chat_id) or {}
+    filas = [f for f in obtener_metricas() if f["chat_id"] == chat_id]
+    herramientas = []
+    for f in filas:
+        for h in json.loads(f.get("herramientas") or "[]"):
+            herramientas.append({"nombre": h.get("nombre"), "argumentos": h.get("argumentos"),
+                                 "resultado": h.get("resultado"),
+                                 "estado": "error" if isinstance(h.get("resultado"), dict)
+                                 and "error" in h["resultado"] else "ok"})
+    ultimo = turnos[-1] if turnos else {"respuestas": []}
+    tipos = [f["tipo_respuesta"] for f in filas]
+    cotizo = any("cotizacion" in (t or "").split("+") for t in tipos)
+    publicado = chat.get("resumen_caso")
+    # El resumen que vería el asesor, aunque el caso no se haya derivado (vista previa)
+    resumen = publicado or construir_resumen(chat_id, "sin_derivar")
+    return {
+        "respuesta_bot": _texto_respuestas(ultimo["respuestas"]),
+        "respuestas": ultimo["respuestas"],
+        "turnos": [{"mensaje": t["mensaje"], "respuesta_bot": _texto_respuestas(t["respuestas"]),
+                    "tipo_respuesta": t["tipo_respuesta"]} for t in turnos],
+        "error_ejecucion": error or (None if ultimo["respuestas"] else "sin respuesta"),
+        "tipo_respuesta": tipos[-1] if tipos else None,
+        "registros_acciones": {
+            "traza_completa": error is None,
+            "herramientas": herramientas,
+            "bot_pausado": not bool(chat.get("bot_activo", 1)),
+            "motivo_derivacion": chat.get("motivo_derivacion"),
+            "resumen_en_consola": {"publicado": bool(publicado), "texto": publicado},
+        },
+        "datos_recopilados": _datos_recopilados(chat, herramientas),
+        "resumen_caso": {"publicado": bool(publicado), "texto": resumen,
+                         "campos_faltantes": campos_faltantes(resumen)},
+        "registros_tiempo": [{"latencia_llm_ms": f.get("latencia_llm_ms"),
+                              "latencia_procesamiento_ms": f.get("latencia_procesamiento_ms"),
+                              "espera_limite_ms": f.get("espera_limite_ms"),
+                              "llamadas_llm": f.get("llamadas_llm")} for f in filas],
+        "cotizacion": {"emitida": cotizo, "total_proforma": chat.get("cotizacion_total") if cotizo else None,
+                       "moneda": "USD"},
+    }
+
+
+@app.post("/api/eval/caso", dependencies=[Depends(verificar_eval_key)])
+async def api_eval_caso(payload: EvalCasoPayload):
+    """Corre un caso de un banco en una sesión nueva, con nuestra key de pago de Cerebras.
+
+    `pregunta` = un mensaje; `mensajes` = varios turnos seguidos en la misma sesión (para medir la
+    recopilación progresiva de datos). Devuelve la respuesta íntegra, cada turno, los datos que
+    recopiló Globix, el resumen del caso y los registros que pide el juez v2. Nada sale a Meta.
+    Ver docs/api_evaluacion.md.
+    """
+    if not _ID_EVAL.match(payload.corrida_id) or not _ID_EVAL.match(payload.id):
+        raise HTTPException(status_code=422, detail="corrida_id e id: 1 a 30 letras, números, '-' o '_'")
+    mensajes = [m.strip() for m in (payload.mensajes or ([payload.pregunta] if payload.pregunta else []))]
+    if not mensajes or len(mensajes) > MAX_TURNOS_EVAL or any(not m or len(m) > 2000 for m in mensajes):
+        raise HTTPException(status_code=422, detail=f"Envía 'pregunta' o 'mensajes' (1 a {MAX_TURNOS_EVAL}), "
+                                                    "cada uno de 1 a 2000 caracteres")
+    cliente = _cliente_cerebras_eval()
+    _controlar_cupo_eval()
+
+    # Sesión nueva siempre: el mismo id en otra repetición no hereda historial
+    chat_id = f"{_prefijo_eval(payload.corrida_id)}{payload.id}-{uuid.uuid4().hex[:6]}"
+    token_cliente = _cliente_externo.set(cliente)
+    token_modelo = _modelo_externo.set(os.getenv("CEREBRAS_MODEL", "gpt-oss-120b"))
+    turnos: List[Dict] = []
+    error = None
+    inicio = time.monotonic()
+    try:
+        for mensaje in mensajes:
+            texto = _texto_de_opcion(mensaje)  # un título de botón entra como en WhatsApp
+            registrar_mensaje_entrante(chat_id, "Evaluación", texto)
+            if not esta_bot_activo(chat_id):  # ya derivó: Globix no responde más, como en WhatsApp
+                turnos.append({"mensaje": mensaje, "respuestas": [], "tipo_respuesta": "bot_pausado"})
+                continue
+            _capturas[chat_id] = []
+            filas_antes = len([f for f in obtener_metricas() if f["chat_id"] == chat_id])
+            try:
+                await procesar_mensaje_consolidado(chat_id, "Evaluación", texto)
+            finally:
+                capturado = _capturas.pop(chat_id, [])
+            filas = [f for f in obtener_metricas() if f["chat_id"] == chat_id]
+            turnos.append({"mensaje": mensaje, "respuestas": [r for r in map(_respuesta_legible, capturado) if r],
+                           "tipo_respuesta": filas[-1]["tipo_respuesta"] if len(filas) > filas_antes else None})
+    except Exception as e:  # el caso se reporta como fallo de ejecución, no se pierde
+        error = f"{e.__class__.__name__}: {str(e)[:200]}"
+    finally:
+        _cliente_externo.reset(token_cliente)
+        _modelo_externo.reset(token_modelo)
+    return {
+        "banco_id": payload.banco_id, "corrida_id": payload.corrida_id, "id": payload.id,
+        "pregunta": mensajes[0] if len(mensajes) == 1 else None, "mensajes": mensajes,
+        "ejecutado": True, "duracion_ms": round((time.monotonic() - inicio) * 1000, 1),
+        "control_versiones": {"proveedor_chatbot": "Cerebras",
+                              "modelo_chatbot": os.getenv("CEREBRAS_MODEL", "gpt-oss-120b"),
+                              "commit_chatbot": os.getenv("RENDER_GIT_COMMIT")},
+        **_registro_eval(chat_id, turnos, error),
+    }
+
+
+@app.get("/api/eval/resumen", dependencies=[Depends(verificar_eval_key)])
+def api_eval_resumen(corrida_id: str):
+    """Tiempo de respuesta (p50/p95), tipos de respuesta, derivaciones y cotizaciones de una corrida."""
+    if not _ID_EVAL.match(corrida_id):
+        raise HTTPException(status_code=422, detail="corrida_id: 1 a 30 letras, números, '-' o '_'")
+    prefijo = _prefijo_eval(corrida_id)
+    filas = [f for f in obtener_metricas() if f["chat_id"].startswith(prefijo)]
+    chats = [c for c in obtener_todos_los_chats() if c["chat_id"].startswith(prefijo)]
+    return {
+        "corrida_id": corrida_id,
+        "casos": len(chats),
+        "tiempo_y_costo": resumir_metricas(filas),
+        "derivados": sum(1 for c in chats if c.get("motivo_derivacion")),
+        "cotizaciones": sum(1 for c in chats if c.get("cotizacion_total")),
+        "nota": "El costo usa los precios de Groq; el tiempo no incluye los 5 s de agrupación de WhatsApp.",
+    }
 
 
 @app.post("/api/admin/clean-data", dependencies=[Depends(verificar_api_key)])

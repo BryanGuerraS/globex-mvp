@@ -226,7 +226,7 @@ _MENCIONA_TAX = re.compile(r"\b(tax|taxes|impuestos?|sales)\b")
 # El precio ya trae el TAX, o la tienda no lo cobra. Desde el 14/11 (decisión del usuario) comprar en
 # Amazon o eBay ya no basta, y "sin tax" significa que el precio NO lo incluye: se suma el 7 %.
 _SIN_TAX = re.compile(
-    r"\binclu\w*\W+(?:\w+\W+){0,3}?(?:tax|taxes|impuestos?)\b"
+    r"\binclu\w*\W+(?:\w+\W+){0,5}?(?:tax|taxes|impuestos?)\b"  # "ya incluye USD 3,00 de TAX"
     r"|\b(?:tax|taxes|impuestos?)\W+(?:\w+\W+){0,3}?inclu\w*"
     r"|\bcon\s+(?:el\s+|los\s+)?(?:tax|taxes|impuestos?)\b"
     r"|\bno\s+(?:me\s+)?(?:cobra|cobran|paga|pague|pago|hay|tiene)\s+(?:el\s+)?(?:tax|taxes|impuestos?)\b"
@@ -248,6 +248,9 @@ def validar_tax_tienda(args: dict, textos_cliente: Iterable[str]) -> Union[Optio
         if tax is None or tax < 0:
             return "El TAX de la tienda debe ser un número mayor o igual a cero, en USD."
         if tax == 0:
+            # "el checkout confirma TAX de USD 0": el cliente dijo un TAX de cero
+            if _MENCIONA_TAX.search(texto) and any(n == 0 for n in numeros_en_texto(textos)):
+                return 0.0
             args = {**args, "sin_tax": True}
         elif not (_MENCIONA_TAX.search(texto) and any(_cerca(tax, n) for n in numeros_en_texto(textos))):
             return (
