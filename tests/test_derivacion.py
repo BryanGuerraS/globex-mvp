@@ -1,4 +1,4 @@
-"""Resumen del caso y aviso al asesor cuando Globix deriva (hallazgo 5)."""
+"""Resumen del caso para el asesor cuando Globix deriva (hallazgo 5)."""
 
 import asyncio
 import hashlib
@@ -11,7 +11,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 import main
-import notificaciones
 from tests.test_tool_calling import LLMFalso, _respuesta, _tool_call
 
 
@@ -27,19 +26,6 @@ def turno(monkeypatch, bloquear_meta):
     return correr
 
 
-@pytest.fixture
-def avisos(monkeypatch):
-    enviados = []
-
-    async def telegram_falso(texto):
-        enviados.append(texto)
-        return True
-
-    monkeypatch.setattr(main, "notificaciones_activas", lambda: True)
-    monkeypatch.setattr(main, "enviar_telegram", telegram_falso)
-    return enviados
-
-
 def _cotizar(turno, chat_id):
     turno(chat_id, "zapatillas nike de 120 dólares, 1.5 kg",
           [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
@@ -53,7 +39,7 @@ def test_derivacion_tras_cotizar_guarda_resumen_completo(turno):
     assert chat["motivo_derivacion"] == "asesor" and chat["derivado_at"]
     r = chat["resumen_caso"]
     assert "Pidió hablar con un asesor" in r
-    assert "Zapatillas Nike, USD 120.00, 1.5 kg, total USD" in r
+    assert "Zapatillas Nike USD 120.00, 1.5 kg, total USD" in r
     assert "Aún no dio su nombre" in r
     assert "• quiero hablar con un asesor" in r and "• zapatillas nike de 120 dólares, 1.5 kg" in r
 
@@ -78,27 +64,6 @@ def test_prohibida_no_se_deriva(turno):
     assert chat["motivo_derivacion"] is None
 
 
-def test_aviso_por_telegram(turno, avisos):
-    _cotizar(turno, "PE.d6")
-    turno("PE.d6", "quiero un asesor", [_respuesta(tool_calls=[_tool_call("t2", "derivar_a_asesor", {})])])
-    assert len(avisos) == 1
-    assert avisos[0].startswith("🔔 *Nuevo caso para asesor*")
-    assert "Zapatillas Nike" in avisos[0]
-
-
-def test_sin_configuracion_no_hay_aviso(turno, monkeypatch):
-    llamados = []
-
-    async def no_deberia(texto):
-        llamados.append(texto)
-        return True
-
-    monkeypatch.setattr(main, "enviar_telegram", no_deberia)
-    turno("PE.d7", "quiero un asesor", [_respuesta(tool_calls=[_tool_call("t1", "derivar_a_asesor", {})])])
-    assert llamados == []
-    assert asyncio.run(notificaciones.enviar_telegram("x")) is False  # sin token no sale nada
-
-
 # ---------- Nombre: el resumen se actualiza ----------
 
 def _post_firmado(cliente, payload):
@@ -114,7 +79,7 @@ def _payload(bsuid, wamid, mensaje):
     }}]}]}
 
 
-def test_boton_asesor_y_nombre_actualizan_resumen(monkeypatch, bloquear_meta, avisos):
+def test_boton_asesor_y_nombre_actualizan_resumen(monkeypatch, bloquear_meta):
     monkeypatch.setattr(main, "debounce_mensajes", lambda *a: asyncio.sleep(0))
     cliente = TestClient(main.app)
     boton = {"type": "interactive", "interactive": {"type": "button_reply",
@@ -128,4 +93,30 @@ def test_boton_asesor_y_nombre_actualizan_resumen(monkeypatch, bloquear_meta, av
     chat = main.obtener_chat("PE.d8")
     assert "*Cliente:* Ana Pérez" in chat["resumen_caso"]
     assert chat["derivado_at"] == derivado_at  # no cuenta como derivación nueva
-    assert len(avisos) == 1  # el nombre no genera un segundo aviso
+
+
+def test_resumen_trae_los_cuatro_campos_del_e3(turno):
+    from resumen_caso import campos_faltantes
+    _cotizar(turno, "PE.e3")
+    chat = turno("PE.e3", "quiero hablar con un asesor",
+                 [_respuesta(tool_calls=[_tool_call("t2", "derivar_a_asesor", {"motivo": "pide asesor"})])])
+    r = chat["resumen_caso"]
+    assert "*Necesidad:* Continuar con la cotización de Zapatillas Nike" in r
+    assert "*Pendientes:* Validar la cotización y enviar el PDF formal; Nombre del cliente" in r
+    assert campos_faltantes(r) == []
+
+
+def test_pendientes_de_seguimiento_usan_el_tracking():
+    from resumen_caso import _pendientes
+    assert _pendientes("seguimiento", "", {"nombre_cliente": "Ana"}, None,
+                       ["mi tracking es 1Z999AA10123456784"]) == ["Ubicar el paquete con el código 1Z999AA10123456784"]
+    assert _pendientes("seguimiento", "", {"nombre_cliente": "Ana"}, None, ["¿dónde está mi paquete?"]) == \
+        ["Pedir el código de tracking"]
+    assert _pendientes("restringido", "RECETA MÉDICA VISADA", {"nombre_cliente": "Ana"}, None, []) == \
+        ["Confirmar que tiene receta médica visada"]
+
+
+def test_campos_faltantes_detecta_resumen_incompleto():
+    from resumen_caso import campos_faltantes
+    assert campos_faltantes("*Motivo:* Pidió hablar con un asesor\n*Cliente:* Ana") == ["necesidad", "pendientes"]
+    assert campos_faltantes(None) == ["motivo", "necesidad", "datos", "pendientes"]

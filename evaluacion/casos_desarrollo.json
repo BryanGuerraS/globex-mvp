@@ -262,7 +262,7 @@
     {
       "id": "TAX-01",
       "categoria": "cotizacion",
-      "descripcion": "Compra en Amazon: cotiza sin TAX",
+      "descripcion": "Compra en Amazon: desde el 14/11 también suma el 7 % de referencia",
       "mensajes": [
         "Quiero traer unos audífonos de Amazon de $180 que pesan 0.5 kg"
       ],
@@ -424,11 +424,11 @@
         "tipo_final": [
           "faq"
         ],
-        "herramientas": [
-          "consultar_faq_comercial"
-        ],
         "cotiza": false,
-        "deriva": false
+        "deriva": false,
+        "contiene": [
+          "7270"
+        ]
       }
     },
     {
@@ -2543,6 +2543,314 @@
         "cotizacion": {
           "valor": 140,
           "peso": 0.3
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COR-01",
+      "categoria": "multiturno",
+      "descripcion": "Corrige el peso después de cotizar",
+      "mensajes": [
+        "Laptop Lenovo de 650 dólares, 2.5 kg",
+        "Perdón, pesa 3 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 650,
+          "peso": 3
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "COR-02",
+      "categoria": "multiturno",
+      "descripcion": "Corrige el precio después de cotizar",
+      "mensajes": [
+        "Unas zapatillas de 90 dólares, 1 kg",
+        "Me equivoqué, cuestan 120 dólares"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 120,
+          "peso": 1
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "FAQ-G-01",
+      "categoria": "faq",
+      "descripcion": "Dos preguntas de la base ampliada en un mensaje",
+      "mensajes": [
+        "¿Qué pongo en State y ZIP code? ¿Y qué teléfono del almacén coloco?"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "faq"
+        ],
+        "contiene": [
+          "33122",
+          "628-8807"
+        ],
+        "cotiza": false,
+        "deriva": false
+      }
+    },
+    {
+      "id": "FAQ-G-02",
+      "categoria": "faq",
+      "descripcion": "Free tax de Amazon",
+      "mensajes": [
+        "¿Qué es el free tax de Amazon?"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "faq"
+        ],
+        "contiene": [
+          "alianza"
+        ],
+        "cotiza": false,
+        "deriva": false
+      }
+    },
+    {
+      "id": "FAQ-G-03",
+      "categoria": "faq",
+      "descripcion": "Dirección con faltas de ortografía",
+      "mensajes": [
+        "k direcsion pongo pa k llegue al almacen d globex en miami?"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "faq"
+        ],
+        "contiene": [
+          "7270"
+        ],
+        "cotiza": false,
+        "deriva": false
+      }
+    },
+    {
+      "id": "FAQ-G-04",
+      "categoria": "faq",
+      "descripcion": "Pago con Yape",
+      "mensajes": [
+        "¿Puedo pagar el servicio con Yape?"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "faq"
+        ],
+        "contiene": [
+          "transferencia"
+        ],
+        "cotiza": false,
+        "deriva": false
+      }
+    },
+    {
+      "id": "FAQ-G-05",
+      "categoria": "derivacion",
+      "descripcion": "Compra asistida: responde y deriva",
+      "mensajes": [
+        "Quiero que ustedes compren el producto por mí con su tarjeta"
+      ],
+      "esperado": {
+        "cotiza": false,
+        "deriva": true
+      }
+    },
+    {
+      "id": "REE-01",
+      "categoria": "derivacion",
+      "descripcion": "Pregunta por reempaque: explica y deriva",
+      "mensajes": [
+        "¿Ustedes hacen reempaque de las cajas?"
+      ],
+      "esperado": {
+        "cotiza": false,
+        "deriva": true,
+        "contiene": [
+          "reorganizar el embalaje"
+        ]
+      }
+    },
+    {
+      "id": "REE-02",
+      "categoria": "derivacion",
+      "descripcion": "Pide reempacar su pedido",
+      "mensajes": [
+        "Quiero que reempaquen mis 3 paquetes en una caja más chica"
+      ],
+      "esperado": {
+        "cotiza": false,
+        "deriva": true
+      }
+    },
+    {
+      "id": "TAX-04",
+      "categoria": "cotizacion",
+      "descripcion": "Precio sin tax: suma el 7 %",
+      "mensajes": [
+        "Un parlante de 150 dólares sin tax, pesa 2 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 150,
+          "peso": 2
+        },
+        "contiene": [
+          "estimado 7 %"
+        ],
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "TAX-05",
+      "categoria": "cotizacion",
+      "descripcion": "Precio con tax incluido: TAX 0",
+      "mensajes": [
+        "Unos audífonos de 180 dólares con tax incluido, 0.5 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "valor": 180,
+          "peso": 0.5
+        },
+        "contiene": [
+          "incluido en el precio"
+        ],
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "PED-01",
+      "categoria": "cotizacion",
+      "descripcion": "Dos productos de dos tiendas (ejemplo aprobado)",
+      "mensajes": [
+        "Quiero cotizar 2 polos de Amazon de 20 dólares cada uno, pesan 1 kg, y unas zapatillas Nike de 120 dólares que pesan 1.5 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "productos": [
+            {
+              "valor": 20,
+              "peso": 1
+            },
+            {
+              "valor": 120,
+              "peso": 1.5
+            }
+          ],
+          "total": 202.7
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "PED-02",
+      "categoria": "cotizacion",
+      "descripcion": "Tres productos, uno con TAX incluido",
+      "mensajes": [
+        "Cotízame: unos audífonos de 90 dólares de 0.5 kg, una mochila de 60 dólares de 1 kg y un perfume de 85 dólares con tax incluido de 0.6 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion",
+          "guardrail"
+        ],
+        "cotiza": false
+      }
+    },
+    {
+      "id": "PED-03",
+      "categoria": "cotizacion",
+      "descripcion": "Peso total para todo el pedido",
+      "mensajes": [
+        "Una casaca de 100 dólares y un buzo de 50 dólares, todo pesa 2 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "productos": [
+            {
+              "valor": 100,
+              "peso": 2
+            },
+            {
+              "valor": 50,
+              "peso": 2
+            }
+          ],
+          "total": 187.5
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "PED-04",
+      "categoria": "tope",
+      "descripcion": "La suma del pedido pasa USD 2 000",
+      "mensajes": [
+        "Una laptop de 1500 dólares de 2.5 kg y un monitor de 600 dólares de 5 kg"
+      ],
+      "esperado": {
+        "cotiza": false,
+        "deriva": true
+      }
+    },
+    {
+      "id": "PED-05",
+      "categoria": "multiturno",
+      "descripcion": "Agrega un producto después de cotizar",
+      "mensajes": [
+        "Un parlante de 150 dólares, pesa 2 kg",
+        "Agrégale también unos audífonos de 40 dólares de 0.5 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "productos": [
+            {
+              "valor": 150,
+              "peso": 2
+            },
+            {
+              "valor": 40,
+              "peso": 0.5
+            }
+          ],
+          "total": 283.59
         },
         "cotiza": true,
         "deriva": false

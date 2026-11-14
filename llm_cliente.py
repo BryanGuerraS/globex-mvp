@@ -26,6 +26,7 @@ from typing import Callable, List, Optional, Tuple
 from openai import APIConnectionError, APITimeoutError, InternalServerError, OpenAI, RateLimitError
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"  # misma API compatible con OpenAI
 PAUSA_POR_DEFECTO_S = 60  # si Groq no dice cuánto esperar
 ESPERA_MAXIMA_S = 60  # tope de espera por cuota en una llamada; después se propaga el 429
 REINTENTOS_TRANSITORIOS = 2  # errores de red o 5xx, en la misma key
@@ -141,17 +142,18 @@ class ClienteGroqConRespaldo:
             esperado_s += espera
 
 
-def keys_de_respaldo(entorno) -> List[str]:
-    """GROQ_API_KEY_RESPALDO, GROQ_API_KEY_RESPALDO_2, _3... en ese orden (sin vacías)."""
-    nombres = ["GROQ_API_KEY_RESPALDO"] + [f"GROQ_API_KEY_RESPALDO_{i}" for i in range(2, 21)]
+def keys_de_respaldo(entorno, prefijo: str = "GROQ_API_KEY") -> List[str]:
+    """<prefijo>_RESPALDO, <prefijo>_RESPALDO_2, _3... en ese orden (sin vacías)."""
+    nombres = [f"{prefijo}_RESPALDO"] + [f"{prefijo}_RESPALDO_{i}" for i in range(2, 21)]
     return [entorno.get(n) for n in nombres if entorno.get(n)]
 
 
-def crear_cliente(key_principal: Optional[str], respaldos: Optional[List[str]] = None) -> ClienteGroqConRespaldo:
+def crear_cliente(key_principal: Optional[str], respaldos: Optional[List[str]] = None,
+                  base_url: str = GROQ_BASE_URL) -> ClienteGroqConRespaldo:
     """Envoltorio con la key principal y las de respaldo (si las hay), en orden."""
     keys = [("principal", key_principal)] + [
         (f"respaldo {i}", k) for i, k in enumerate([k for k in (respaldos or []) if k], 1)
     ]
     return ClienteGroqConRespaldo([
-        (nombre, OpenAI(api_key=k, base_url=GROQ_BASE_URL, max_retries=0)) for nombre, k in keys
+        (nombre, OpenAI(api_key=k, base_url=base_url, max_retries=0)) for nombre, k in keys
     ])

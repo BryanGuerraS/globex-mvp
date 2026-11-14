@@ -204,7 +204,7 @@
     {
       "id": "M11",
       "categoria": "Exoneración: producto + TAX menor a USD 200",
-      "descripcion": "USD 199.99 sin TAX (Amazon): sin tributos",
+      "descripcion": "USD 199.99 con TAX incluido: sin tributos",
       "tipo": "calculo",
       "valor": 199.99,
       "peso": 1,
@@ -364,7 +364,7 @@
     {
       "id": "M19",
       "categoria": "TAX de la tienda",
-      "descripcion": "Amazon/eBay con almacén Globex: TAX 0",
+      "descripcion": "Precio con TAX incluido (cualquier tienda): TAX 0",
       "tipo": "calculo",
       "valor": 650,
       "peso": 2.5,
@@ -528,7 +528,7 @@
     {
       "id": "M29",
       "categoria": "Tope de USD 2 000 (producto + TAX)",
-      "descripcion": "USD 2 000 sin TAX (Amazon) se cotiza",
+      "descripcion": "USD 2 000 con TAX incluido se cotiza",
       "tipo": "tope",
       "valor": 2000,
       "tax": 0,
@@ -539,7 +539,7 @@
     {
       "id": "M30",
       "categoria": "Tope de USD 2 000 (producto + TAX)",
-      "descripcion": "USD 2 000.01 sin TAX se deriva",
+      "descripcion": "USD 2 000.01 con TAX incluido se deriva",
       "tipo": "tope",
       "valor": 2000.01,
       "tax": 0,
@@ -751,7 +751,7 @@
     {
       "id": "M44",
       "categoria": "Anclaje del TAX al mensaje del cliente",
-      "descripcion": "Compra en Amazon: TAX 0",
+      "descripcion": "Comprar en Amazon ya no basta: rechaza (se usa el 7 %)",
       "tipo": "validacion_tax",
       "args": {
         "sin_tax": true
@@ -760,7 +760,7 @@
         "laptop de amazon, 650 dólares, 2.5 kg"
       ],
       "esperado": {
-        "resultado": 0.0
+        "resultado": "rechaza"
       }
     },
     {
@@ -868,7 +868,7 @@
     {
       "id": "M51",
       "categoria": "Cantidad: precio × unidades",
-      "descripcion": "4 perfumes de USD 45.50 de Amazon (sin TAX), 1.6 kg",
+      "descripcion": "4 perfumes de USD 45.50 con TAX incluido, 1.6 kg",
       "tipo": "calculo",
       "valor": 45.5,
       "peso": 1.6,
@@ -926,6 +926,198 @@
       ],
       "esperado": {
         "resultado": "rechaza"
+      }
+    },
+    {
+      "id": "M55",
+      "categoria": "Pedido de varios productos",
+      "descripcion": "Polos de Amazon y zapatillas Nike: 171.20 sin tributos (ejemplo aprobado)",
+      "tipo": "pedido",
+      "productos": [
+        {
+          "precio_unitario": 20,
+          "cantidad": 2,
+          "peso_kg": 1,
+          "tax": null
+        },
+        {
+          "precio_unitario": 120,
+          "cantidad": 1,
+          "peso_kg": 1.5,
+          "tax": null
+        }
+      ],
+      "peso_total": null,
+      "esperado": {
+        "boleta": 171.2,
+        "peso_facturable_kg": 2.5,
+        "costo_flete": 22.5,
+        "costo_envio": 31.5,
+        "tributos_aprox": 0.0,
+        "costo_total": 202.7,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M56",
+      "categoria": "Pedido de varios productos",
+      "descripcion": "Tres productos, uno con TAX incluido: la suma pasa 200 y paga tributos",
+      "tipo": "pedido",
+      "productos": [
+        {
+          "precio_unitario": 20,
+          "cantidad": 2,
+          "peso_kg": 1,
+          "tax": null
+        },
+        {
+          "precio_unitario": 120,
+          "cantidad": 1,
+          "peso_kg": 1.5,
+          "tax": null
+        },
+        {
+          "precio_unitario": 85,
+          "cantidad": 1,
+          "peso_kg": 0.6,
+          "tax": 0
+        }
+      ],
+      "peso_total": null,
+      "esperado": {
+        "boleta": 256.2,
+        "peso_facturable_kg": 3.1,
+        "costo_flete": 27.9,
+        "costo_envio": 36.9,
+        "tributos_aprox": 61.49,
+        "costo_total": 354.59,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M57",
+      "categoria": "Pedido de varios productos",
+      "descripcion": "Dos productos livianos: el peso total 0.5 kg se cobra como 1 kg",
+      "tipo": "pedido",
+      "productos": [
+        {
+          "precio_unitario": 30,
+          "cantidad": 1,
+          "peso_kg": 0.2,
+          "tax": null
+        },
+        {
+          "precio_unitario": 40,
+          "cantidad": 1,
+          "peso_kg": 0.3,
+          "tax": null
+        }
+      ],
+      "peso_total": null,
+      "esperado": {
+        "boleta": 74.9,
+        "peso_facturable_kg": 1.0,
+        "costo_flete": 9.0,
+        "costo_envio": 18.0,
+        "tributos_aprox": 0.0,
+        "costo_total": 92.9,
+        "aplica_impuesto": false,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M58",
+      "categoria": "Pedido de varios productos",
+      "descripcion": "Peso total dado por el cliente para todo el pedido",
+      "tipo": "pedido",
+      "productos": [
+        {
+          "precio_unitario": 100,
+          "cantidad": 1,
+          "peso_kg": null,
+          "tax": null
+        },
+        {
+          "precio_unitario": 150,
+          "cantidad": 1,
+          "peso_kg": null,
+          "tax": 10
+        }
+      ],
+      "peso_total": 3.2,
+      "esperado": {
+        "boleta": 267.0,
+        "peso_facturable_kg": 3.2,
+        "costo_flete": 28.8,
+        "costo_envio": 37.8,
+        "tributos_aprox": 64.08,
+        "costo_total": 368.88,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M59",
+      "categoria": "Pedido de varios productos",
+      "descripcion": "Cada producto bajo 200 pero la suma sí paga tributos",
+      "tipo": "pedido",
+      "productos": [
+        {
+          "precio_unitario": 110,
+          "cantidad": 1,
+          "peso_kg": 1,
+          "tax": null
+        },
+        {
+          "precio_unitario": 110,
+          "cantidad": 1,
+          "peso_kg": 1,
+          "tax": null
+        }
+      ],
+      "peso_total": null,
+      "esperado": {
+        "boleta": 235.4,
+        "peso_facturable_kg": 2.0,
+        "costo_flete": 18.0,
+        "costo_envio": 27.0,
+        "tributos_aprox": 56.5,
+        "costo_total": 318.9,
+        "aplica_impuesto": true,
+        "requiere_asesor": false
+      }
+    },
+    {
+      "id": "M60",
+      "categoria": "Pedido de varios productos",
+      "descripcion": "La suma de productos con TAX pasa USD 2 000: se deriva",
+      "tipo": "pedido",
+      "productos": [
+        {
+          "precio_unitario": 900,
+          "cantidad": 1,
+          "peso_kg": 2,
+          "tax": null
+        },
+        {
+          "precio_unitario": 1100,
+          "cantidad": 1,
+          "peso_kg": 3,
+          "tax": 0
+        }
+      ],
+      "peso_total": null,
+      "esperado": {
+        "boleta": 2063.0,
+        "peso_facturable_kg": 5.0,
+        "costo_flete": 45.0,
+        "costo_envio": 54.0,
+        "tributos_aprox": 495.12,
+        "costo_total": 2612.12,
+        "aplica_impuesto": true,
+        "requiere_asesor": true
       }
     }
   ]

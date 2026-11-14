@@ -223,19 +223,21 @@ def validar_cantidad(args: dict, textos_cliente: Iterable[str]) -> Union[int, st
 # ---------------- TAX de la tienda ----------------
 
 _MENCIONA_TAX = re.compile(r"\b(tax|taxes|impuestos?|sales)\b")
+# El precio ya trae el TAX, o la tienda no lo cobra. Desde el 14/11 (decisión del usuario) comprar en
+# Amazon o eBay ya no basta, y "sin tax" significa que el precio NO lo incluye: se suma el 7 %.
 _SIN_TAX = re.compile(
-    r"\b(amazon|ebay)\b"
-    r"|\binclu\w*\W+(?:\w+\W+){0,3}?(?:tax|taxes|impuestos?)\b"
+    r"\binclu\w*\W+(?:\w+\W+){0,3}?(?:tax|taxes|impuestos?)\b"
     r"|\b(?:tax|taxes|impuestos?)\W+(?:\w+\W+){0,3}?inclu\w*"
-    r"|\b(?:sin|no\s+(?:me\s+)?(?:cobra|cobran|paga|pague|pago|hay|tiene))\s+(?:el\s+)?(?:tax|taxes|impuestos?)\b"
+    r"|\bcon\s+(?:el\s+|los\s+)?(?:tax|taxes|impuestos?)\b"
+    r"|\bno\s+(?:me\s+)?(?:cobra|cobran|paga|pague|pago|hay|tiene)\s+(?:el\s+)?(?:tax|taxes|impuestos?)\b"
 )
 
 
 def validar_tax_tienda(args: dict, textos_cliente: Iterable[str]) -> Union[Optional[float], str]:
     """Decide el TAX de tienda que se pasa al motor.
 
-    Devuelve el TAX en USD que dijo el cliente, 0.0 si no aplica (Amazon/eBay con almacén
-    Globex o precio con TAX incluido), None para usar el 7 % de referencia, o un texto
+    Devuelve el TAX en USD que dijo el cliente, 0.0 si el precio ya lo incluye o la tienda no
+    lo cobra (en cualquier tienda), None para usar el 7 % de referencia, o un texto
     con el motivo del rechazo. Lo que diga el LLM tiene que estar en el texto del cliente.
     """
     textos = list(textos_cliente)
@@ -257,7 +259,7 @@ def validar_tax_tienda(args: dict, textos_cliente: Iterable[str]) -> Union[Optio
     if args.get("sin_tax") is True:
         if not _SIN_TAX.search(texto):
             return (
-                "El cliente no dijo que compra en Amazon/eBay ni que su precio incluye el TAX. "
+                "El cliente no dijo que su precio incluye el TAX ni que la tienda no se lo cobra. "
                 "Deja sin_tax vacío y el motor usa el 7 % de referencia."
             )
         return 0.0
@@ -407,3 +409,63 @@ def pide_dato_indispensable(texto: Optional[str]) -> bool:
         if es_pedido and _DATOS_INDISPENSABLES.search(frase):
             return True
     return False
+
+
+# ---------------- Pedidos de varios productos (14/11) ----------------
+
+MAX_PRODUCTOS = 10
+
+
+def validar_productos(
+    args: dict, textos_cliente: Iterable[str], pesos_referenciales: Iterable[float] = ()
+) -> Union[Tuple[list, Optional[float]], str]:
+    """Valida los productos que el LLM pasa a calcular_cotizacion.
+
+    Acepta `productos` (lista) o, por compatibilidad, los campos de un solo producto en `args`.
+    Cada precio, cantidad, peso y TAX se ancla al texto del cliente con las mismas reglas de
+    siempre. Devuelve (productos para el motor, peso_total_kg o None) o el motivo del rechazo.
+    """
+    textos = list(textos_cliente)
+    pesos_ref = list(pesos_referenciales)
+    brutos = args.get("productos")
+    if not brutos:
+        brutos = [{"producto": args.get("producto"), "precio_unitario_usd": args.get("valor_producto_usd"),
+                   "cantidad": args.get("cantidad"), "peso_kg": args.get("peso_kg"),
+                   "tax_tienda_usd": args.get("tax_tienda_usd"), "sin_tax": args.get("sin_tax")}]
+    if not isinstance(brutos, list) or len(brutos) > MAX_PRODUCTOS:
+        return f"Pasa entre 1 y {MAX_PRODUCTOS} productos en la lista 'productos'."
+
+    peso_total = _a_numero(args.get("peso_total_kg"))
+    if args.get("peso_total_kg") is not None and (peso_total is None or peso_total <= 0):
+        return "El peso total debe ser un número mayor a cero, en kg."
+
+    salida = []
+    for i, b in enumerate(brutos, 1):
+        if not isinstance(b, dict):
+            return "Cada producto debe ser un objeto con su precio y su peso."
+        etiqueta = f"Producto {i}" + (f" ({b.get('producto')})" if b.get("producto") else "")
+        legado = {"valor_producto_usd": b.get("precio_unitario_usd", b.get("valor_producto_usd")),
+                  "cantidad": b.get("cantidad"), "tax_tienda_usd": b.get("tax_tienda_usd"),
+                  "sin_tax": b.get("sin_tax")}
+        cantidad = validar_cantidad(legado, textos)
+        if isinstance(cantidad, str):
+            return f"{etiqueta}: {cantidad}"
+        peso_item = b.get("peso_kg")
+        if peso_item is None and peso_total is None:
+            return (f"{etiqueta}: falta su peso. Pide el peso de cada producto o el peso total del pedido "
+                    "(peso_total_kg), o usa consultar_peso_producto.")
+        legado["peso_kg"] = peso_item if peso_item is not None else peso_total
+        validacion = validar_argumentos_cotizacion(legado, textos, pesos_ref, cantidad)
+        if isinstance(validacion, str):
+            return f"{etiqueta}: {validacion}"
+        valor, peso = validacion
+        tax = validar_tax_tienda(legado, textos)
+        if isinstance(tax, str):
+            return f"{etiqueta}: {tax}"
+        salida.append({"producto": (str(b.get("producto") or "").strip()[:40] or None),
+                       "tienda": (str(b.get("tienda") or "").strip()[:30] or None),
+                       "precio_unitario": valor, "cantidad": cantidad,
+                       "peso_kg": peso if peso_item is not None else None, "tax": tax})
+    if peso_total is None and any(p["peso_kg"] is None for p in salida):
+        return "Falta el peso de algún producto."
+    return salida, peso_total

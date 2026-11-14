@@ -41,3 +41,6 @@ docs/pendientes_por_validar.txt
 
 # Worktrees locales para correr versiones anteriores (v0 del lote nuevo)
 .worktrees/
+
+# Copia local de los entregables del curso (pueden tener datos reales): no subir
+entregables/

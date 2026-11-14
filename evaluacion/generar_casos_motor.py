@@ -56,6 +56,25 @@ def oraculo(valor, peso, tax=None, cantidad=1) -> dict:
     }
 
 
+def oraculo_pedido(items, peso_total=None) -> dict:
+    """Pedido de varios productos (reglas del 14/11): una guía, flete sobre el peso total,
+    un solo desaduanaje y tributos sobre la suma de los precios totales (producto + TAX)."""
+    boleta = D(0)
+    for precio, cantidad, _, tax in items:
+        v = D(str(precio)) * cantidad
+        boleta += v + _tax(v, tax)
+    p = D(str(peso_total)) if peso_total is not None else sum(D(str(i[2])) for i in items)
+    facturable = p if p >= 1 else D(1)
+    flete = _r(facturable * 9)
+    envio = _r(flete + 9)
+    aplica = boleta >= 200
+    tributos = _r(boleta * D("0.24")) if aplica else D(0)
+    return {"boleta": float(boleta), "peso_facturable_kg": float(facturable), "costo_flete": float(flete),
+            "costo_envio": float(envio), "tributos_aprox": float(tributos),
+            "costo_total": float(_r(boleta + envio + tributos)), "aplica_impuesto": aplica,
+            "requiere_asesor": boleta > 2000}
+
+
 def deriva(valor, tax=None, cantidad=1) -> bool:
     v = D(str(valor)) * cantidad
     return v + _tax(v, tax) > 2000
@@ -75,7 +94,7 @@ CALCULOS = [
         ("USD 186.91 + TAX 13.08 = 199.99, sin tributos", 186.91, 1, None),
         ("USD 186.92 + TAX 13.08 = 200.00, ya paga (Excel: menor a 200 exonera)", 186.92, 2, None),
         ("USD 199.99 + TAX estimado supera 200: paga", 199.99, 1, None),
-        ("USD 199.99 sin TAX (Amazon): sin tributos", 199.99, 1, 0),
+        ("USD 199.99 con TAX incluido: sin tributos", 199.99, 1, 0),
         ("USD 120 y 0.5 kg (zapatillas)", 120, 0.5, None),
     ]),
     ("Tributos: 24 % de producto + TAX", [
@@ -87,7 +106,7 @@ CALCULOS = [
         ("USD 899.99, 4.2 kg", 899.99, 4.2, None),
     ]),
     ("TAX de la tienda", [
-        ("Amazon/eBay con almacén Globex: TAX 0", 650, 2.5, 0),
+        ("Precio con TAX incluido (cualquier tienda): TAX 0", 650, 2.5, 0),
         ("TAX que indica el cliente (USD 45.50)", 650, 2.5, 45.5),
         ("TAX del cliente que deja la boleta bajo 200", 150, 1, 10),
         ("TAX del cliente que lleva la boleta sobre 200", 190, 1, 15),
@@ -101,8 +120,8 @@ TOPES = [
     ("USD 1 869.16 + TAX = 2 000.00 se cotiza", 1869.16, None),
     ("USD 1 869.17 + TAX = 2 000.01 se deriva", 1869.17, None),
     ("USD 1 999.99 + TAX estimado se deriva", 1999.99, None),
-    ("USD 2 000 sin TAX (Amazon) se cotiza", 2000, 0),
-    ("USD 2 000.01 sin TAX se deriva", 2000.01, 0),
+    ("USD 2 000 con TAX incluido se cotiza", 2000, 0),
+    ("USD 2 000.01 con TAX incluido se deriva", 2000.01, 0),
 ]
 
 ERRORES_MOTOR = [
@@ -135,7 +154,7 @@ VALIDACIONES = [
 CANTIDADES_CALCULO = [
     ("3 polos de USD 20 cada uno, 1 kg en total", 20, 1, None, 3),
     ("2 zapatillas de USD 150: la suma pasa de USD 200 y paga tributos", 150, 2, None, 2),
-    ("4 perfumes de USD 45.50 de Amazon (sin TAX), 1.6 kg", 45.5, 1.6, 0, 4),
+    ("4 perfumes de USD 45.50 con TAX incluido, 1.6 kg", 45.5, 1.6, 0, 4),
 ]
 CANTIDADES_TOPE = [
     ("3 × USD 700 + TAX supera USD 2 000: se deriva", 700, None, 3),
@@ -149,11 +168,24 @@ VALIDACIONES_CANTIDAD = [
 # resultado esperado: None = 7 % de referencia, número = TAX que se usa, "rechaza" = vuelve al LLM
 VALIDACIONES_TAX = [
     ("Sin datos del TAX: se usa el 7 % de referencia", {}, ["laptop de 650 dólares, 2.5 kg"], None),
-    ("Compra en Amazon: TAX 0", {"sin_tax": True}, ["laptop de amazon, 650 dólares, 2.5 kg"], 0.0),
+    ("Comprar en Amazon ya no basta: rechaza (se usa el 7 %)", {"sin_tax": True}, ["laptop de amazon, 650 dólares, 2.5 kg"], "rechaza"),
     ("Precio con TAX incluido: TAX 0", {"sin_tax": True}, ["son 650 dólares con el tax incluido, 2.5 kg"], 0.0),
     ("sin_tax sin indicio del cliente: rechaza", {"sin_tax": True}, ["laptop de best buy, 650 dólares, 2.5 kg"], "rechaza"),
     ("TAX dicho por el cliente", {"tax_tienda_usd": 45.5}, ["laptop de 650 dólares, el tax fue 45.50, 2.5 kg"], 45.5),
     ("TAX inventado por el LLM: rechaza", {"tax_tienda_usd": 45}, ["laptop de 650 dólares, 2.5 kg"], "rechaza"),
+]
+
+
+# (descripción, [(precio unitario, cantidad, peso kg o None, TAX o None)], peso total o None)
+PEDIDOS = [
+    ("Polos de Amazon y zapatillas Nike: 171.20 sin tributos (ejemplo aprobado)",
+     [(20, 2, 1, None), (120, 1, 1.5, None)], None),
+    ("Tres productos, uno con TAX incluido: la suma pasa 200 y paga tributos",
+     [(20, 2, 1, None), (120, 1, 1.5, None), (85, 1, 0.6, 0)], None),
+    ("Dos productos livianos: el peso total 0.5 kg se cobra como 1 kg", [(30, 1, 0.2, None), (40, 1, 0.3, None)], None),
+    ("Peso total dado por el cliente para todo el pedido", [(100, 1, None, None), (150, 1, None, 10)], 3.2),
+    ("Cada producto bajo 200 pero la suma sí paga tributos", [(110, 1, 1, None), (110, 1, 1, None)], None),
+    ("La suma de productos con TAX pasa USD 2 000: se deriva", [(900, 1, 2, None), (1100, 1, 3, 0)], None),
 ]
 
 
@@ -190,6 +222,10 @@ def generar() -> dict:
     for desc, args, textos, resultado in VALIDACIONES_CANTIDAD:
         nuevo(categoria="Cantidad: precio × unidades", descripcion=desc, tipo="validacion_cantidad",
               args=args, textos=textos, esperado={"resultado": resultado})
+    for desc, items, peso_total in PEDIDOS:
+        nuevo(categoria="Pedido de varios productos", descripcion=desc, tipo="pedido",
+              productos=[{"precio_unitario": p, "cantidad": c, "peso_kg": k, "tax": t} for p, c, k, t in items],
+              peso_total=peso_total, esperado=oraculo_pedido(items, peso_total))
     return {"descripcion": __doc__.split("Uso:")[0].strip(), "casos": casos}
 
 

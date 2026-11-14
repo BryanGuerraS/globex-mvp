@@ -94,14 +94,32 @@ def generar_imagen_proforma(
     detalle_tax = GlobexPricingEngine.detalle_tax(calculo)
 
     cantidad = int(calculo.get("cantidad", 1))
-    filas = [
+    productos = calculo.get("productos") or []
+    if len(productos) > 1:  # pedido de varios productos: una fila por producto (formato del 14/11)
+        def _nombre(i, p):  # el nombre se acorta con "…"; la tienda se conserva entera
+            nombre = p["producto"] if len(p["producto"]) <= 18 else p["producto"][:17].rstrip() + "…"
+            return f"{i}. {nombre}" + (f" ({p['tienda'][:12]})" if p.get("tienda") else "")
+        filas = [(_nombre(i, p),
+                  GlobexPricingEngine.linea_producto(p), _usd(p["total"])) for i, p in enumerate(productos, 1)]
+        filas += [
+            ("Flete aéreo", f"{_kg(peso_fact)} × USD 9.00/kg (peso total)"
+             + (f" (mínimo 1 kg; peso {_kg(peso)})" if peso_fact != peso else ""), _usd(flete)),
+            ("Desaduanaje", "Una vez por cotización", _usd(tramite)),
+            ("Tributos SUNAT",
+             "24 % de productos + TAX" if calculo.get("aplica_impuesto")
+             else "Exonerado: productos con TAX menor a USD 200",
+             _usd(tributos)),
+        ]
+    elif cantidad > 1:
+        filas = [
         ("Valor unitario", "Precio por unidad", _usd(float(calculo["precio_unitario"]))),
         ("Cantidad", "Unidades", str(cantidad)),
         ("Total", "Valor unitario × cantidad", _usd(valor)),
-    ] if cantidad > 1 else [
-        ("Valor del producto", "Precio declarado", _usd(valor)),
-    ]
-    filas += [
+        ]
+    else:
+        filas = [("Valor del producto", "Precio declarado", _usd(valor))]
+    if len(productos) <= 1:
+        filas += [
         ("TAX de la tienda", (detalle_tax[:1].upper() + detalle_tax[1:]) if detalle_tax else "Indicado por el cliente",
          _usd(tax)),
         ("Flete aéreo", f"{_kg(peso_fact)} × USD 9.00/kg"

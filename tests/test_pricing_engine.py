@@ -54,7 +54,7 @@ def test_tax_del_cliente_y_sin_tax():
 
 def test_mensaje_muestra_tax():
     assert "*TAX de la tienda:* USD 45.50 (estimado 7 %)" in E.formatear_mensaje_whatsapp(E.calcular(650, 2.5))
-    assert "USD 0.00 (no aplica)" in E.formatear_mensaje_whatsapp(E.calcular(650, 2.5, 0))
+    assert "USD 0.00 (incluido en el precio)" in E.formatear_mensaje_whatsapp(E.calcular(650, 2.5, 0))
     assert "TAX de la tienda:* USD 45.50" + chr(10) in E.formatear_mensaje_whatsapp(E.calcular(650, 2.5, 45.5))
 
 

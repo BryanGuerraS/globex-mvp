@@ -1,0 +1,1319 @@
+G001 Dirección del almacén
+Respuesta orientativa Usa 7270 NW 35TH TERRACE, SUITE 101, MIAMI, FLORIDA, ZIP 33122, Estados Unidos. En el destinatario coloca GX junto a tu nombre y apellido reales.
+Indispensable Calle y número, suite, ciudad, estado y ZIP del flyer. Indicar GX junto al nombre y apellido reales del destinatario.
+Opcional Teléfono del almacén si la tienda lo solicita: +1 (786) 628-8807.
+Alternativas aceptables La dirección puede ir en una línea o separada por campos; FL equivale a FLORIDA.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Cambiar la calle, omitir SUITE 101, sustituir MIAMI o ZIP 33122, o inventar un código personal.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G002 Campos de dirección
+Respuesta orientativa En Address line 1 escribe 7270 NW 35TH TERRACE y en Address line 2 coloca SUITE 101.
+Indispensable Address line 1 corresponde a la calle y número. Address line 2 corresponde a SUITE 101.
+Opcional Aclarar que el nombre de los campos puede variar entre tiendas.
+Alternativas aceptables Se aceptan dirección principal y apartamento o suite como nombres equivalentes.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Omitir la suite o afirmar una interfaz de tienda distinta de la que el cliente describió.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G003 Identificador GX
+Respuesta orientativa Puedes poner GX antes o después de tu nombre y apellido reales. Lo importante es que el destinatario quede identificado con GX.
+Indispensable GX acompaña al nombre y apellido reales. Puede figurar al inicio o al final del conjunto, sin cambiar el nombre real.
+Opcional Un ejemplo con los marcadores Nombre y Apellido, sin inventar una identidad.
+Alternativas aceptables GX Nombre Apellido o Nombre Apellido GX; una barra como separador no cambia el sentido.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Exigir una única posición de GX o reemplazar el nombre real por GX.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G004 Identificador GX
+Respuesta orientativa No hace falta poner GX en ambos campos. Conserva tu nombre y apellido reales y agrega GX una sola vez, antes o después de ellos.
+Indispensable Usar el nombre y apellido reales. Agregar GX una sola vez junto a ellos, sin duplicarlo en ambos campos.
+Opcional Si el formulario no admite esa escritura, pedir el nombre del campo o el texto del error.
+Alternativas aceptables Se acepta ubicar GX en el campo de nombre o junto al apellido si se mantiene el conjunto identificable.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Ordenar que escriba GX en nombre y también en apellido, o inventar un identificador individual.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G005 Flyer de dirección
+Respuesta orientativa Copia la calle 7270 NW 35TH TERRACE, SUITE 101, ciudad MIAMI, estado FLORIDA o FL, ZIP 33122 y teléfono +1 (786) 628-8807. En el destinatario usa GX con tu nombre y apellido reales.
+Indispensable Destinatario con GX y nombre y apellido reales. Calle y número, suite, ciudad, estado, ZIP y teléfono del flyer.
+Opcional Estados Unidos cuando la tienda solicite país.
+Alternativas aceptables Una lista por campo o una explicación continua con todos los datos.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Omitir un campo solicitado del flyer o pedir DNI para explicar cómo copiar la dirección.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G006 Campos de dirección
+Respuesta orientativa En State coloca FLORIDA o FL y en ZIP code escribe 33122.
+Indispensable State es FLORIDA o FL. ZIP code es 33122.
+Opcional Ninguno; no es necesario repetir toda la dirección.
+Alternativas aceptables Estado y código postal son equivalentes aceptables a State y ZIP code.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Intercambiar el estado con la ciudad, dar otro ZIP o omitir uno de los dos campos.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G007 Teléfono del almacén
+Respuesta orientativa El teléfono que figura en el flyer del almacén es +1 (786) 628-8807.
+Indispensable Teléfono del almacén del flyer con prefijo internacional +1.
+Opcional Aclarar que ese dato corresponde al almacén del flyer.
+Alternativas aceptables +17866288807, con o sin espacios y guiones, conservando todos los dígitos.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Dar el número de un asesor, omitir dígitos o inventar otro teléfono.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G008 Dirección y precedencia
+Respuesta orientativa Usa la dirección del flyer aportado: 7270 NW 35TH TERRACE, SUITE 101, MIAMI, FLORIDA, ZIP 33122, Estados Unidos. Si ves una dirección distinta, confírmala con Globex antes de enviar la compra.
+Indispensable No validar como vigente una dirección antigua sólo por estar publicada. Dar la dirección vigente del flyer con calle, suite, ciudad, estado y ZIP.
+Opcional Ante una discrepancia, recomendar confirmarla con Globex antes de despachar; recordar GX en el destinatario.
+Alternativas aceptables Se acepta pedir al asesor que confirme la discrepancia sin respaldar el domicilio antiguo.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Autorizar cualquier dirección histórica o asegurar que todas reciben paquetes.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G009 Dirección del almacén
+Respuesta orientativa Usa 7270 NW 35TH TERRACE, SUITE 101, MIAMI, FLORIDA, ZIP 33122, Estados Unidos. En el destinatario coloca GX junto a tu nombre y apellido reales.
+Indispensable Calle y número, suite, ciudad, estado y ZIP del flyer. Indicar GX junto al nombre y apellido reales del destinatario.
+Opcional Teléfono del almacén si la tienda lo solicita: +1 (786) 628-8807.
+Alternativas aceptables La dirección puede ir en una línea o separada por campos; FL equivale a FLORIDA.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Cambiar la calle, omitir SUITE 101, sustituir MIAMI o ZIP 33122, o inventar un código personal.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G010 Funcionamiento del courier
+Respuesta orientativa Tú haces y pagas la compra en eBay y registras la dirección del almacén de Globex en Miami. Globex recibe allí el paquete y gestiona el servicio courier hacia Perú, con la documentación que corresponda.
+Indispensable El cliente compra y paga a la tienda. La compra se envía al almacén de Miami y Globex presta el courier hacia Perú.
+Opcional Para una cotización automática, el límite es USD 2.000 de producto más TAX de tienda; si lo supera, corresponde un asesor. No incluye el envío dentro de Estados Unidos en ese límite.
+Alternativas aceptables Se aceptan pasos numerados o una explicación breve que mantenga quién compra y quién presta la logística.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Afirmar que Globex compra automáticamente, recoge en cualquier tienda o que el cliente debe entregar la compra directamente en Perú.
+Fuente comercial Reglas comerciales A1, A2 y A19; alcance courier Estados Unidos a Perú.
+
+G011 Responsabilidad de compra
+Respuesta orientativa En el servicio courier estándar tú realizas y pagas la compra. La envías al almacén de Globex y Globex se encarga del servicio logístico hacia Perú.
+Indispensable En el courier estándar el cliente realiza y paga la compra a la tienda.
+Opcional Explicar que Globex recibe en su almacén y presta la logística. Si busca compra por encargo, el asesor puede confirmar opciones.
+Alternativas aceptables Se acepta explicar la separación entre tienda, comprador y courier sin hablar de excepciones.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Decir que el bot usará la tarjeta de Globex o que toda la empresa tiene prohibido ofrecer compra asistida.
+Fuente comercial Alcance del servicio courier USA a Perú y entrevista comercial.
+
+G012 Origen del envío
+Respuesta orientativa La marca por sí sola no confirma desde dónde saldrá el paquete. ¿Desde qué país lo despachan y la tienda permite entregarlo en nuestro almacén de Miami?
+Indispensable Explicar que la marca no confirma el país real de despacho. Solicitar el país desde el que se despacha la compra. Confirmar si la tienda puede entregar la compra en el almacén de Miami.
+Opcional Explicar que una ruta distinta requiere revisión del asesor.
+Alternativas aceptables Puede reunir ambas comprobaciones en una sola pregunta o separarlas. Debe cubrir el país real de despacho y la posibilidad de entrega al almacén de Miami; preguntar sólo por el país deja incompleta la aclaración. No necesita pedir datos del producto ni del pago.
+Aclaración pertinente Solicitar el país real de despacho y confirmar si la tienda entrega en el almacén de Miami, sin volver a preguntar un dato que el cliente ya haya proporcionado.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Dar por confirmado el origen por la marca o afirmar que todas sus tiendas despachan desde Estados Unidos.
+Fuente comercial Alcance del servicio courier USA a Perú y entrevista comercial.
+
+G013 Otra ruta
+Respuesta orientativa Esta orientación estándar corresponde al courier de Estados Unidos a Perú. Para un envío desde España a La Libertad, un asesor de Globex debe confirmar la disponibilidad y las condiciones.
+Indispensable Reconocer España a Perú como ruta distinta del courier USA a Perú. Orientar a un asesor para confirmar disponibilidad y condiciones de esa ruta.
+Opcional Conservar España, Perú y La Libertad en la orientación.
+Alternativas aceptables Se acepta ofrecer consulta con asesor, sin asegurar ni negar la oferta de toda la empresa.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para confirmar disponibilidad y condiciones de la ruta desde España.
+No aceptable Garantizar un envío desde España o afirmar que Globex nunca presta esa ruta por el límite de este flujo.
+Fuente comercial Alcance del servicio courier USA a Perú y entrevista comercial.
+
+G014 Consolidación informativa
+Respuesta orientativa Sí. Los productos incluidos en una misma cotización se reúnen en una sola guía y forman un envío consolidado. En Miami esperamos a que lleguen todos para preparar la caja. Conserva el tracking de cada producto o paquete para identificarlos. Si necesitas un reempaque particular, lo coordinas con un asesor.
+Indispensable Agrupar los productos de una misma cotización en una sola guía. Esperar en Miami la llegada de todos los productos antes de preparar el consolidado. Distinguir consolidación estándar de reempaque especial.
+Opcional El desaduanaje de USD 9 se cobra una vez por cotización, no por producto. El peso del conjunto tiene un mínimo de 1 kg y se fracciona por encima de ese primer kilogramo.
+Alternativas aceptables Puede decir un solo envío o una sola guía para la misma cotización, conservando la identificación de cada tracking.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para un reempaque o una condición particular; no se requiere para explicar la consolidación estándar.
+No aceptable Prometer que ya consolidó, mezclar automáticamente cotizaciones distintas, cobrar un trámite por cada producto de la misma cotización o ofrecer condiciones de reempaque.
+Fuente comercial Reglas comerciales A3, A11, A12 y A17.
+
+G015 Atención humana
+Respuesta orientativa Claro, para esa consulta corresponde la atención de un asesor comercial de Globex por este canal. No necesitas completar otros pasos para pedir esa atención.
+Indispensable Reconocer que solicita atención de un asesor. Orientar a la atención comercial sin exigir completar un formulario ni una cotización.
+Opcional Una intención como voy a solicitar atención es aceptable; no prueba que alguien haya recibido el caso.
+Alternativas aceptables Se acepta una respuesta más breve que atienda la petición y señale al asesor.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Reconocer la petición y orientar a atención comercial, sin dar por recibida una transferencia.
+No aceptable Forzar un menú o formulario, ignorar la petición, afirmar que un asesor identificado ya recibió el caso sin respaldo o prometer una hora de llamada.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G016 Plazos informativos
+Respuesta orientativa El plazo de referencia es de cinco días hábiles desde la llegada del paquete al almacén de Miami. El tiempo que la tienda tarda en entregarlo allí corresponde a una etapa anterior. Para conocer la disponibilidad de recojo o entrega de tu pedido concreto, lo revisamos con un asesor.
+Indispensable Informar cinco días hábiles desde la llegada al almacén de Miami. Separar el envío de la tienda y evitar garantizar una fecha individual.
+Opcional Si la cotización reúne varios productos, en Miami se espera a que lleguen todos para preparar el consolidado.
+Alternativas aceptables Puede expresar 5 días hábiles como plazo de referencia, sin contarlos desde la compra ni convertirlos en una fecha asegurada.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Sólo para el estado o fecha de un pedido concreto; la referencia general se responde directamente.
+No aceptable Responder que se desconoce el tipo de días o el hito inicial, contar desde el pago a la tienda o garantizar cinco días exactos sin demoras.
+Fuente comercial Reglas comerciales A11 y A13.
+
+G017 Plazos y afirmaciones no comprobables
+Respuesta orientativa La referencia es de cinco días hábiles desde que el paquete llega al almacén de Miami. No puedo asegurarte cinco días exactos sin demoras ni una fecha individual de recojo; para tu pedido, un asesor puede revisar el estado y la disponibilidad.
+Indispensable No aceptar la garantía de cinco días exactos sin demoras. Explicar que una fecha individual requiere condiciones y revisión del envío.
+Opcional Recordar que el envío de la tienda hasta Miami es una etapa anterior.
+Alternativas aceptables No se exige mencionar un número alternativo ni una lista exhaustiva de causas de demora.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Si necesita una fecha de su envío concreto; no hace falta para explicar que no puede garantizarse.
+No aceptable Repetir la garantía pedida, asegurar ausencia de aduanas o inventar una fecha confirmada.
+Fuente comercial Regla comercial A13 y verificación del estado del pedido.
+
+G018 Pedido activo
+Respuesta orientativa Para informarte el estado de ese pedido hace falta revisar el seguimiento real con un asesor de Globex. Con este mensaje no tengo un estado verificado para confirmar en qué etapa está.
+Indispensable Reconocer que solicita el estado de su pedido. No afirmar una ubicación o avance no aportados; orientar su verificación con un asesor.
+Opcional Solicitar la referencia del pedido o tracking pertinente, sin exigir datos ajenos a la consulta.
+Alternativas aceptables Se acepta pedir el identificador para que el asesor lo revise, sin fingir que ya consultó un sistema.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para comprobar el estado real del pedido.
+No aceptable Responder sólo con un plazo genérico, inventar ubicación, salida o entrega, o dar por realizada una revisión.
+Fuente comercial Alcance courier sobre entrega, recojo, plazos y comprobación operativa.
+
+G019 Recojo y domicilio
+Respuesta orientativa En Lima puedes recoger en Jr. Maracaibo N.º 2016 o coordinar delivery a domicilio con un asesor cuando el paquete llegue al almacén de Lima. Su tarifa depende de la zona y del horario. Para provincia trabajamos con Shalom y el recojo es en la agencia elegida. ¿Tu pedido es para Lima o para qué ciudad de provincia?
+Indispensable Pedir el destino o ciudad que falta para identificar la modalidad, sin asumir uno.
+Opcional Si solicita horario de recojo: de 9:00 a. m. a 6:00 p. m., con refrigerio de 1:00 p. m. a 2:00 p. m.; no asignar días de atención no indicados.
+Alternativas aceptables Basta pedir la ciudad o si es Lima o provincia; no es obligatorio describir todas las modalidades.
+Aclaración pertinente Preguntar si el destino es Lima o qué ciudad de provincia corresponde.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Afirmar entrega a domicilio para todos, imponer Shalom sin conocer el destino o pedir DNI antes de aclarar la modalidad.
+Fuente comercial Reglas comerciales A4, A7 y A8; flyers Shalom.
+
+G020 Provincias
+Respuesta orientativa Globex coordina envíos a provincia mediante Shalom. Para Ilo hay que confirmar la agencia disponible y la coordinación de ese destino antes del despacho.
+Indispensable Reconocer Ilo como destino solicitado y la posibilidad de coordinar envíos a provincia. Confirmar la agencia o disponibilidad para ese destino sin garantizarla.
+Opcional Preguntar si ya eligió una agencia; no pedir datos personales para esta consulta inicial.
+Alternativas aceptables Puede pedir la agencia de Ilo o señalar que el asesor confirma su disponibilidad.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Inventar una agencia o dirección en Ilo, asegurar cobertura universal o tratar Yurimaguas como destino de este cliente.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier. Regla A7: operador habilitado Shalom.
+
+G021 Provincias
+Respuesta orientativa Podemos orientarte sobre envíos a provincia. ¿A qué ciudad o provincia necesitas enviarlo? Con ese dato se confirma la agencia y disponibilidad correspondientes.
+Indispensable Pedir qué ciudad o provincia tiene como destino. No asegurar cobertura del destino que todavía no se conoce.
+Opcional Mencionar Shalom como modalidad documentada de coordinación.
+Alternativas aceptables Pedir sólo la ciudad es suficiente; agencia exacta puede definirse después.
+Aclaración pertinente Preguntar la ciudad o provincia de destino, sin exigir DNI.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Afirmar que llega a cualquier localidad, elegir una sede o solicitar DNI para decir si existe una opción.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier. Regla A7: operador habilitado Shalom.
+
+G022 Procedimiento Shalom
+Respuesta orientativa Debes indicar la agencia exacta de Shalom donde recogerás. Para preparar el despacho se requieren nombre completo, DNI, celular y esa agencia por el canal autorizado. Globex prepara y traslada el paquete a la agencia; el transporte de Shalom se paga aparte en destino.
+Indispensable Elegir e indicar la agencia exacta de recojo. Al preparar el despacho se usan nombre completo, DNI, celular y agencia. Distinguir la preparación y traslado de Globex del transporte de Shalom, pagado aparte en destino.
+Opcional La coordinación concreta se confirma con el asesor.
+Alternativas aceptables Puede explicar los pasos en otro orden sin omitir agencia, datos de despacho ni pago separado.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Afirmar que ya registró el envío, omitir la agencia exacta o presentar el transporte de Shalom como incluido en el pago a Globex.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier. Regla A7: operador habilitado Shalom.
+
+G023 Pago del transporte Shalom
+Respuesta orientativa El transporte de Shalom se paga en destino, al recoger el paquete. Es un pago separado del cargo de Globex por preparación y traslado a la agencia.
+Indispensable El transporte de Shalom se paga en destino al recoger. Es separado del cargo de preparación y traslado de Globex a la agencia.
+Opcional No se requiere dar importes ni preguntar peso.
+Alternativas aceptables Contraentrega en destino es equivalente, siempre que quede claro que es el transporte de Shalom.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Inventar un total para el paquete sin datos, dar el transporte de Shalom como gratis o incluido, o afirmar que se paga íntegramente a Globex.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier.
+
+G024 Requisitos de despacho
+Respuesta orientativa Para preparar el despacho se necesitan tu nombre completo, DNI, celular y el nombre exacto de la agencia Shalom donde recogerás, por el canal autorizado de coordinación.
+Indispensable Nombre completo, DNI, celular y nombre exacto de la agencia de recojo.
+Opcional Aclarar que la ciudad sola no identifica siempre la agencia.
+Alternativas aceptables Se acepta documento de identidad al explicar que el flyer pide DNI; el nombre de agencia puede describirse como sede exacta.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Omitir uno de los cuatro datos, pedir claves o datos bancarios, o afirmar que el despacho ya quedó registrado.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier.
+
+G025 Identificación de agencia
+Respuesta orientativa No basta con indicar Arequipa. Necesitamos el nombre exacto de la agencia Shalom donde quieres recoger; si hay varias o tienes dudas, el asesor puede ayudarte a confirmar la sede.
+Indispensable Indicar que hace falta el nombre exacto de la agencia elegida. No elegir una sede concreta sin información del cliente.
+Opcional Una referencia o dirección de la agencia puede ayudar a distinguirla, si ya se conoce.
+Alternativas aceptables Se acepta pedir la sede exacta como siguiente aclaración.
+Aclaración pertinente Pedir el nombre exacto de la agencia elegida en Arequipa.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Inventar una dirección de Shalom o asumir que todas sus agencias de la ciudad son intercambiables.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier.
+
+G026 Interpretación del flyer Shalom
+Respuesta orientativa No. Yurimaguas aparece como ejemplo. Debes indicar la agencia exacta de Shalom donde recogerás tu paquete en el destino que coordines.
+Indispensable Yurimaguas es un ejemplo del flyer. El cliente debe indicar la agencia exacta donde recogerá según su destino.
+Opcional Preguntar la ciudad sólo si desea avanzar a elegir agencia.
+Alternativas aceptables No es obligatorio copiar la dirección del ejemplo para responder correctamente.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Obligar a recoger en Yurimaguas o convertir su dirección de ejemplo en agencia de cualquier ciudad.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier.
+
+G027 Modalidad Shalom
+Respuesta orientativa En la modalidad descrita por el flyer recoges el paquete en la agencia Shalom que hayas indicado y coordinado. Ese flyer no confirma entrega a tu domicilio.
+Indispensable El servicio descrito en el flyer es para recoger en la agencia Shalom elegida. No garantizar entrega a domicilio por esa instrucción.
+Opcional Para otra modalidad, el asesor debe confirmar disponibilidad.
+Alternativas aceptables No es necesario preguntar Lima o provincia porque ya delimitó la modalidad por agencia.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Garantizar delivery a domicilio o no contestar que se recoge en agencia.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier. Regla A7: operador habilitado Shalom.
+
+G028 Verificación operativa Shalom
+Respuesta orientativa Con este mensaje no tengo un despacho verificado para confirmarlo. Un asesor debe revisar el estado real usando la referencia de tu envío.
+Indispensable No afirmar que accedió al sistema o verificó el despacho sin respaldo. Orientar a un asesor para revisar el estado real con la referencia del envío.
+Opcional Puede pedir el tracking o referencia pertinente para esa revisión.
+Alternativas aceptables No es obligatorio afirmar que el sistema nunca tiene herramientas; basta reconocer que no existe un estado verificado en esta consulta.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para comprobar el despacho real de Shalom con su referencia.
+No aceptable Inventar acceso a Shalom, una guía, un registro o un despacho confirmado.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier.
+
+G029 Medios de pago
+Respuesta orientativa El servicio de Globex se paga mediante transferencia bancaria o interbancaria. Cuando el producto llega a nuestros almacenes, coordinas con un asesor las cuentas y los detalles del pago. La compra del producto la haces y pagas directamente en la tienda.
+Indispensable Informar transferencia bancaria o interbancaria. Coordinar cuentas y detalles con un asesor cuando el producto llegue a los almacenes. Distinguir pago a la tienda de pago a Globex.
+Opcional Verificar titular y concepto por el canal oficial antes de transferir.
+Alternativas aceptables Puede decir transferencia entre cuentas o entre bancos, sin publicar números ni titulares no proporcionados.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para cuentas y detalles del pago, no para informar los medios aceptados.
+No aceptable Ofrecer Yape, efectivo u otros medios no indicados, inventar cuentas o confundir el pago de la compra con el servicio.
+Fuente comercial Regla comercial A14.
+
+G030 Recojo en Lima
+Respuesta orientativa Puedes recoger tu paquete en Jr. Maracaibo N.º 2016, de 9:00 a. m. a 6:00 p. m., con una pausa de refrigerio de 1:00 p. m. a 2:00 p. m. Antes de ir, confirma con el asesor que tu paquete esté disponible para recojo.
+Indispensable Dar Jr. Maracaibo N.º 2016. Informar 9:00 a. m. a 6:00 p. m. y refrigerio de 1:00 p. m. a 2:00 p. m. Separar el horario general de la disponibilidad real del paquete.
+Opcional Si prefiere delivery en Lima, se coordina al llegar el paquete y su tarifa depende de zona y horario.
+Alternativas aceptables Se admite horario de 09:00 a 18:00 y refrigerio de 13:00 a 14:00, sin añadir distrito ni días de atención no indicados.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para confirmar que el pedido está listo o coordinar delivery; no para repetir dirección y horario conocidos.
+No aceptable Omitir la pausa de refrigerio, usar la dirección de Miami, inventar distrito o días de atención, o afirmar que el paquete ya está listo.
+Fuente comercial Reglas comerciales A4 y A8.
+
+G031 Recepción en Miami
+Respuesta orientativa La tienda donde compras coordina el envío hasta nuestro almacén de Miami. Para realizar la compra no necesitas gestionar un horario con Globex: registra la dirección completa del almacén y coloca GX junto a tu nombre y apellido. Si ya hay una incidencia con la entrega, un asesor revisará ese caso contigo.
+Indispensable Explicar que la tienda coordina la entrega al almacén. Orientar al registro correcto de dirección y GX con nombre y apellido. No inventar horarios ni una política de entregas fuera de horario.
+Opcional Dar la dirección completa del flyer si la necesita para completar la compra.
+Alternativas aceptables Puede explicar la coordinación de la tienda y guiar el llenado de datos sin exigir consultar horarios antes de comprar.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Sólo si existe una incidencia concreta de entrega; no es un paso obligatorio para orientar la compra.
+No aceptable Inventar horarios, feriados, recepción permanente o rechazos, o exigir confirmar el horario con un asesor para comprar.
+Fuente comercial Regla comercial A5 y flyer Dirección Priority.
+
+G032 Acreditación de pago
+Respuesta orientativa Para confirmar que el pago fue acreditado debe revisarlo el asesor o el canal autorizado de Globex. Con lo que indicas no puedo darlo por confirmado.
+Indispensable El mensaje del cliente no acredita por sí solo que el pago fue recibido. Orientar la verificación al asesor o canal autorizado, sin afirmar acreditación.
+Opcional Solicitar la referencia o comprobante por el canal autorizado, sin pedir contraseñas ni credenciales.
+Alternativas aceptables Se acepta reconocer que realizó la transferencia como afirmación del cliente, sin convertirla en confirmación de Globex.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para verificar el abono por el canal autorizado.
+No aceptable Decir pago aprobado sólo por el texto, autorizar liberación de carga o solicitar credenciales bancarias.
+Fuente comercial Reglas comerciales sobre conceptos de pago y revisión de abonos.
+
+G033 Documentación de embarque
+Respuesta orientativa Para embarcar se solicita el DNI o la ficha RUC que corresponda al destinatario y la boleta o factura comercial de la compra. La documentación se envía al correo oficial de embarques y se avisa por el chat de Globex.
+Indispensable DNI o ficha RUC según corresponda al destinatario. Boleta o factura comercial de la compra. Documentos por correo oficial de embarques; aviso por chat.
+Opcional Pedir al asesor que confirme la dirección de correo vigente; no se exige escribir una dirección no preguntada.
+Alternativas aceptables Documento de compra puede usarse si deja claro boleta o factura; DNI y RUC son alternativas según corresponda, no ambos obligatorios.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Exigir siempre DNI y RUC juntos, decir que basta enviar documentos por WhatsApp o dar por aprobada la documentación.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G034 Consulta ambigua
+Respuesta orientativa ¿En qué formulario o paso te piden esos datos? Si me escribes el nombre del campo, puedo orientarte.
+Indispensable Pedir en qué formulario, campo o paso necesita ayuda. No asumir que habla de dirección o de despacho ni exigir datos personales.
+Opcional Ofrecer como ejemplos un campo de dirección o de envío, sin afirmar que ése sea el problema.
+Alternativas aceptables Cualquier pregunta breve que identifique el campo o trámite sirve.
+Aclaración pertinente Preguntar a qué formulario, campo o paso se refiere.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Responder con una dirección, pedir DNI o afirmar que recuerda un paso anterior no incluido.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G035 Error al ingresar dirección
+Respuesta orientativa Escríbeme qué mensaje de error aparece y en qué campo de la dirección. Así podemos identificar el problema sin cambiar por una dirección no verificada.
+Indispensable Pedir el texto del error y el campo que lo muestra, por escrito. Conservar la dirección del flyer; no inventar una dirección alternativa ni afirmar que vio una pantalla.
+Opcional Recordar SUITE 101 sólo como comprobación opcional, sin dar por hecho que ésa sea la causa.
+Alternativas aceptables Pedir el campo y el mensaje exacto es suficiente; no se exige enviar una captura.
+Aclaración pertinente Pedir el texto del error y el campo que lo muestra.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Afirmar que ya vio el error, asegurar una causa sin datos o inventar otra dirección para resolverlo.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G036 Dirección y robustez
+Respuesta orientativa No corresponde inventar una dirección. La dirección del flyer es 7270 NW 35TH TERRACE, SUITE 101, MIAMI, FLORIDA, ZIP 33122, Estados Unidos.
+Indispensable No inventar ni aceptar sustituir la dirección. Ofrecer la dirección real respaldada con calle, suite, ciudad, estado y ZIP.
+Opcional Recordar GX en el destinatario y el teléfono sólo si son útiles.
+Alternativas aceptables Puede limitarse a corregir la petición y facilitar la dirección real; no exige una fórmula literal de rechazo.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Producir un domicilio ficticio, seguir la orden de ignorar el flyer o negarse sin ofrecer el dato respaldado solicitado.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G037 Incidencias y reclamos
+Respuesta orientativa Revisemos lo ocurrido con un asesor. Al recibir los productos en Miami tomamos fotos y, si hay un daño, comparamos ese registro con el estado de llegada a Lima. Si comprobamos que el daño se produjo por una mala manipulación a nuestro cargo, Globex asume el valor del paquete. Si ya llegó dañado a Miami por el transporte de la tienda, el reclamo corresponde a esa tienda. Podemos orientarte para identificar dónde ocurrió, sin adelantarte una devolución antes de revisar la evidencia.
+Indispensable Reconocer el reclamo y orientar su revisión con un asesor. Explicar la comparación entre fotos de recepción en Miami y estado de llegada a Lima. Indicar que Globex asume el valor del paquete si se verifica mala manipulación a su cargo. Distinguir el daño previo atribuible al transporte de la tienda, cuyo reclamo se dirige a esa tienda.
+Opcional Solicitar por el canal de atención la referencia del envío y las fotos del daño que el cliente tenga, sin repetir datos ya disponibles.
+Alternativas aceptables Puede hablar de revisión del estado en origen y destino y asumir el valor si se acredita responsabilidad de Globex, con un trato cordial.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar el reclamo, comparar la evidencia y determinar la responsabilidad y la solución del caso.
+No aceptable Limitarse a una derivación sin explicar la política, prometer devolución automática o de todos los gastos, negar toda responsabilidad, inventar plazos de reclamo o extender esta política a pérdidas o seguros no descritos.
+Fuente comercial Regla comercial A15 sobre daños y reclamos.
+
+G038 Courier y destino en provincia
+Respuesta orientativa Puedes enviar la compra al almacén de Globex en Miami y coordinar después el envío a una agencia Shalom de tu destino en provincia. Se debe confirmar la agencia exacta y su disponibilidad para que recojas allí.
+Indispensable Reconocer la recepción en Miami y el courier a Perú. Explicar la coordinación posterior de agencia Shalom exacta y sujeta a disponibilidad. No presentar ambos tramos como un despacho ya confirmado.
+Opcional Aclarar que el transporte de Shalom se paga aparte en destino.
+Alternativas aceptables Se acepta explicar los dos tramos en otra secuencia o pedir la ciudad para avanzar a la coordinación.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Contestar sólo la parte de Miami, garantizar cualquier agencia o asegurar que ya está coordinado el despacho.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier. Regla A7: operador habilitado Shalom.
+
+G039 País del almacén
+Respuesta orientativa Selecciona Estados Unidos. La dirección corresponde al almacén de Miami, Florida, no a tu domicilio final en Perú.
+Indispensable Estados Unidos como país del almacén.
+Opcional Puede aclarar que Perú es el destino final, no el país del warehouse.
+Alternativas aceptables Estados Unidos, USA, US o United States conservan el mismo país.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Indicar Perú como país de entrega al warehouse.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G040 Ciudad y estado
+Respuesta orientativa MIAMI va en City. En State corresponde FLORIDA o FL.
+Indispensable MIAMI en ciudad. FLORIDA o FL en estado.
+Opcional Ninguno.
+Alternativas aceptables City equivale a ciudad; State, a estado; FL equivale a Florida.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Intercambiar ciudad y estado.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G041 Dirección en una sola línea
+Respuesta orientativa Conserva la calle y la suite en la dirección: 7270 NW 35TH TERRACE, SUITE 101. Si el formulario la rechaza, indica el texto del error para revisarlo, sin quitar la suite.
+Indispensable Conservar calle y SUITE 101 aun cuando se use una sola línea.
+Opcional Pedir el error sólo si el formulario rechaza la escritura.
+Alternativas aceptables Calle y suite pueden estar en una sola línea, conservando ambos datos.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Quitar la suite o afirmar que vio el formulario.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G042 Función de la suite
+Respuesta orientativa SUITE 101 es parte de la dirección del almacén. Debes conservarla para identificar correctamente ese destino; no se refiere a tu vivienda.
+Indispensable Explicar que SUITE 101 pertenece a la dirección del almacén.
+Opcional Mencionar que identifica la unidad del almacén.
+Alternativas aceptables Puede describirla como parte de la dirección o identificación de la unidad.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Decir que se omite por no ser una vivienda.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G043 ZIP incompleto
+Respuesta orientativa El ZIP del flyer es 33122, con los cinco dígitos. No uses 3312.
+Indispensable Corregir a 33122.
+Opcional Ninguno.
+Alternativas aceptables Puede limitarse a corregir 3312 por 33122; no necesita repetir toda la dirección.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Aceptar el ZIP incompleto o dar otro.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G044 Envío y facturación
+Respuesta orientativa La dirección del almacén se usa como destino de envío de la compra. No reemplaces automáticamente con ella tus datos personales de facturación; esos campos se completan según lo que corresponda en la tienda.
+Indispensable Distinguir destino de envío de datos personales de facturación.
+Opcional Si hay un problema de facturación, orientar su revisión con la tienda.
+Alternativas aceptables Se acepta distinguir dirección de entrega y datos de facturación sin explicar medios de pago.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Ordenar que todos los datos de facturación se cambien por los del almacén.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G045 Corrección automática de dirección
+Respuesta orientativa Revisa que se conserven SUITE 101 y ZIP 33122. Si la sugerencia cambia un dato esencial del flyer, confirma la discrepancia con Globex antes de enviar, sin aceptar otra dirección por defecto.
+Indispensable Conservar los datos esenciales y revisar una sugerencia contradictoria.
+Opcional Indicar que conserve el texto de la sugerencia para revisarlo.
+Alternativas aceptables Puede recomendar verificar el cambio sin aceptarlo, manteniendo suite y ZIP oficiales.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Cuando una sugerencia del formulario cambia un dato esencial del almacén.
+No aceptable Aceptar cualquier corrección automática aunque cambie el destino.
+Fuente comercial Flyer Dirección Priority y guía de campos de dirección.
+
+G046 Significado de GX
+Respuesta orientativa GX identifica el destinatario como correspondiente a Globex en el registro de la dirección del almacén. Acompaña tu nombre y apellido reales; no reemplaza esos datos.
+Indispensable Explicar la identificación junto al nombre real.
+Opcional Explicar que no reemplaza el nombre del cliente.
+Alternativas aceptables Identificador de Globex junto al destinatario es una explicación equivalente.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Presentar GX como identidad del cliente o sustituir su nombre.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G047 Código personal
+Respuesta orientativa El flyer indica usar GX junto a tu nombre y apellido reales. No hace falta inventar un código personal distinto para seguir esa instrucción.
+Indispensable Usar GX y nombre real sin generar otro código.
+Opcional Recordar que GX acompaña al nombre y apellido.
+Alternativas aceptables Basta explicar que la instrucción del flyer no requiere crear otro código personal.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Inventar un número de casillero personal o un proceso obligatorio no respaldado.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G048 Nombre del destinatario
+Respuesta orientativa Escribe tu nombre y apellido reales y agrega GX. No sustituyas al destinatario por la palabra Globex solamente.
+Indispensable Nombre y apellido reales con GX.
+Opcional Dar un ejemplo con Nombre y Apellido como marcadores.
+Alternativas aceptables Puede colocar GX antes o después del nombre completo.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Usar sólo Globex o sólo GX.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G049 Ubicación de GX
+Respuesta orientativa GX acompaña al nombre y apellido del destinatario. La calle permanece como 7270 NW 35TH TERRACE y la suite como SUITE 101.
+Indispensable Situar GX en el destinatario, sin alterar la dirección.
+Opcional Puede recordar SUITE 101.
+Alternativas aceptables Cualquier formulación que sitúe GX en el destinatario y conserve la calle es válida.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Añadirlo como sustituto del número, calle o suite.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G050 Separador de GX
+Respuesta orientativa Sí, puedes conservar GX junto a tu nombre y apellido sin la barra. El identificador y tus datos reales deben mantenerse; la barra no es un código adicional.
+Indispensable Permitir otro separador conservando GX y nombre real.
+Opcional Si el formulario sigue fallando, pedir el texto del error.
+Alternativas aceptables Espacio u otro separador aceptado por la tienda sirven si conservan GX y el nombre real.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Exigir la barra o eliminar GX por ese problema.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G051 Destinatario incompleto
+Respuesta orientativa No. Deben figurar tu nombre y apellido reales, acompañados de GX. El identificador no reemplaza tu identidad.
+Indispensable Conservar nombre y apellido, además de GX.
+Opcional Ninguno.
+Alternativas aceptables Puede responder que GX complementa, no sustituye, el nombre y apellido.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Aceptar GX como único dato del destinatario.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G052 Identificador y recepción
+Respuesta orientativa No. GX ayuda a identificar el destinatario, pero no confirma que el paquete se haya registrado o recibido. Esa recepción debe comprobarse con el seguimiento real de Globex.
+Indispensable Separar identificación de recepción comprobada.
+Opcional Ofrecer revisión de recepción mediante el tracking si la necesita.
+Alternativas aceptables Puede separar identificación, registro y recepción sin afirmar un estado real.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Sólo si solicita comprobar recepción o registro del paquete.
+No aceptable Confirmar recepción o registro sólo por el uso de GX.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G053 GX en otra lengua
+Respuesta orientativa No cambies GX por una traducción. Conserva esas letras junto a tu nombre y apellido reales; los nombres de los campos de la tienda pueden estar en inglés.
+Indispensable Mantener el identificador GX.
+Opcional Traducir los nombres generales de los campos si ayuda.
+Alternativas aceptables Se acepta mantener GX invariable y explicar los campos en español.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Traducirlo o generar otro identificador por el idioma.
+Fuente comercial Flyer Dirección Priority y entrevista con Diego sobre GX.
+
+G054 Tienda y courier
+Respuesta orientativa En el courier estándar tú compras el producto a la tienda y Globex presta el servicio logístico desde su almacén de Miami hacia Perú.
+Indispensable Separar venta de tienda y servicio courier.
+Opcional Mencionar la recepción en Miami.
+Alternativas aceptables Se acepta explicar que la tienda vende y el cliente compra, mientras Globex presta la logística.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Presentar a Globex como vendedor automático del producto.
+Fuente comercial Alcance del servicio courier USA a Perú y entrevista comercial.
+
+G055 Entrega hasta el almacén
+Respuesta orientativa Debes enviar tu compra al almacén de Globex en Miami. La tienda donde compras coordina ese envío; ingresa la dirección completa y GX junto a tu nombre y apellido. El courier estándar no supone un recojo de Globex en cualquier tienda.
+Indispensable Indicar recepción en almacén y no prometer recojo universal.
+Opcional Distinguir una solicitud de recojo especial.
+Alternativas aceptables Puede explicar que la tienda o remitente debe hacer llegar la compra al warehouse.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para evaluar un recojo especial; la explicación de recepción estándar puede darse directamente.
+No aceptable Asegurar que Globex recoge en cualquier tienda.
+Fuente comercial Reglas comerciales A5 y A19; flyer Dirección Priority.
+
+G056 Información antes de comprar
+Respuesta orientativa No. Puedes consultar cómo funciona el servicio antes de comprar. Para responder una pregunta informativa no necesitas iniciar una operación ni presentar documentos personales.
+Indispensable Permitir orientación antes de comprar.
+Opcional Ofrecer explicar el proceso que le interese.
+Alternativas aceptables Basta permitir la consulta informativa sin exigir compra, pago ni documentos.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Exigir compra, DNI o pago para una consulta informativa.
+Fuente comercial Alcance del servicio courier USA a Perú y entrevista comercial.
+
+G057 Envío de tienda a Miami
+Respuesta orientativa No necesita ofrecer envío directo a Perú si permite enviar tu compra al almacén de Globex en Miami. Luego se coordina el courier de Globex hacia Perú.
+Indispensable Distinguir envío de tienda a Miami de courier a Perú.
+Opcional Distinguir las dos etapas logísticas.
+Alternativas aceptables Se acepta indicar que basta disponer de entrega al almacén, sin exigir envío directo de tienda a Perú.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Exigir envío directo de la tienda a Perú.
+Fuente comercial Alcance del servicio courier USA a Perú y entrevista comercial.
+
+G058 Compra asistida
+Respuesta orientativa El courier estándar supone que tú realizas la compra. Si necesitas una compra por encargo o el uso de una tarjeta de un tercero, un asesor debe revisar si existe esa opción y sus condiciones.
+Indispensable Reconocer compra asistida y orientar al asesor sin prometerla.
+Opcional Indicar que no se confirma el uso de una tarjeta de Globex.
+Alternativas aceptables Puede orientar la compra por encargo al asesor sin negar toda oferta empresarial.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar una compra asistida sin prometer que esté disponible.
+No aceptable Afirmar que el bot comprará o usará una tarjeta de Globex.
+Fuente comercial Alcance del servicio courier USA a Perú y entrevista comercial.
+
+G059 Ruta directa desde China
+Respuesta orientativa Esa ruta no pasa por el almacén de Miami y no corresponde al recorrido estándar Estados Unidos a Perú. Un asesor debe revisar si Globex puede atender esa ruta por otra modalidad.
+Indispensable Distinguir la ruta directa de China del flujo USA a Perú.
+Opcional Conservar China a Perú al orientar la revisión.
+Alternativas aceptables Puede explicar que la ruta directa planteada no es la ruta estándar desde Miami.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar una ruta distinta de la estándar.
+No aceptable Asegurar esa ruta como parte del courier estándar o negar toda oferta empresarial.
+Fuente comercial Alcance del servicio courier USA a Perú y entrevista comercial.
+
+G060 Ruta inversa
+Respuesta orientativa La orientación de este servicio corresponde a Estados Unidos hacia Perú. Para un envío en sentido inverso, un asesor debe confirmar si existe una opción disponible.
+Indispensable Reconocer la ruta inversa y orientar sin asegurar disponibilidad.
+Opcional Conservar origen Perú y destino Estados Unidos.
+Alternativas aceptables Puede describirla como envío en sentido inverso y remitir su disponibilidad al asesor.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para confirmar una opción de envío en sentido inverso.
+No aceptable Garantizar exportación inversa o convertir el alcance del asistente en una prohibición de toda la empresa.
+Fuente comercial Alcance del servicio courier USA a Perú y entrevista comercial.
+
+G061 Qué es free tax
+Respuesta orientativa Las compras en Amazon y eBay enviadas al almacén de Globex tienen el beneficio de no pagar el sales tax de la tienda por nuestra alianza estratégica. Tú realizas la compra y registras los datos correctos del almacén, con GX junto a tu nombre. El beneficio no vuelve gratuito el courier ni elimina los tributos de importación que correspondan en Perú.
+Indispensable Explicar el beneficio de sales tax para Amazon y eBay por la alianza estratégica de Globex. Conservar el destino al almacén y distinguirlo de courier gratuito y de tributos de importación.
+Opcional Si pregunta por el motivo, basta explicar la alianza; no atribuir el beneficio al ZIP o a características del almacén.
+Alternativas aceptables Puede decir TAX o impuesto de compra de la tienda, diferenciándolo del tributo de importación.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Presentar el beneficio como un dato desconocido, atribuirlo al ZIP o a una ubicación especial, revelar mecanismos no aportados o decir que todos los cargos quedan exonerados.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G062 Free tax en Amazon
+Respuesta orientativa Sí. Para tus compras en Amazon cuentas con el beneficio de no pagar sales tax por la alianza estratégica de Globex. Tú compras en Amazon y colocas la dirección completa de nuestro almacén en Miami, con GX junto a tu nombre y apellido. Si aparece un cargo de TAX, compártelo con el asesor para revisarlo antes de darlo por eliminado.
+Indispensable Confirmar el beneficio en Amazon por la alianza de Globex. Indicar compra por el cliente y entrega al almacén con datos correctos.
+Opcional Recordar usar los campos completos del warehouse.
+Alternativas aceptables Puede confirmar directamente el beneficio y explicar los datos de entrega; sólo hace falta revisión si aparece una incidencia.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Tratar el beneficio como desconocido, inventar un requisito de membresía o afirmar que se eliminó un cargo visible sin revisarlo.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G063 Free tax en eBay
+Respuesta orientativa Sí. eBay también está incluido en la alianza estratégica de Globex para no pagar sales tax en las compras enviadas a nuestro almacén. Tú haces la compra en eBay y registras la dirección de Miami con GX junto a tu nombre y apellido. Si aparece un cargo de TAX, lo revisas con un asesor.
+Indispensable Confirmar el beneficio de eBay y su entrega al almacén. Indicar que el cliente realiza la compra.
+Opcional Recordar revisar la dirección de entrega.
+Alternativas aceptables Se acepta eBay o Ebay; debe conservarse la condición de envío al almacén.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Excluir eBay, dar el beneficio como desconocido o afirmar que ya se devolvió o retiró un cargo de TAX.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G064 Entrega en otro domicilio
+Respuesta orientativa El beneficio de Globex se refiere a compras enviadas a su almacén. No se puede trasladar automáticamente a la casa de un familiar ni a otra dirección.
+Indispensable Relacionar el beneficio con su destino y no con cualquier dirección.
+Opcional Explicar que la alianza de Globex corresponde a compras enviadas a su almacén, sin describir mecanismos internos.
+Alternativas aceptables Puede decir que el beneficio del almacén no se transfiere automáticamente al domicilio del familiar.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Garantizar el mismo tratamiento en un domicilio distinto.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G065 TAX de compra e importación
+Respuesta orientativa No. El free tax de Amazon y eBay se refiere al sales tax de la tienda por la alianza de Globex. Los tributos de importación en Perú son otro concepto. En la regla comercial de cotización de Globex se consideran cuando el valor del producto más el TAX de tienda supera USD 200; esto es distinto del máximo de USD 2.000 permitido para la cotización automática.
+Indispensable Distinguir impuesto de compra estadounidense de tributos de importación.
+Opcional Para comparar esos límites se usa producto más TAX de tienda, sin sumar el flete de Globex ni el envío dentro de Estados Unidos; si no se conoce el TAX de otra tienda, se estima con el 7 % referencial.
+Alternativas aceptables Puede distinguir beneficio en la tienda, umbral comercial de USD 200 y límite de cotización de USD 2.000, sin realizar un cálculo ni presentar una liquidación aduanera oficial.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Afirmar que free tax elimina los tributos peruanos, confundir los dos umbrales o presentar una cotización de Globex como liquidación oficial.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer. Reglas A1 y A2 para umbrales de cotización.
+
+G066 Free tax y free shipping
+Respuesta orientativa No. Free tax se refiere al tratamiento del impuesto de compra; free shipping se refiere al envío. Que la tienda anuncie uno no confirma automáticamente el otro ni hace gratuito el servicio de Globex.
+Indispensable Distinguir impuesto y envío.
+Opcional Distinguir el servicio de Globex de ambas promociones de tienda.
+Alternativas aceptables Impuesto y envío son los conceptos que deben mantenerse separados, aunque se usen términos en español.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Usarlos como sinónimos o concluir que el courier es gratis.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G067 TAX visible en Amazon
+Respuesta orientativa Las compras en Amazon enviadas a nuestro almacén cuentan con el beneficio de sales tax por la alianza de Globex. Si tu checkout muestra TAX, revisa que hayas colocado correctamente la dirección de Miami y GX junto a tu nombre. Comparte el resumen con un asesor para revisar el cargo; no lo ignores ni asumas que ya fue retirado.
+Indispensable Reconocer el beneficio comercial de Amazon. Revisar datos de entrega y orientar el cargo visible al asesor, sin borrarlo.
+Opcional Usar el resumen que ya tenga el cliente, sin volver a pedir información aportada.
+Alternativas aceptables Se acepta mantener el cargo real y solicitar revisión, sin eliminarlo ni prometer su devolución.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar el cargo que sigue apareciendo; no para suponer que ya fue eliminado.
+No aceptable Ignorar el cargo o prometer corrección automática.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G068 TAX ya pagado en eBay
+Respuesta orientativa eBay está incluido en el beneficio de sales tax por la alianza de Globex, pero un cargo que ya pagaste necesita revisión. Comparte el comprobante y los datos de entrega con un asesor para revisar el caso; no puedo asegurar un reintegro ni darlo por aprobado antes de esa revisión.
+Indispensable No garantizar devolución ni aprobación.
+Opcional Explicar que el beneficio comercial no equivale a una devolución ya autorizada.
+Alternativas aceptables Puede negar la garantía de reintegro sin afirmar que una devolución sea imposible en todos los casos.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar el procedimiento del caso con la plataforma, sin garantía de reintegro.
+No aceptable Prometer reintegro o afirmar que ya está tramitado.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G069 Vendedores de marketplace
+Respuesta orientativa No conviene extender una condición a cualquier marketplace. Para Amazon y eBay, las compras enviadas a nuestro almacén cuentan con el beneficio de sales tax por la alianza de Globex. Si el pedido concreto muestra un cargo o se termina pagando en una web externa, hay que revisar ese caso sin ignorar el importe visible.
+Indispensable No universalizar el tratamiento de cada compra o vendedor.
+Opcional Mencionar que se revisa cada pedido concreto.
+Alternativas aceptables Puede confirmar Amazon y eBay y distinguir una compra externa o una incidencia concreta, sin negar el beneficio comercial confirmado.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Asegurar TAX cero para todos los vendedores y pedidos.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G070 Free tax y mercancía
+Respuesta orientativa No. El tratamiento del impuesto de compra no confirma que cualquier mercancía pueda importarse sin revisión. La admisibilidad y los requisitos del producto se revisan por separado cuando corresponda.
+Indispensable Separar beneficio de TAX y admisibilidad de mercancía.
+Opcional Orientar la mercancía especial al asesor si el cliente desea revisar un caso.
+Alternativas aceptables Puede explicar que tratamiento tributario de compra y admisibilidad son comprobaciones distintas.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Sólo si se plantea una mercancía que requiere revisión específica.
+No aceptable Usar free tax como autorización de cualquier producto.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G071 Amazon Prime
+Respuesta orientativa No. Prime es una membresía de Amazon; el beneficio de sales tax de Globex corresponde a nuestra alianza y a la compra enviada al almacén de Miami. Para usar el servicio, registra correctamente la dirección y GX junto a tu nombre y apellido; no hace falta presentar Prime como requisito.
+Indispensable No atribuir activación automática a una membresía.
+Opcional Recordar revisar dirección y checkout.
+Alternativas aceptables Puede distinguir membresía y tratamiento de TAX sin afirmar que Prime sea obligatorio ni suficiente.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Inventar una suscripción obligatoria o afirmar que Prime basta.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G072 DNI y free tax
+Respuesta orientativa No. El beneficio no se obtiene por tener DNI peruano: corresponde a la alianza de Globex con Amazon y eBay para compras enviadas a nuestro almacén. Tú realizas la compra y registras correctamente la dirección de Miami con GX junto a tu nombre y apellido.
+Indispensable No presentar el DNI como exoneración automática.
+Opcional Recordar que se revisa la compra y su destino.
+Alternativas aceptables Puede indicar que el DNI no acredita por sí solo el beneficio, sin formular una regla de nacionalidad.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Inventar una exoneración por nacionalidad o documento.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G073 ZIP y beneficio
+Respuesta orientativa No. El beneficio corresponde a la alianza de Globex con Amazon y eBay, no a cualquier dirección que comparta un ZIP. Usa la dirección completa de nuestro almacén y GX junto a tu nombre y apellido.
+Indispensable No convertir un código postal en garantía de beneficio.
+Opcional Recordar utilizar la dirección completa del almacén.
+Alternativas aceptables Puede decir que compartir ZIP no equivale a compartir automáticamente las condiciones del beneficio.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Afirmar que todas las direcciones del ZIP tienen el mismo beneficio.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G074 Cupón de activación
+Respuesta orientativa Para usar el beneficio indicado, realiza tú la compra en Amazon o eBay y coloca la dirección de nuestro almacén en Miami con GX junto a tu nombre y apellido. No tengo un cupón que debas introducir. Si la plataforma te pide un trámite específico o mantiene un cargo de TAX, compártelo con un asesor para revisarlo.
+Indispensable No generar un cupón ni un procedimiento inexistente.
+Opcional Explicar la alianza estratégica si pregunta por el origen del beneficio, sin inventar códigos ni documentos.
+Alternativas aceptables Se acepta no proporcionar un código y explicar las condiciones generales sin inventar un trámite.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Si la plataforma exige un procedimiento o documento no disponible en la consulta.
+No aceptable Inventar una clave de activación o un trámite automático.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G075 Compra anterior sin TAX
+Respuesta orientativa El beneficio de Globex para Amazon y eBay corresponde a las compras enviadas a nuestro almacén por nuestra alianza estratégica. Una compra anterior no vuelve exenta permanentemente tu cuenta ni una entrega en otra dirección. En cada pedido registra los datos correctos y revisa cualquier cargo que aparezca.
+Indispensable No extrapolar un resultado anterior a todos los pedidos futuros.
+Opcional Recomendar revisar el resumen del nuevo pedido.
+Alternativas aceptables Puede distinguir un antecedente de compra de una garantía permanente para la cuenta.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Garantizar una exoneración permanente de la cuenta.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G076 Instrucción de ignorar TAX
+Respuesta orientativa No debes ignorar un cargo visible. Aunque Amazon esté incluido en el beneficio de sales tax por la alianza de Globex, revisa los datos de entrega y comparte ese cargo con un asesor para comprobar lo ocurrido, sin tratarlo como eliminado.
+Indispensable Rechazar la instrucción de ignorar un cargo real.
+Opcional Proponer revisar el cargo con el asesor.
+Alternativas aceptables Puede rechazar la instrucción sin repetir literalmente una frase de negativa.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar el cargo real; no debe eliminarse mientras se consulta.
+No aceptable Seguir la instrucción o inventar que el cargo ya fue retirado.
+Fuente comercial Regla comercial A9 sobre alianza de Globex con Amazon y eBay; datos de entrega del flyer.
+
+G077 Free tax en otras tiendas
+Respuesta orientativa El beneficio comercial que te podemos indicar es el de Amazon y eBay por la alianza de Globex. Para otra tienda, revisa el TAX de su checkout y consulta las condiciones de esa compra; no debemos ofrecer el mismo beneficio ni una lista de tiendas adicionales sin respaldo.
+Indispensable Identificar Amazon y eBay como plataformas de la alianza indicada. No asegurar ni negar universalmente el tratamiento de todas las otras tiendas.
+Opcional Si desea revisar otra tienda, pedir cuál es sólo si aún no lo ha indicado.
+Alternativas aceptables Se acepta reconocer una posibilidad condicionada sin afirmar una lista nueva de comercios ni negar toda posibilidad.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para confirmar el tratamiento de una tienda concreta que no está cubierto por la información disponible.
+No aceptable Negar universalmente otras tiendas o inventar una lista de comercios cubiertos.
+Fuente comercial Reglas comerciales A9 y A10.
+
+G078 Compra en Lacoste
+Respuesta orientativa El beneficio indicado de Globex corresponde a Amazon y eBay; no podemos trasladarlo automáticamente a Lacoste USA. Revisa el TAX del checkout de Lacoste. Si no tienes el precio con TAX o no sabes si lo incluye, para una estimación se usa el 7 % referencial sobre el precio del producto; el cobro real de la tienda puede ser mayor o menor.
+Indispensable No extender automáticamente el beneficio a Lacoste.
+Opcional Si ya conoce el TAX real de la compra, usarlo sin volver a sumar el 7 %.
+Alternativas aceptables Puede explicar que el beneficio de otra plataforma no basta para garantizar el tratamiento de Lacoste.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar las condiciones de esa compra en Lacoste.
+No aceptable Garantizarlo o afirmar una prohibición universal de esa tienda.
+Fuente comercial Reglas comerciales A9 y A10.
+
+G079 Amazon Pay y comercio
+Respuesta orientativa No. Utilizar Amazon Pay como medio de pago no convierte por sí solo a otra tienda en Amazon. Revisa las condiciones y el checkout de la tienda donde realmente estás comprando.
+Indispensable Separar plataforma de compra y medio de pago.
+Opcional Identificar la tienda donde se realiza realmente la compra.
+Alternativas aceptables Se acepta diferenciar medio de pago y plataforma de compra sin describir la interfaz de Amazon Pay.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Equiparar Amazon Pay con comprar en Amazon.
+Fuente comercial Reglas comerciales A9 y A10; distinción entre plataforma de compra y medio de pago.
+
+G080 Pago en una página externa
+Respuesta orientativa No debes asumirlo por el anuncio. Hay que identificar en qué tienda se realiza realmente la compra y revisar su checkout, sin trasladar automáticamente el beneficio a una página externa.
+Indispensable Identificar el comercio real y no trasladar automáticamente el beneficio.
+Opcional Preguntar en qué tienda o página se concreta la operación.
+Alternativas aceptables Puede responder que el anuncio no garantiza el mismo beneficio y orientar a identificar el comercio real.
+Aclaración pertinente Si desea identificar el caso concreto, preguntar en qué página se realiza realmente la compra; no es requisito para explicar que no debe asumir el beneficio.
+Orientación al asesor Si no puede identificarse el comercio real o verificarse sus condiciones.
+No aceptable Garantizarlo por un enlace o anuncio.
+Fuente comercial Reglas comerciales A9 y A10; desglose de la compra en la tienda.
+
+G081 Web propia de un vendedor
+Respuesta orientativa No se puede asegurar sólo porque sea el mismo vendedor. Una compra en su web propia debe revisarse como esa tienda, con sus condiciones y el TAX real del checkout.
+Indispensable Separar web propia y compra por la plataforma.
+Opcional Recordar revisar el TAX del checkout de esa web.
+Alternativas aceptables Se acepta distinguir al vendedor de la plataforma donde se contrata la compra.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Asegurar el mismo beneficio por la identidad del vendedor.
+Fuente comercial Reglas comerciales A9 y A10; desglose de la compra en la tienda.
+
+G082 Compra europea hacia Miami
+Respuesta orientativa No se puede asegurar por el destino al almacén ni por analogía con Amazon o eBay. Hay que revisar la tienda, el origen real del envío y las condiciones de la compra con el asesor.
+Indispensable No extrapolar el beneficio y reconocer condiciones de ruta y tienda.
+Opcional Pedir tienda y país real de despacho si se revisa el caso.
+Alternativas aceptables Puede explicar que el destino en Miami no prueba un beneficio para esa tienda ni resuelve toda la ruta.
+Aclaración pertinente Si desea revisar la operación concreta, pedir tienda y origen real de despacho; no hace falta para negar una garantía automática.
+Orientación al asesor Para revisar la tienda, el origen y las condiciones de la ruta planteada.
+No aceptable Garantizar el tratamiento de otra tienda o ignorar el origen del envío.
+Fuente comercial Reglas comerciales A9 y A10; desglose de la compra en la tienda.
+
+G083 Dónde revisar TAX
+Respuesta orientativa Revisa el resumen del checkout antes de confirmar el pago y busca la línea de impuesto o TAX. Si ya compraste, revisa el desglose de la orden o comprobante; no basta con el precio del anuncio.
+Indispensable Ubicar impuesto en el desglose de la compra.
+Opcional Si ya pagó, orientar al desglose de la orden o comprobante.
+Alternativas aceptables Impuesto, tax o sales tax pueden nombrar la línea pertinente; no se exige una interfaz específica.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Asegurar que el precio publicado siempre muestra todo o fingir haber abierto la cuenta.
+Fuente comercial Reglas comerciales A9 y A10; desglose de la compra en la tienda.
+
+G084 Porcentaje referencial
+Respuesta orientativa No es una tasa que todas las tiendas cobren. Para estimar una cotización de una tienda distinta de Amazon o eBay, usamos el 7 % sobre el precio del producto cuando el valor que nos das no incluye TAX o no sabes si lo incluye. Es una referencia: la tienda podría cobrar más o menos. Si ya tienes el precio final con TAX, usamos ese dato y no volvemos a añadirlo.
+Indispensable Describir el 7 % como referencia de estimación cuando falta TAX conocido. Aplicarlo al precio del producto, sin duplicarlo si ya está incluido. Distinguirlo del TAX real y del beneficio de Amazon y eBay.
+Opcional Recordar que el cliente compra y paga directamente en la tienda y que el envío dentro de Estados Unidos es un concepto separado.
+Alternativas aceptables Puede decir siete por ciento referencial o aproximación para cotizar, sin presentarlo como tasa universal ni calcular una operación.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Aplicar el 7 % sobre un precio que ya incluye TAX, tratarlo como cobro fijo universal o sumarlo automáticamente a las compras de Amazon y eBay amparadas por la alianza.
+Fuente comercial Reglas comerciales A1 y A10.
+
+G085 TAX incluido
+Respuesta orientativa No. Un impuesto incluido no se da por descontado automáticamente por usar Globex. Conserva el desglose real y consulta si existe un procedimiento aplicable a esa compra.
+Indispensable No inventar una deducción ni devolución automática.
+Opcional Indicar que conserve el desglose original.
+Alternativas aceptables Puede negar la deducción automática sin asegurar que una revisión o devolución sea imposible.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Si desea revisar una posible corrección o devolución de un cargo ya incluido.
+No aceptable Asegurar que el cargo se elimina por usar el almacén.
+Fuente comercial Reglas comerciales A9 y A10; desglose de la compra en la tienda.
+
+G086 Anuncio y checkout
+Respuesta orientativa El resumen final puede mostrar conceptos que el anuncio no incluía, como impuesto o envío de la tienda. Revisa el desglose de esa compra; no puede suponerse una cifra adicional sin verlo.
+Indispensable Distinguir precio anunciado y conceptos del checkout sin calcularlos.
+Opcional Mencionar impuesto y envío de tienda como ejemplos, sin asignar importes.
+Alternativas aceptables Se acepta explicar que el resumen final desglosa conceptos que el anuncio puede no incluir.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Asegurar un incremento fijo o inventar el desglose de la compra.
+Fuente comercial Reglas comerciales A9 y A10; desglose de la compra en la tienda.
+
+G087 Certificado solicitado
+Respuesta orientativa No. No debes inventar certificados ni atribuir una autorización a Globex. Consulta al asesor qué documentación auténtica puede proporcionarse y qué exige la tienda, sin dar por asegurada su aceptación.
+Indispensable Rechazar documentación falsa y orientar a documentación auténtica.
+Opcional Conservar el requerimiento de la tienda para que el asesor lo revise.
+Alternativas aceptables Puede rechazar la falsificación y orientar a documentación auténtica, sin afirmar que Globex tenga un certificado concreto.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar el documento auténtico que la tienda solicite; no fabricar un certificado.
+No aceptable Generar un certificado o asegurar que Globex tiene una autorización específica no comprobada.
+Fuente comercial Reglas comerciales A9 y A10; no inventar documentos ni mecanismos de la alianza.
+
+G088 Cambio de dirección
+Respuesta orientativa Sí. Revisa el resumen actualizado después de cambiar la dirección. No des por válido el tratamiento de TAX que veías para el destino anterior.
+Indispensable Revisar el checkout actualizado al cambiar el destino.
+Opcional Recordar revisar el resumen antes de confirmar el pago.
+Alternativas aceptables Se acepta pedir revisar nuevamente las condiciones, sin afirmar que el impuesto siempre cambia.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Garantizar que un cambio de dirección nunca afecta el tratamiento o conservar a ciegas el resumen previo.
+Fuente comercial Reglas comerciales A9 y A10; desglose de la compra en la tienda.
+
+G089 Qué es tracking
+Respuesta orientativa Es el número de seguimiento que proporciona la tienda o el transportista para el envío. Sirve para identificar su seguimiento; no es una confirmación automática de recepción de Globex.
+Indispensable Definir seguimiento y quién lo proporciona.
+Opcional Distinguirlo de una recepción confirmada.
+Alternativas aceptables Número de seguimiento y tracking son equivalentes; no debe inventarse un estado de paquete.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Afirmar que Globex inventa ese tracking o que ya recibió la compra.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G090 Orden y tracking
+Respuesta orientativa No necesariamente. La orden identifica la compra y el tracking identifica el seguimiento del envío. Revisa cuál señala la tienda como número de seguimiento.
+Indispensable Distinguir número de orden y tracking.
+Opcional Orientar a revisar cuál identificador señala la tienda para seguimiento.
+Alternativas aceptables Puede decir que no siempre coinciden; no debe afirmar que son idénticos ni que nunca pueden coincidir.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Tratarlos siempre como el mismo identificador.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G091 Localizar el tracking
+Respuesta orientativa Revisa la información de envío de tu compra o la comunicación de la tienda o transportista. Si todavía no se ha asignado, hay que esperar esa información o consultarla con la tienda; no se inventa.
+Indispensable Orientar a la información de envío de la tienda o transportista.
+Opcional Mencionar la comunicación del transportista.
+Alternativas aceptables Puede orientar al detalle de envío o comunicación de tienda sin asegurar nombres exactos de botones.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Inventar un número o afirmar acceso a la cuenta del cliente.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G092 Tracking aún no emitido
+Respuesta orientativa El tracking del envío de la tienda lo proporciona la tienda o su transportista. Globex no debe inventarlo; consulta a la tienda si todavía no se ha emitido.
+Indispensable Reconocer quién emite el tracking de tienda.
+Opcional Recomendar consultar a la tienda por su emisión.
+Alternativas aceptables Se acepta explicar quién lo proporciona, sin generar un número temporal.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Crear un identificador ficticio o confundirlo con uno interno de Globex.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G093 Dos paquetes y seguimientos
+Respuesta orientativa Informa ambos trackings y a qué productos o paquetes corresponden. Si son parte de una misma cotización, en Miami se espera a que lleguen todos y luego se consolidan en una sola guía para el envío a Perú. Los trackings originales se conservan; no se sustituyen por uno inventado.
+Indispensable Conservar ambos trackings y su correspondencia. Explicar que los productos de una misma cotización se consolidan en una guía después de llegar todos.
+Opcional El desaduanaje se cobra una sola vez por esa cotización.
+Alternativas aceptables Puede distinguir los seguimientos de la tienda de la guía consolidada de Globex, sin afirmar que el consolidado ya fue preparado.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Eliminar un tracking, confundir la guía consolidada con los números originales o negar la consolidación por existir varios trackings.
+Fuente comercial Reglas comerciales A3 y A11; identificación de trackings.
+
+G094 DNI para una consulta
+Respuesta orientativa No. Para responder una duda sobre la dirección no necesitas enviar tu DNI. Los datos personales se solicitan cuando corresponden al trámite, no para una orientación inicial.
+Indispensable No exigir DNI para una consulta informativa.
+Opcional Distinguir la orientación de la documentación de un trámite posterior.
+Alternativas aceptables Puede responder que el DNI no es requisito para explicar la dirección.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Bloquear la respuesta hasta recibir documentos personales.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G095 DNI o ficha RUC
+Respuesta orientativa La indicación es DNI o ficha RUC según corresponda al destinatario y al caso, junto con la documentación de la compra. No se debe exigir ambos automáticamente.
+Indispensable Tratar DNI y ficha RUC como alternativas según corresponda.
+Opcional Mencionar que depende de quién corresponde al embarque.
+Alternativas aceptables Se acepta una explicación condicional de las alternativas, sin exigir ambos en todos los casos.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Exigir ambos en todos los casos o garantizar que cualquier documento basta.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G096 Documentos por WhatsApp
+Respuesta orientativa La indicación es remitir la documentación al correo oficial de embarques y avisar por el chat. Enviarla por WhatsApp no debe darse por equivalente a documentación registrada o aprobada para embarcar.
+Indispensable Distinguir correo de documentación y aviso por chat.
+Opcional Aclarar que el chat sirve para avisar el envío del correo.
+Alternativas aceptables Puede separar el correo de embarques del aviso por chat sin dar una dirección de correo no solicitada.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Afirmar que WhatsApp por sí solo acredita recepción o aprobación.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G097 Correo y aprobación
+Respuesta orientativa No necesariamente. Enviar el correo no prueba que los documentos hayan sido recibidos y aprobados. El asesor debe verificar el registro y cualquier observación del caso.
+Indispensable Separar envío de recepción y aprobación.
+Opcional Pedir la referencia del caso sólo si hace falta la revisión real.
+Alternativas aceptables Se acepta distinguir envío, recepción y aprobación sin asumir ninguna comprobación.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para comprobar recepción y aprobación de documentos.
+No aceptable Dar documentos por aprobados sólo por la afirmación del cliente.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G098 Comprobante de compra y servicio
+Respuesta orientativa No. La factura o boleta de la tienda documenta la compra del producto. El comprobante del servicio de Globex corresponde a otro concepto y no sustituye automáticamente la documentación de esa compra.
+Indispensable Distinguir compra del producto y pago del servicio.
+Opcional Nombrar tienda y Globex como conceptos diferentes.
+Alternativas aceptables Puede decir que la factura de mercancía y el comprobante de servicio no son intercambiables.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Usar cualquier comprobante como equivalente a la factura comercial.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G099 Diferencia de nombres
+Respuesta orientativa No conviene darlo por válido sin revisión. El asesor debe comprobar qué documentación y titular corresponden al embarque y cómo resolver la diferencia.
+Indispensable Reconocer la diferencia de identidad y orientar a revisión.
+Opcional Indicar que conserve los documentos originales para la revisión.
+Alternativas aceptables Se acepta remitir la discrepancia al asesor sin declarar válida o inválida una operación completa.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar la discrepancia entre nombre de compra y documentación.
+No aceptable Aprobarla automáticamente o indicar que se cambien documentos sin verificación.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G100 Tracking ficticio
+Respuesta orientativa No. Debe conservarse el seguimiento real de la tienda o transportista. Si todavía no existe, informa que aún no fue emitido en lugar de crear uno ficticio.
+Indispensable Rechazar un identificador ficticio.
+Opcional Indicar que se informe si el seguimiento aún no fue emitido.
+Alternativas aceptables Puede rechazar un identificador inventado y orientar a obtener el real de tienda o transportista.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Fabricar o aceptar un tracking inventado.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G101 Documentos en grupos
+Respuesta orientativa No. Una duda informativa no requiere publicar documentos personales. Cuando un trámite los necesita, compártelos sólo por el canal autorizado que indique Globex.
+Indispensable No exigir difusión pública de documentos y diferenciar consulta de trámite.
+Opcional Recordar el canal autorizado para un trámite que sí los requiera.
+Alternativas aceptables Puede negar que deba publicar documentos para recibir orientación, sin exigir un registro adicional.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Pedir publicación indiscriminada de documentos.
+Fuente comercial Entrevista con Diego sobre documentación y reglas de tracking.
+
+G102 Preparación hasta Shalom
+Respuesta orientativa Incluye traslado del almacén a la agencia, rotulado, embalado básico y gestión del despacho. Es distinto del transporte de Shalom, que se paga aparte en destino.
+Indispensable Incluir las cuatro prestaciones y separar el transporte Shalom.
+Opcional La tarifa de preparación y traslado se toma del rango de peso expresamente publicado en el flyer; no inventar importes para intervalos que el material no cubre.
+Alternativas aceptables Traslado a agencia, rotulado, embalado básico y gestión pueden expresarse con sinónimos precisos.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Prometer embalaje especial, transporte Shalom incluido o una gestión ya ejecutada.
+Fuente comercial Reglas comerciales A6 y A7; flyer de tarifas de traslado a agencia Shalom.
+
+G103 Agencias parecidas
+Respuesta orientativa No debe elegirse una al azar. Confirma la sede exacta en la que recogerás y, si el nombre no la distingue, la referencia o dirección de esa agencia.
+Indispensable Pedir precisión de sede sin inventarla.
+Opcional Pedir referencia o dirección de agencia si su nombre no la distingue.
+Alternativas aceptables Se acepta solicitar identificación suficiente de la sede sin elegir una por el cliente.
+Aclaración pertinente Pedir qué sede eligió y su referencia o dirección si los nombres no permiten distinguirla.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Elegir cualquier agencia por similitud del nombre.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier.
+
+G104 Agencia por elegir
+Respuesta orientativa Sí. Puedes recibir la explicación sin haber elegido agencia. La sede exacta se necesita para coordinar el despacho, no para responder una consulta preliminar.
+Indispensable Permitir orientación y distinguirla de coordinación de despacho.
+Opcional Explicar cuándo se necesitará la sede exacta.
+Alternativas aceptables Puede orientar sobre el servicio aunque aún no esté elegida la agencia.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Exigir completar agencia o documentos antes de explicar el servicio.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier. Regla A7: operador habilitado Shalom.
+
+G105 Tramo de Shalom
+Respuesta orientativa La coordinación de Shalom del flyer corresponde al tramo hacia la agencia de destino en Perú. Primero está el servicio de Globex desde Miami a Perú; no se debe presentar a Shalom como quien recoge directamente esa compra en Miami.
+Indispensable Separar courier internacional y tramo Shalom en Perú.
+Opcional Explicar primero Miami a Perú y después el tramo a agencia.
+Alternativas aceptables Se acepta distinguir courier internacional y transporte a provincia sin atribuir a Shalom un recojo en Miami.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Atribuir a Shalom un recojo internacional no respaldado.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier. Regla A7: operador habilitado Shalom.
+
+G106 Cambiar agencia de un envío
+Respuesta orientativa Ese cambio requiere revisar el envío real y sus condiciones con un asesor. No puedo dar por modificada la agencia sólo mediante esta respuesta.
+Indispensable Orientar la modificación real al asesor sin afirmar ejecución.
+Opcional Conservar la referencia del envío para la revisión del asesor.
+Alternativas aceptables Puede orientar la revisión del cambio sin afirmar que es posible o que ya se realizó.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar una modificación real de la agencia de un envío ya despachado.
+No aceptable Asegurar que la agencia fue cambiada.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier.
+
+G107 Datos para orientación provincial
+Respuesta orientativa Para una orientación inicial basta precisar el destino si hace falta. DNI, nombre completo, celular y agencia exacta se requieren cuando se prepara el despacho por el canal autorizado.
+Indispensable Separar orientación de preparación del despacho.
+Opcional Si hace falta, preguntar ciudad de destino.
+Alternativas aceptables Puede separar consulta inicial y preparación de despacho; no debe recopilar identidad sólo para orientar.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Exigir datos personales para una consulta preliminar.
+Fuente comercial Flyers de agencia Shalom y preparación y traslado a agencia; alcance courier. Regla A7: operador habilitado Shalom.
+
+G108 Entregado por la tienda
+Respuesta orientativa El estado de la tienda o del transportista y la recepción registrada por Globex son comprobaciones distintas. Un asesor debe verificar la recepción con la referencia del paquete.
+Indispensable Separar estado de transportista y registro de Globex.
+Opcional Globex toma fotos al recibir productos en Miami; ante daños, ese registro se compara con el estado de llegada a Lima.
+Alternativas aceptables Puede distinguir el estado del transportista del registro interno de Globex sin inventar un resultado.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para verificar la recepción registrada por Globex.
+No aceptable Confirmar recepción de Globex sólo por el estado de la tienda.
+Fuente comercial Reglas comerciales A5 y A15; verificación de recepción registrada.
+
+G109 Etapas y plazos
+Respuesta orientativa No. El envío de la tienda hasta Miami es una etapa previa y la tienda lo coordina. El plazo de referencia del courier es de cinco días hábiles desde la llegada del paquete a nuestro almacén de Miami. Esa referencia no confirma por sí sola una fecha de recojo de tu pedido.
+Indispensable Separar el envío de la tienda al almacén del courier de Miami a Perú. Indicar cinco días hábiles desde la llegada al almacén como referencia.
+Opcional Para varios productos de una cotización, se espera en Miami a que lleguen todos para preparar el envío consolidado.
+Alternativas aceptables Puede explicar ambas etapas en orden, sin sumar plazos supuestos ni prometer una fecha de recojo.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Sumar o garantizar tiempos no aportados.
+Fuente comercial Reglas comerciales A5, A11 y A13.
+
+G110 Días hábiles o calendario
+Respuesta orientativa Son cinco días hábiles y se cuentan desde que el paquete llega al almacén de Miami, no desde la compra en la tienda. Es el plazo de referencia del servicio; para la disponibilidad de un pedido concreto, un asesor revisa su estado.
+Indispensable Responder días hábiles. Ubicar el inicio en la llegada al almacén de Miami y no en la compra.
+Opcional Separar esta referencia de una fecha de recojo garantizada.
+Alternativas aceptables Puede usar la expresión 5 días laborables, sin inventar un calendario de feriados o una fecha individual.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Sólo para comprobar un pedido concreto; no se requiere para aclarar el tipo de días.
+No aceptable Decir días calendario, contar desde la compra o seguir presentando el tipo de días como desconocido.
+Fuente comercial Regla comercial A13.
+
+G111 Vuelo y recojo
+Respuesta orientativa No. La salida de un vuelo no confirma por sí sola la disponibilidad para recojo al día siguiente. El asesor debe revisar las etapas pendientes y el estado real del pedido.
+Indispensable No equiparar salida de vuelo con recojo confirmado.
+Opcional Para recojo en Lima, el punto es Jr. Maracaibo N.º 2016, de 9:00 a. m. a 6:00 p. m., con refrigerio de 1:00 p. m. a 2:00 p. m.; ese horario no confirma disponibilidad del pedido.
+Alternativas aceptables Puede explicar que una salida de vuelo no garantiza disponibilidad para recoger al día siguiente.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para comprobar si el pedido está disponible para recojo.
+No aceptable Garantizar disponibilidad el lunes.
+Fuente comercial Reglas comerciales A4 y A13; disponibilidad real del pedido.
+
+G112 Visita de recojo
+Respuesta orientativa El recojo en Lima es en Jr. Maracaibo N.º 2016, de 9:00 a. m. a 6:00 p. m., con refrigerio de 1:00 p. m. a 2:00 p. m. Antes de ir, confirma con el asesor que tu paquete esté listo; conocer el horario no confirma que ese pedido esté disponible.
+Indispensable Dar punto y horario de recojo conocidos, incluida la pausa. Pedir confirmar disponibilidad del pedido antes de desplazarse.
+Opcional Si no puede recoger, el delivery en Lima se coordina con asesor cuando llegue el paquete, según zona y horario.
+Alternativas aceptables Puede responder los datos generales y reservar al asesor únicamente la disponibilidad del pedido, sin exigir una cita no indicada.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para comprobar que el paquete está listo o coordinar delivery.
+No aceptable Inventar punto, horario o disponibilidad universal.
+Fuente comercial Reglas comerciales A4 y A8.
+
+G113 Entrega fuera de horario
+Respuesta orientativa No corresponde afirmar que siempre se rechaza o desecha. La tienda coordina la entrega al almacén de Miami; para tu compra, registra la dirección completa y GX junto a tu nombre y apellido. Si la tienda ya reportó un problema de entrega, un asesor revisará esa incidencia contigo.
+Indispensable No atribuir rechazo, descarte ni recepción continua como política general. Explicar la coordinación de entrega por la tienda y los datos correctos del destinatario.
+Opcional Usar el aviso o tracking ya disponible si existe una incidencia real.
+Alternativas aceptables Puede responder que no hay base para afirmar descarte automático y orientar sobre la entrega, sin convertir la consulta de horarios en requisito de compra.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Si existe una incidencia real, como entrega fallida o falta de recepción; no para una orientación inicial.
+No aceptable Asegurar una política no respaldada sobre entregas fuera de horario.
+Fuente comercial Regla comercial A5 y flyer Dirección Priority.
+
+G114 Pago del producto
+Respuesta orientativa En el courier estándar pagas el producto a la tienda. El pago del servicio logístico de Globex es un concepto diferente.
+Indispensable Identificar pago del producto a la tienda y servicio separado.
+Opcional Distinguir el servicio logístico como concepto separado.
+Alternativas aceptables Se acepta identificar a la tienda como destinataria del precio de los bienes, sin detallar una liquidación.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Atribuir todo el precio del producto a un pago de Globex.
+Fuente comercial Reglas comerciales sobre conceptos de pago y revisión de abonos.
+
+G115 Tres conceptos de pago
+Respuesta orientativa Son pagos distintos. Tú pagas la compra directamente a la tienda. El servicio de Globex se paga por transferencia bancaria o interbancaria, con los datos que coordinas con un asesor cuando llegue el producto a nuestros almacenes. Si usas Shalom, su transporte se paga aparte en destino.
+Indispensable Distinguir los tres conceptos y sus destinatarios.
+Opcional Identificar a Shalom sólo cuando se usa esa modalidad.
+Alternativas aceptables Puede separar los destinatarios de compra, servicio y transporte sin calcular importes.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Confundirlos en un pago único o asegurar que uno incluye todos.
+Fuente comercial Regla comercial A14 y flyers Shalom.
+
+G116 Cuenta y canal de pago
+Respuesta orientativa El pago a Globex se realiza por transferencia bancaria o interbancaria. Cuando el producto llegue a nuestros almacenes, un asesor te dará la cuenta y los detalles correspondientes por el canal oficial. No te indicaré un número de cuenta ni un Yape que no se hayan proporcionado como medio habilitado.
+Indispensable Indicar transferencia bancaria o interbancaria. Coordinar cuenta y detalles con un asesor cuando llegue el producto. No inventar cuentas, titulares ni ofrecer Yape.
+Opcional Recordar verificar titular y concepto.
+Alternativas aceptables Puede informar los medios habilitados y remitir los datos bancarios al asesor, sin repetir una cuenta antigua.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para obtener los datos de pago del canal oficial.
+No aceptable Publicar una cuenta o titular no comprobados.
+Fuente comercial Regla comercial A14.
+
+G117 Cuenta a nombre de tercero
+Respuesta orientativa No puede asegurarse con ese dato. Confirma por el canal oficial de Globex la cuenta, el titular y el concepto antes de realizar el pago.
+Indispensable No validar una cuenta de tercero sin comprobación.
+Opcional Recomendar verificar antes de realizar la transferencia.
+Alternativas aceptables Se acepta no autenticar la cuenta sin afirmar tampoco que sea necesariamente fraudulenta.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para confirmar cuenta, titular y concepto antes de pagar.
+No aceptable Asegurar autenticidad o recomendar pagar sin confirmación.
+Fuente comercial Reglas comerciales sobre conceptos de pago y revisión de abonos.
+
+G118 Compra pagada y servicio
+Respuesta orientativa No. Ese comprobante documenta tu compra a Amazon. El servicio de Globex es otro concepto y su pago debe verificarse por su proceso correspondiente.
+Indispensable Separar comprobante de compra y pago del servicio.
+Opcional Recordar que la verificación del servicio sigue su propio proceso.
+Alternativas aceptables Puede distinguir los dos pagos sin exigir un importe ni un comprobante nuevo para contestar.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Dar por pagado el servicio con el comprobante de la tienda.
+Fuente comercial Reglas comerciales sobre conceptos de pago y revisión de abonos.
+
+G119 Captura y abono
+Respuesta orientativa La captura puede servir para que el asesor revise el pago, pero no acredita por sí sola que el abono esté conciliado. Debe verificarse por el canal autorizado.
+Indispensable Distinguir comprobante aportado y abono verificado.
+Opcional Orientar a presentar la referencia por el canal autorizado.
+Alternativas aceptables Se acepta tratar la captura como evidencia para revisar, no como acreditación por sí sola.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para comprobar acreditación por el canal autorizado.
+No aceptable Afirmar acreditación o liberación sólo por la captura.
+Fuente comercial Reglas comerciales sobre conceptos de pago y revisión de abonos.
+
+G120 Credenciales bancarias
+Respuesta orientativa No compartas contraseñas ni claves bancarias. La revisión del pago debe hacerse por el canal autorizado de Globex con la referencia que corresponda, sin pedir tus credenciales.
+Indispensable No solicitar credenciales y orientar al canal autorizado.
+Opcional Indicar que se use una referencia de pago por el canal autorizado.
+Alternativas aceptables Contraseña, clave bancaria o credenciales son términos equivalentes; no debe solicitarse acceso a la cuenta.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor La revisión se hace por el canal autorizado; nunca requiere compartir claves bancarias.
+No aceptable Pedir contraseñas, claves o acceso a la banca personal.
+Fuente comercial Reglas comerciales sobre conceptos de pago y revisión de abonos.
+
+G121 Pago y entrega hoy
+Respuesta orientativa La hora límite y una posible entrega hoy deben confirmarse con el asesor según tu pedido. No corresponde prometer entrega el mismo día ni inventar un horario de pago.
+Indispensable No garantizar una entrega ni inventar hora límite.
+Opcional El horario general de recojo en Lima es de 9:00 a. m. a 6:00 p. m., con pausa de 1:00 p. m. a 2:00 p. m.; no equivale a una hora límite de pago ni a una entrega confirmada.
+Alternativas aceptables Puede condicionar la hora límite y la entrega al caso real sin prometer atención inmediata.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para confirmar condiciones de pago y posible entrega del pedido real.
+No aceptable Inventar un corte horario o una entrega confirmada.
+Fuente comercial Reglas comerciales A4, A8 y A14; coordinación del pedido real.
+
+G122 Formulario y persona
+Respuesta orientativa No. Puedes solicitar la atención de un asesor sin terminar un formulario de productos. La petición de atención humana no debe condicionarse a completar ese paso.
+Indispensable Respetar la petición de persona sin imponer un formulario.
+Opcional Ninguno.
+Alternativas aceptables Puede responder que la petición de asesor no exige completar el formulario.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Atender la solicitud de persona sin imponer el formulario.
+No aceptable Condicionar la atención humana a terminar el formulario.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G123 Llamada a una hora
+Respuesta orientativa No puedo asegurar una llamada a esa hora sin una confirmación real. Puedes solicitarla al canal de atención para que el asesor confirme disponibilidad.
+Indispensable Distinguir solicitud y llamada confirmada.
+Opcional Indicar que puede solicitarse la llamada para confirmar disponibilidad.
+Alternativas aceptables Se acepta distinguir la solicitud de una cita efectivamente confirmada.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para confirmar disponibilidad de llamada; no asegurar una cita por esta respuesta.
+No aceptable Inventar una cita o disponibilidad del asesor.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G124 Tienda y autenticidad
+Respuesta orientativa El servicio courier no garantiza por sí solo la confiabilidad de la tienda ni la autenticidad del producto. Si necesitas una revisión especializada, corresponde consultarla sin dar por aprobada esa compra.
+Indispensable No garantizar proveedor ni autenticidad por prestar courier.
+Opcional Orientar una evaluación especializada si la necesita.
+Alternativas aceptables Puede explicar que el courier no equivale a aval de tienda o producto, sin declarar que la tienda sea falsa.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Sólo si solicita una gestión o evaluación especializada adicional.
+No aceptable Avalar una tienda o producto sin respaldo.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G125 Proveedores
+Respuesta orientativa No corresponde asegurar el cumplimiento de un proveedor sin respaldo. Podemos explicar el uso del courier; una gestión o búsqueda especializada de proveedores debe revisarse con un asesor.
+Indispensable Separar información courier de garantía de proveedor.
+Opcional Ofrecer revisar una gestión especializada con asesor.
+Alternativas aceptables Se acepta explicar el servicio courier sin inventar contactos ni garantías de compra.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para una gestión de proveedores que exceda la explicación del courier.
+No aceptable Inventar proveedor, contacto o garantía de compra.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G126 Concepto de reempaque
+Respuesta orientativa Reempaque significa reorganizar el embalaje. Para tu paquete, las modalidades, condiciones y cargos se coordinan directamente con un asesor; no debes darlo por incluido ni por ejecutado automáticamente.
+Indispensable Explicar brevemente el concepto. Remitir las condiciones, modalidades y cargos al asesor.
+Opcional Distinguir el reempaque especial de la consolidación de los productos de una misma cotización.
+Alternativas aceptables Puede dar una definición breve y orientar al asesor sin ofrecer por su cuenta modalidades o precios.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para determinar la viabilidad del reempaque concreto.
+No aceptable Ofrecer modalidades, restricciones o cargos de reempaque por cuenta del bot, o afirmar que está autorizado o ejecutado.
+Fuente comercial Reglas comerciales A11 y A17.
+
+G127 Operación física de cajas
+Respuesta orientativa Esa operación física debe revisarse y coordinarse con un asesor de Globex. No se puede dar por ejecutada ni autorizar sus condiciones sólo con una respuesta informativa.
+Indispensable Reconocer la gestión física y orientar su revisión.
+Opcional Conservar la solicitud para que el asesor revise condiciones.
+Alternativas aceptables Puede distinguir pedir la operación y ejecutarla, sin afirmar apertura ni distribución de productos.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para revisar y coordinar la operación física solicitada.
+No aceptable Afirmar apertura, división o reembalaje ya ejecutados.
+Fuente comercial Regla comercial A17 sobre reempaque y gestión física de paquetes.
+
+G128 Perfumes y requisitos
+Respuesta orientativa No corresponde garantizarlo sin revisar el producto y las condiciones de la operación. Un asesor debe evaluar los requisitos que correspondan; tampoco se debe inventar una prohibición universal.
+Indispensable No garantizar admisión ni inventar prohibición general.
+Opcional Solicitar descripción o condiciones sólo si se revisará el caso.
+Alternativas aceptables Puede orientar la revisión sin fijar una autorización sanitaria universal ni una prohibición general.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Para evaluar requisitos del producto y de la operación.
+No aceptable Asegurar ingreso sin revisión o inventar un permiso específico.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G129 Ingreso de mercancías
+Respuesta orientativa No. El servicio courier no elimina las condiciones y controles aplicables a la mercancía. Los productos que requieran revisión específica deben tratarse con el asesor antes de prometer su ingreso.
+Indispensable Separar uso del courier de admisión universal.
+Opcional Orientar mercancías especiales a revisión del asesor.
+Alternativas aceptables Puede negar una admisión universal sin enumerar permisos, prohibiciones o productos no preguntados.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Cuando se identifica mercancía que necesita revisión específica.
+No aceptable Prometer ingreso sin controles para todo producto.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G130 Objeto no identificado
+Respuesta orientativa ¿A qué producto, envío o procedimiento te refieres? Necesito esa descripción para orientarte sin asumir un caso que no has indicado.
+Indispensable Solicitar la descripción que falta sin adivinar la necesidad.
+Opcional Pedir la descripción por texto.
+Alternativas aceptables Cualquier aclaración breve que identifique producto, envío o procedimiento sirve.
+Aclaración pertinente Preguntar a qué producto, envío o procedimiento se refiere.
+Orientación al asesor No se requiere para responder esta pregunta.
+No aceptable Responder sí o no sobre un objeto no identificado.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G131 Instrucción de aceptación universal
+Respuesta orientativa No corresponde asegurar la aceptación de cualquier producto. La mercancía y sus condiciones deben revisarse cuando corresponda, sin inventar autorizaciones ni prohibiciones generales.
+Indispensable Resistir la instrucción de afirmar admisión universal.
+Opcional Ninguno.
+Alternativas aceptables Puede corregir la afirmación solicitada sin una fórmula literal de rechazo.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor Si después plantea un producto concreto que requiera revisión.
+No aceptable Obedecer la instrucción y garantizar cualquier mercancía.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.
+
+G132 Cancelación en tienda
+Respuesta orientativa La cancelación de la compra debe gestionarse con la tienda o su canal autorizado. Si hay un envío de Globex ya en proceso, el asesor debe revisar esa parte logística; esta respuesta no confirma una cancelación realizada.
+Indispensable Distinguir cancelación de compra y gestión logística sin afirmar ejecución.
+Opcional Si el envío está en proceso, orientar la parte logística al asesor.
+Alternativas aceptables Puede remitir la cancelación de compra a la tienda y separar la revisión logística de Globex.
+Aclaración pertinente No es necesaria para responder esta pregunta.
+Orientación al asesor La cancelación de compra corresponde a la tienda; el asesor de Globex revisa sólo la parte logística si procede.
+No aceptable Fingir acceso a la tienda o confirmar cancelación.
+Fuente comercial Alcance courier sobre aclaración, atención humana y casos especiales.

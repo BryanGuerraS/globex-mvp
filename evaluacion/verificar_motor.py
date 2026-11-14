@@ -47,6 +47,18 @@ def verificar_caso(caso: Dict) -> Dict:
         total = f"USD {esperado['costo_total']:,.2f}"
         if total not in GlobexPricingEngine.formatear_mensaje_whatsapp(obtenido):
             diferencias.append(f"el mensaje no muestra {total}")
+    elif tipo == "pedido":
+        obtenido = GlobexPricingEngine.calcular_pedido(caso["productos"], caso.get("peso_total"))
+        for campo in CAMPOS_MONTO:
+            if campo in esperado and abs(obtenido[campo] - esperado[campo]) > 0.0049:
+                diferencias.append(f"{campo}: esperado {esperado[campo]:.2f}, motor {obtenido[campo]:.2f}")
+        if obtenido["aplica_impuesto"] != esperado["aplica_impuesto"]:
+            diferencias.append("aplica_impuesto distinto")
+        if GlobexPricingEngine.requiere_asesor_pedido(caso["productos"]) != esperado["requiere_asesor"]:
+            diferencias.append("requiere_asesor distinto")
+        total = f"USD {esperado['costo_total']:,.2f}"
+        if total not in GlobexPricingEngine.formatear_mensaje_whatsapp(obtenido):
+            diferencias.append(f"el mensaje no muestra {total}")
     elif tipo == "tope":
         obtenido = {"requiere_asesor": GlobexPricingEngine.requiere_asesor(caso["valor"], caso.get("tax"), caso.get("cantidad", 1))}
         if obtenido != esperado:

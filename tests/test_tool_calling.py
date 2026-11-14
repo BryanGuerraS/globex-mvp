@@ -242,10 +242,21 @@ def test_tope_cuenta_el_tax_estimado(entorno):
     assert "supera los USD 2,000" in enviado and "COTIZACIÓN" not in enviado
 
 
-def test_amazon_cotiza_sin_tax(entorno):
+def test_amazon_ya_no_exime_del_tax(entorno):
     llm, enviado = entorno(
         "chat_amazon",
         "una laptop de amazon de 650 dólares que pesa 2.5 kg",
+        [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
+                                           {"valor_producto_usd": 650, "peso_kg": 2.5, "sin_tax": True})]),
+         _respuesta(tool_calls=[_tool_call("t2", "calcular_cotizacion", {"valor_producto_usd": 650, "peso_kg": 2.5})])],
+    )
+    assert "USD 893.92" in enviado  # sin_tax rechazado: 7 % de referencia (decisión del 14/11)
+
+
+def test_precio_con_tax_incluido_no_suma_tax(entorno):
+    llm, enviado = entorno(
+        "chat_incluido",
+        "una laptop de 650 dólares con tax incluido que pesa 2.5 kg",
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
                                            {"valor_producto_usd": 650, "peso_kg": 2.5, "sin_tax": True})])],
     )

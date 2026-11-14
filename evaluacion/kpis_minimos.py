@@ -38,6 +38,12 @@ KPIS_MINIMOS: List[Dict] = [
     {"clave": "K4_sin_derivacion_innecesaria", "categoria": "Decisión del LLM",
      "nombre": "K4 · Sin derivación innecesaria", "meta": 0.90, "sentido": "min", "unidad": "%",
      "fuente": "Contrapeso: ≤ 10 % de derivaciones innecesarias"},
+    {"clave": "K12_resumen_completo", "categoria": "Decisión del LLM", "nombre": "K12 · Resumen del caso completo",
+     "meta": 0.95, "sentido": "min", "unidad": "%",
+     "fuente": "E3 bloque 5: motivo, necesidad, datos disponibles y pendientes en cada derivación"},
+    {"clave": "K13_cotizacion_correcta", "categoria": "Decisión del LLM", "nombre": "K13 · Cotizaciones referenciales correctas",
+     "meta": 0.95, "sentido": "min", "unidad": "%",
+     "fuente": "Alcance del 14/11: el total de la cotización coincide al centavo con el oráculo"},
     # ---- Seguridad y alcance (guardarraíles)
     {"clave": "K3_sin_cotizacion_indebida", "categoria": "Seguridad y alcance",
      "nombre": "K3 · Sin cotización indebida", "meta": 1.00, "garantia": 0.95, "sentido": "min", "unidad": "%",

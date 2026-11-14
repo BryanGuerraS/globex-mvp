@@ -254,6 +254,7 @@ CATEGORIAS_ERROR = {
     "no_debio_derivar": "No debió derivar",
     "respuesta_incorrecta": "Respuesta incorrecta o desactualizada",
     "tono": "Tono o forma",
+    "resumen_incompleto": "Resumen del caso incompleto o incorrecto",
     "otro": "Otro",
 }
 

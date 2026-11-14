@@ -59,6 +59,28 @@ def _tipo_coincide(tipo: Optional[str], permitidos: List[str]) -> bool:
     return any(tipo == p or tipo.startswith(p + ":") or p in partes for p in permitidos)
 
 
+def _items_de(args: Dict) -> List[Dict]:
+    """Productos de una llamada a calcular_cotizacion: la lista `productos` o el formato de uno solo."""
+    if isinstance(args.get("productos"), list):
+        return [p for p in args["productos"] if isinstance(p, dict)]
+    return [{"precio_unitario_usd": args.get("valor_producto_usd"), "peso_kg": args.get("peso_kg")}] if args else []
+
+
+def _coincide(item: Dict, esperado: Dict, args: Dict) -> bool:
+    """Precio y peso del producto llamado contra lo esperado (el peso puede venir como total)."""
+    try:
+        if "valor" in esperado and abs(float(item.get("precio_unitario_usd", item.get("valor_producto_usd")))
+                                       - float(esperado["valor"])) > 0.011:
+            return False
+        if "peso" in esperado:
+            peso = item.get("peso_kg") if item.get("peso_kg") is not None else args.get("peso_total_kg")
+            if abs(float(peso) - float(esperado["peso"])) > 0.011:
+                return False
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
 def evaluar_corrida(caso: Dict, corrida: Dict) -> List[Dict]:
     """Compara una corrida con lo esperado. Devuelve una lista de verificaciones."""
     esp = caso.get("esperado", {})
@@ -92,13 +114,21 @@ def evaluar_corrida(caso: Dict, corrida: Dict) -> List[Dict]:
                 args = {}
         ok = bool(candidatas)
         detalle = f"args={args}"
-        for clave, campo in (("valor", "valor_producto_usd"), ("peso", "peso_kg")):
-            if clave in esp["cotizacion"]:
-                try:
-                    ok = ok and abs(float(args.get(campo)) - float(esp["cotizacion"][clave])) <= 0.011
-                except (TypeError, ValueError):
-                    ok = False
+        items = _items_de(args)
+        esperados = esp["cotizacion"].get("productos") or [esp["cotizacion"]]
+        if len(items) != len(esperados):
+            ok = False
+        else:  # sin importar el orden: cada producto esperado empareja con uno llamado
+            libres = list(items)
+            for e in esperados:
+                par = next((i for i in libres if _coincide(i, e, args)), None)
+                ok = ok and par is not None
+                if par is not None:
+                    libres.remove(par)
         check("argumentos_cotizacion", ok, f"{detalle}, esperado={esp['cotizacion']}")
+        if "total" in esp["cotizacion"]:  # % de cotizaciones referenciales correctas: el total al centavo
+            total = f"TOTAL ESTIMADO:* USD {float(esp['cotizacion']['total']):,.2f}"
+            check("total_cotizacion", total in textos_bot, f"esperado {total}")
 
     if "cotiza" in esp:
         cotizo = any("cotizacion" in (t.get("tipo_respuesta") or "").split("+") for t in procesados)
@@ -124,6 +154,12 @@ def _bloqueado_por_guardrail(r: Dict) -> bool:
     if any(t.get("tipo_respuesta") == "guardrail" for t in r.get("turnos", [])):
         return True
     return any(c["check"].startswith("no_contiene:") and not c["ok"] for c in r.get("checks", []))
+
+
+def _resumen_completo(corridas) -> Dict:
+    from resumen_caso import campos_faltantes
+    derivadas = [r for _, r in corridas if r.get("motivo_derivacion")]
+    return proporcion(sum(not campos_faltantes(r.get("resumen_caso")) for r in derivadas), len(derivadas))
 
 
 def calcular_kpis(casos: List[Dict], resultados: Dict[str, List[Dict]]) -> Dict:
@@ -169,6 +205,11 @@ def calcular_kpis(casos: List[Dict], resultados: Dict[str, List[Dict]]) -> Dict:
                                           pred=lambda r: not _bloqueado_por_guardrail(r)),
         "K11_adherencia_alcance": contar(lambda c: c.get("categoria") in ("alcance", "adversarial"),
                                           pred=lambda r: r["exito"]),
+        # Derivación con contexto (guardarraíl del E3): el resumen trae motivo, necesidad, datos y
+        # pendientes. Se mide aparte y no entra al éxito de tarea.
+        "K12_resumen_completo": _resumen_completo(corridas),
+        # % de cotizaciones referenciales correctas (alcance del 14/11): argumentos y total al centavo
+        "K13_cotizacion_correcta": contar(lambda c: "total" in esp(c).get("cotizacion", {}), "total_cotizacion"),
     }
 
 
@@ -230,7 +271,8 @@ async def correr_caso(main, caso: Dict, repeticion: int, enviados: Dict[str, Lis
         })
     chat = main.obtener_chat(chat_id) or {}
     return {"chat_id": chat_id, "repeticion": repeticion, "turnos": turnos,
-            "bot_activo_final": chat.get("bot_activo")}
+            "bot_activo_final": chat.get("bot_activo"),
+            "motivo_derivacion": chat.get("motivo_derivacion"), "resumen_caso": chat.get("resumen_caso")}
 
 
 def _cuerpo(payload: Dict) -> Optional[str]:
@@ -399,6 +441,8 @@ def main_cli(argv=None):
     parser.add_argument("--solo", default="", help="IDs separados por coma")
     parser.add_argument("--pausa", type=float, default=0.0, help="Segundos entre corridas (límites de Groq)")
     parser.add_argument("--salida", default=os.path.join(REPO, "evaluacion", "reportes"))
+    parser.add_argument("--proveedor", choices=["groq", "cerebras"], default=None,
+                        help="Proveedor del LLM (por defecto, el de LLM_PROVEEDOR en el .env o Groq)")
     parser.add_argument("--reglas", action="store_true",
                         help="Baseline sin LLM: reemplaza el LLM por reglas (evaluacion/baseline_reglas.py)")
     parser.add_argument("--pdf-desde", default="",
@@ -420,6 +464,8 @@ def main_cli(argv=None):
     # Entorno aislado: BD y PDFs en una carpeta temporal (nunca la globex.db real)
     sys.path.insert(0, REPO)
     os.chdir(tempfile.mkdtemp(prefix="globex_eval_"))
+    if args.proveedor:
+        os.environ["LLM_PROVEEDOR"] = args.proveedor  # main lo lee al importarse
     import main  # noqa: E402  (carga el .env del repo: GROQ_API_KEY)
     from metricas import resumir  # noqa: E402
 
@@ -447,7 +493,7 @@ def main_cli(argv=None):
         marca = f"{datetime.now():%Y%m%d_%H%M%S}_{sufijo}"
         sufijo += 1
     meta = {"fecha": datetime.now().strftime("%d/%m/%Y %H:%M"), "archivo_casos": os.path.relpath(archivo_casos, REPO),
-            "repeticiones": args.repeticiones, "modelo": main.MODEL, "duracion_s": duracion}
+            "repeticiones": args.repeticiones, "modelo": main.MODEL, "proveedor": main.PROVEEDOR_LLM, "duracion_s": duracion}
 
     ruta_md = os.path.join(salida, f"reporte_{marca}.md")
     with open(ruta_md, "w", encoding="utf-8") as f:

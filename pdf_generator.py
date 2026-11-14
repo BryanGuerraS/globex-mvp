@@ -125,12 +125,24 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
         ["CONCEPTO", "DETALLE / TASA", "IMPORTE (USD)"],
     ]
     cantidad = int(calculo.get("cantidad", 1))
-    if cantidad > 1:
+    productos = calculo.get("productos") or []
+    if len(productos) > 1:  # pedido de varios productos: una fila por producto (formato del 14/11)
+        tabla_cotizacion += [
+            [f"{i}. {p['producto']}" + (f" ({p['tienda']})" if p.get("tienda") else ""),
+             GlobexPricingEngine.linea_producto(p), f"USD {p['total']:,.2f}"]
+            for i, p in enumerate(productos, 1)
+        ]
+        tabla_cotizacion += [
+            ["Flete Aéreo Internacional", f"{peso_facturable:g} kg × USD 9.00/kg (peso total)", f"USD {flete:,.2f}"],
+            ["Desaduanaje", "Una vez por cotización", f"USD {tramite:,.2f}"],
+        ]
+    elif cantidad > 1:
         tabla_cotizacion += [
             ["Valor unitario", "Precio por unidad", f"USD {calculo.get('precio_unitario', 0.0):,.2f}"],
             ["Cantidad", "Unidades", str(cantidad)],
         ]
-    tabla_cotizacion += [
+    if len(productos) <= 1:
+        tabla_cotizacion += [
         ["Total" if cantidad > 1 else "Valor Declarado del Producto (FOB)",
          f"Valor unitario × cantidad ({peso} kg)" if cantidad > 1 else f"Mercancía declarada ({peso} kg)",
          f"USD {val_prod:,.2f}"],
@@ -138,7 +150,7 @@ def generar_pdf_cotizacion(chat_id: str, nombre_cliente: str, calculo: Dict[str,
          f"USD {tax:,.2f}"],
         ["Flete Aéreo Internacional", f"{peso_facturable:g} kg × USD 9.00/kg", f"USD {flete:,.2f}"],
         ["Trámite aduanero", "Tarifa fija", f"USD {tramite:,.2f}"],
-    ]
+        ]
 
     if calculo.get("aplica_impuesto", False):
         tabla_cotizacion.append([
