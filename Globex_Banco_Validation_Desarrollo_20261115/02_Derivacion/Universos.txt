@@ -1,4 +1,0 @@
-U10 — Derivación al asesor
-Casos: 12
-IDs: VDER001, VDER002, VDER003, VDER004, VDER005, VDER006, VDER007, VDER008, VDER009, VDER010, VDER011, VDER012
-Motivos nuevos: Solicitud explícita de persona; Modalidad viajero; Reempaque; Cotización que supera USD 2.000; Seguimiento de un pedido; Reclamos e incidencias; Negociación comercial; Compra asistida

@@ -45,3 +45,6 @@ docs/pendientes_por_validar.txt
 # Copia local de los entregables del curso (pueden tener datos reales): no subir
 entregables/
 docs/indicaciones_system_prompt_juez.txt
+
+# Bancos de evaluación del equipo (no versionar)
+Globex_Banco_Validation_Desarrollo_*/

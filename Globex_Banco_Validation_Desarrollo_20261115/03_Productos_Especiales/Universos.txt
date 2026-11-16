@@ -1,4 +1,0 @@
-MER — Productos no admitidos, prohibidos o con criterios especiales
-Casos: 24
-IDs: VMER001, VMER002, VMER003, VMER004, VMER005, VMER006, VMER007, VMER008, VMER009, VMER010, VMER011, VMER012, VMER013, VMER014, VMER015, VMER016, VMER017, VMER018, VMER019, VMER020, VMER021, VMER022, VMER023, VMER024
-Motivos nuevos: Arma real; Municiones; Chupón de bebé; Biberón; Adhesivo de pestañas; TV Box referencial; Dispositivo médico con receta; Ropa usada en buen estado; Ropa nueva como control; Repuesto usado; Repuesto nuevo como control; Juguetes usados; Cinco juguetes nuevos; Maquillaje por DNI; Cremas y marca; Perfumes en el máximo; Shampoo por cotización; Calzado por consignatario; Excepción de colección; Producto descartado no activo; Medicina y requisito documental; Vitaminas no excluyen receta; Proteína en polvo; Suplemento con receta sin validar
