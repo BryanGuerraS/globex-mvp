@@ -49,7 +49,7 @@ def test_api_devuelve_el_borrador_antes_de_cotizar(api):  # noqa: F811
     assert datos["productos"][0]["tax_estado"] == "desconocido"
     assert datos["pendientes"] == ["Laptop Lenovo: peso en kg"] and datos["cotizacion_aceptada"] is False
     texto = r["resumen_caso"]["texto"]
-    assert "*Pedido (sin cotizar):* Laptop Lenovo (Amazon) USD 650.00" in texto
+    assert "*Pedido (sin cotizar):* Laptop Lenovo (Amazon) 1 × USD 650.00" in texto
     assert "Pedir Laptop Lenovo: peso en kg" in texto and r["resumen_caso"]["campos_faltantes"] == []
 
 

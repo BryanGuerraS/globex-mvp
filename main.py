@@ -207,7 +207,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 
 3. PREGUNTAS GENERALES (FAQs):
    Si preguntan por dirección de Miami, plazos de entrega, entregas en Lima (recojo en oficina, delivery), envíos a provincias o agencias (Olva, Shalom), cómo funciona o formas de pago, usa 'consultar_faq_comercial'.
-   Si preguntan si un producto CONCRETO cumple una regla (si su cantidad está dentro del máximo, si nuevo cumple, figuras de colección, si la receta basta), llama a 'consultar_regla_producto' con el producto y la cantidad que dijo: el código responde sí o no. Si preguntan las reglas en general, usa 'consultar_faq_comercial' con tema 'reglas_productos'. Si preguntan la tarifa por kg, el peso mínimo o qué peso se cobra, usa tema 'tarifas'. No respondas "no tengo ese dato" para estos temas.
+   Si preguntan si un producto CONCRETO cumple una regla (si su cantidad está dentro del máximo, si nuevo cumple, figuras de colección, si la receta basta), llama a 'consultar_regla_producto' con el producto y la cantidad que dijo: el código responde sí o no. Si preguntan las reglas en general, usa 'consultar_faq_comercial' con tema 'reglas_productos'. Si preguntan la tarifa del flete por kg, el peso mínimo o qué peso se cobra, usa tema 'tarifas' (SOLO el flete aéreo y el desaduanaje de Globex). La tarifa de traslado a una agencia Shalom según el peso (S/ 12, 20, 30) es tema 'provincias'. Si la pregunta es puntual y no la responde la FAQ general (dónde ver el TAX real en el correo de compra, dirección de facturación de la tarjeta, si el transporte de Shalom se paga al recoger, cuántos trackings informar), usa 'buscar_faq' en vez de 'consultar_faq_comercial'. No respondas "no tengo ese dato" para estos temas.
    Los datos de Globex (direcciones, oficinas, agencias, horarios, socios, plazos) SOLO salen de 'consultar_faq_comercial'.
    Si el cliente hace varias preguntas en un mensaje, usa 'buscar_faq' para todas (también las de dirección, plazos o pagos): pásalas por separado en 'preguntas' y respóndelas en una sola llamada con sus 'ids'.
    Para CUALQUIER otra pregunta sobre el servicio (TAX y free tax, identificador GX, campos de la dirección en la tienda, tracking, documentos, compras en tiendas, Shalom, consolidación, reempaque, pagos, recojo, plazos de un caso, incidencias...), llama a 'buscar_faq' con la pregunta del cliente. Elige la candidata que responde lo que el cliente preguntó, con los datos que ya dio (nunca una que le pida un dato que ya mencionó), y llama a 'enviar_faq' con su id: Globix envía esa respuesta aprobada tal cual.
@@ -929,6 +929,7 @@ TEXTO_PIDE_PESO = "¿Cuánto pesa aproximadamente en kg? 📦"  # texto aprobado
 MAX_PREGUNTAS_FAQ = 4  # preguntas de la base ampliada que se responden en un mismo mensaje
 
 
+_PIDE_PERSONA = re.compile(r"\b(?:asesor|asesora|persona|humano|alguien del equipo|ejecutivo)\b")
 _PREGUNTA_GENERAL = re.compile(r"\b(?:en general|en t[eé]rminos generales|por lo general|normalmente|"
                                r"usualmente|generalmente|de manera general|en principio)\b")
 _LLAMADA_FAQ_EN_TEXTO = re.compile(r'\{\s*"ids"\s*:\s*\[[^\]]*\][^{}]*\}')
@@ -1056,7 +1057,8 @@ def ejecutar_herramienta(
                     "instruccion": "El catálogo tiene el peso de estos productos: úsalo y llama a "
                                    "calcular_cotizacion. Pide al cliente solo lo que siga faltando."}, None
         # Solo falta el peso de un producto (y el catálogo no lo tiene): texto aprobado, sin redactar
-        if len(items) == 1 and datos["pendientes"] == [f"{items[0]['producto'] or 'P1'}: peso en kg"]:
+        if (len(items) == 1 and datos["pendientes"] == [f"{items[0]['producto'] or 'P1'}: peso en kg"]
+                and not estado.get("ya_pidio_peso") and not _PIDE_PERSONA.search(texto_consolidado.lower())):
             return {"registrado": True, "pide_peso": True, "faltan": datos["pendientes"]}, TEXTO_PIDE_PESO
         return {"registrado": True, "faltan": datos["pendientes"],
                 "instruccion": "Si ya están todos los datos, llama a calcular_cotizacion. "
@@ -1367,6 +1369,10 @@ async def _procesar_turno(
     # 🛑 El escape a atención humana (T13 / F42) lo decide el LLM con la
     # herramienta 'derivar_a_asesor', según la intención y no por palabras sueltas.
 
+    # 👤 Nombre dicho en cualquier mensaje ("Soy Lucía Mena…"), en la ruta común de todos los canales
+    if not (obtener_chat(chat_id) or {}).get("esperando_nombre"):
+        capturar_nombre(chat_id, texto_consolidado)
+
     # 🛡️ 2. GUARDRAIL DE MERCANCÍA RESTRINGIDA / SUNAT (CE11, CE12, F28, F31)
     alerta_aduanera = verificar_mercancia_restringida(texto_consolidado)
     if alerta_aduanera:
@@ -1397,6 +1403,7 @@ async def _procesar_turno(
         "pesos_referenciales": [],
         "nombre": nombre,
         "primer_contacto": not previas_del_bot,
+        "ya_pidio_peso": any(TEXTO_PIDE_PESO in (m or "") for m in previas_del_bot),
         "menu": None,
     }
     textos_cliente = [
@@ -1621,6 +1628,9 @@ def registrar_derivacion(chat_id: str, motivo: str, detalle: str = ""):
     Nunca interrumpe la respuesta al cliente: cualquier error solo se registra.
     """
     try:
+        mensajes = [m["texto"] for m in obtener_mensajes_chat(chat_id) if m.get("emisor") == "cliente"]
+        if mensajes:
+            borrador.completar_con_mensaje(chat_id, mensajes[-1])
         resumen = construir_resumen(chat_id, motivo, detalle)
         guardar_derivacion(chat_id, motivo, resumen)
         print(f"📋 [Derivación] [{chat_id}] {motivo}")

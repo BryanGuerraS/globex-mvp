@@ -104,7 +104,7 @@ catálogo de pesos: nada supuesto.
 | `precio` | Precio unitario en USD; `null` si aún no lo dio |
 | `peso` | Peso de esa línea en kg; `null` si no lo dio o si dio un peso total del pedido |
 | `origen_peso` | `cliente`, `catalogo` (peso referencial de Globix), `peso_total` o `null` |
-| `tax_estado` | `confirmado` (dio el monto), `cero_confirmado` (dijo TAX 0), `incluido_sin_desglose` (el precio ya lo incluye o la tienda no lo cobra) o `desconocido` (se estima el 7 %) |
+| `tax_estado` | `confirmado` (dio el monto, se suma), `cero_confirmado` (dijo TAX 0), `incluido_desglosado` (el precio final ya incluye un TAX cuyo monto dijo; `tax_tienda_usd` trae ese monto), `incluido_sin_desglose` (el precio ya lo incluye o la tienda no lo cobra) o `desconocido` (se estima el 7 %) |
 | `tipo_precio` | `base` (se suma el TAX) o `final` (ya lo incluye) |
 | `tax_tienda_usd`, `sin_tax` | Los mismos datos en el formato anterior (compatibilidad) |
 | `peso_total_kg` | Peso único del pedido, si el cliente lo dio así |

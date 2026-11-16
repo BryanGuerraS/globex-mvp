@@ -8,7 +8,7 @@ import main
 from guardrails import verificar_mercancia_restringida as verificar
 from tests.test_eval_api import KEY, api  # noqa: F401  (fixture)
 from tests.test_tool_calling import _respuesta, _tool_call
-from validaciones import extraer_nombre, nombre_en_frase, validar_productos
+from validaciones import extraer_nombre, nombre_en_frase, validar_datos_parciales, validar_productos
 
 
 @pytest.mark.parametrize("texto, nombre", [
@@ -108,7 +108,7 @@ def test_resumen_separa_cotizacion_previa_de_la_correccion(api):  # noqa: F811
         "corrida_id": "V2", "id": "VIG-2",
         "mensajes": ["Unas zapatillas de 120 dólares, 1.5 kg", "Perdón, en realidad cuestan 140 dólares"]}).json()
     texto = r["resumen_caso"]["texto"]
-    assert "*Pedido vigente (sin recotizar):* zapatillas USD 140.00, 1.5 kg" in texto
+    assert "*Pedido vigente (sin recotizar):* zapatillas 1 × USD 140.00, 1.5 kg" in texto
     assert "*Cotización previa:* total USD" in texto and "USD 120.00" not in texto
     assert r["datos_recopilados"]["productos"][0]["precio"] == 140.0
     assert r["datos_recopilados"]["productos"][0]["id"] == "P1"
@@ -189,3 +189,49 @@ def test_precio_unitario_desde_un_total_por_cantidad():
     unitario = _total({"producto": "zapatillas", "precio_unitario_usd": 90, "cantidad": 2, "peso_kg": 2}, texto)
     total = _total({"producto": "zapatillas", "precio_unitario_usd": 180, "peso_kg": 2}, texto)
     assert unitario == total
+
+
+def test_tax_cero_dicho_queda_como_cero_confirmado():
+    """VCHAT001: 'precio final USD 17,80, con TAX confirmado de USD 0 incluido' -> tax_tienda_usd = 0."""
+    textos = ["El precio final es USD 17,80, con TAX confirmado de USD 0 incluido. Pesa 0,38 kg con embalaje."]
+    bruto = {"producto": "estuche", "precio_unitario_usd": 17.80, "peso_kg": 0.38, "sin_tax": True}
+    productos, _ = validar_productos({"productos": [bruto]}, textos)
+    datos = borrador.construir(productos, [bruto], None, textos=textos)
+    api = borrador.productos_para_api(datos)[0]
+    assert api["tax_estado"] == "cero_confirmado" and api["tax_tienda_usd"] == 0.0
+
+
+def test_nombre_corregido_y_pendientes_reales(api):  # noqa: F811
+    """VCHAT005/007: 'mi nombre correcto es…' reemplaza al anterior; el peso dado al pedir asesor ya no
+    queda como pendiente; los pendientes incluyen continuar la atención y el TAX desconocido."""
+    cliente, con_llm = api
+    con_llm([
+        _respuesta(tool_calls=[_tool_call("r1", "registrar_datos_pedido", {"productos": [
+            {"producto": "mochila", "tienda": "Amazon", "precio_unitario_usd": 60}]})]),
+        _respuesta(tool_calls=[_tool_call("d1", "derivar_a_asesor", {"motivo": "continuar"})]),
+    ])
+    r = cliente.post("/api/eval/caso", headers=KEY, json={"corrida_id": "V3", "id": "VIG-3", "mensajes": [
+        "Soy Lucía Mena. Quiero cotizar una mochila de Amazon de 60 dólares.",
+        "Mi nombre correcto es Lucía Leiva. Pesa 1,2 kg con caja. Quiero que un asesor continúe."]}).json()
+    texto = r["resumen_caso"]["texto"]
+    assert "*Cliente:* Lucía Leiva" in texto and "Mena" not in texto.split("*Mensajes")[0]
+    assert "1.2 kg" in texto and "peso en kg" not in texto
+    assert "Continuar la atención que pidió el cliente" in texto and "Confirmar el TAX de mochila" in texto
+    assert "*Mensajes del cliente:*" in texto and "Soy Lucía Mena" in texto
+
+
+def test_usado_en_el_mensaje_aunque_el_llm_no_lo_diga():
+    """VMER012: 'juguetes que mi hijo ya utilizó' no se aprueba por estar dentro del máximo."""
+    from guardrails import respuesta_regla
+    texto = "Quiero enviar tres juguetes que mi hijo ya utilizó. ¿Estar por debajo de cuatro hace que puedan traerlos?"
+    assert "solo pueden ingresar a Perú si son *nuevos*" in respuesta_regla(texto, "juguetes, 3 unidades")
+    assert verificar("La tienda vende adhesivo para colocar pestañas postizas")["tipo"] == "prohibido"
+
+
+def test_monto_de_tax_incluido_se_registra_aunque_el_llm_no_lo_pase():
+    """VCHAT007: 'ese total ya incluye USD 2,94 de TAX' -> tax_tienda_usd 2.94 en datos_recopilados."""
+    textos = ["Cotiza una cartuchera nueva de Amazon, una unidad, USD 44,94 finales; ese total ya incluye USD 2,94 de TAX."]
+    bruto = {"producto": "cartuchera", "precio_unitario_usd": 44.94, "sin_tax": True}
+    items, _ = validar_datos_parciales({"productos": [bruto]}, textos)
+    api = borrador.productos_para_api(borrador.construir(items, [bruto], None, textos=textos))[0]
+    assert api["tax_estado"] == "incluido_desglosado" and api["tax_tienda_usd"] == 2.94 and api["sin_tax"] is True

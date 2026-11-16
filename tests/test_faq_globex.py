@@ -153,3 +153,14 @@ def test_consultar_regla_producto_responde_por_codigo(entorno):  # noqa: F811
     ])
     assert "No: el máximo es de 5 pares de calzado por consignatario, así que 6 lo supera" in _texto(enviado)
     assert main.obtener_chat("PE.regla")["bot_activo"] == 1
+
+
+@pytest.mark.parametrize("faq_id, frase", [
+    ("G013", "no realizamos envíos desde otros países"),
+    ("G059", "No realizamos ese recorrido"),
+    ("G060", "no hacemos envíos en sentido inverso"),
+])
+def test_rutas_niegan_claro_y_sin_asesor(faq_id, frase):
+    texto = faq_globex.entradas()[faq_id]["respuesta"]
+    assert frase in texto and "Estados Unidos a Perú" in texto or "Estados Unidos hacia Perú" in texto
+    assert "asesor" not in texto

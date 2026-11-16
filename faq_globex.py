@@ -60,6 +60,8 @@ PALABRAS_KB = {
     "metodos_pago": "cómo pago formas de pago Yape Plin tarjeta transferencia",
     "reglas_productos": "ropa nueva usada cumple condición estado máximo cuántos perfumes cremas maquillaje "
                         "calzado zapatos juguetes figuras de colección shampoo receta no admitidos se puede traer",
+    "tax_incluido": "precio final con tax incluido agrego otro 7 % sumo impuesto otra vez total ya incluye "
+                    "tax no separa el impuesto desglose",
     "tarifas": "tarifa por kilo cuánto cobran por kg precio por kilogramo peso mínimo facturable desaduanaje "
                "peso que se cobra",
 }  # inicio de "Orientación al asesor" cuando no hace falta
@@ -107,12 +109,53 @@ def leer_preguntas(ruta: str = ARCHIVO_PREGUNTAS) -> Dict[str, str]:
     return {k: " ".join(v) for k, v in preguntas.items()}
 
 
+# Respuestas de rutas actualizadas (16/11, decisión del usuario: seguir el criterio del juez del equipo).
+# Las del banco de 132 decían "un asesor debe confirmar", y el juez pide una negativa clara: Globex hace
+# courier de EE. UU. a Perú y no ofrece otras rutas ni excepciones mediante asesor. El archivo
+# conocimiento/respuestas_globex_132.txt no se modifica.
+RESPUESTAS_ACTUALIZADAS = {
+    "G013": ("Por el momento no realizamos envíos desde otros países (por ejemplo, España) hacia Perú. "
+             "Nuestro servicio es courier de Estados Unidos a Perú."),
+    "G059": ("No realizamos ese recorrido: un envío directo de China a Perú, sin pasar por nuestro almacén de Miami, "
+             "queda fuera del servicio. Globex hace courier de Estados Unidos a Perú; lo que cuenta es desde dónde se "
+             "despacha el paquete, no el país de la marca. Si el vendedor puede enviarlo a nuestro almacén de Miami, "
+             "desde ahí sí te lo traemos a Perú."),
+    "G060": ("Nuestro servicio cubre Estados Unidos hacia Perú; no hacemos envíos en sentido inverso, "
+             "de Perú a Estados Unidos."),
+    # Banco de desarrollo de 137 (16/11, el usuario pidió ajustarlas al criterio del juez):
+    # VFAQ002: los campos pueden venir traducidos; VFAQ019: G056 empezaba con "No" ante "¿puedo
+    # informarme antes?"; VFAQ024: G093 decía "ambos" y el cliente puede tener tres o más trackings.
+    "G002": ("En *Address line 1* (o *Dirección principal*) escribe 7270 NW 35TH TERRACE y en *Address line 2* "
+             "(o *Apartamento/Suite*) coloca SUITE 101. Tu nombre no va en la suite: va en el campo del "
+             "destinatario, con GX."),
+    "G056": ("Sí. Puedes informarte antes de comprar, sin iniciar una operación ni enviar documentos. Así funciona: "
+             "compras en la tienda de EE. UU. usando la dirección de nuestro almacén en Miami, la tienda entrega ahí "
+             "y Globex lleva tu compra a Perú."),
+    "G093": ("Informa todos los trackings (dos, tres o los que sean) y a qué productos o paquetes corresponden. Si son "
+             "parte de una misma cotización, en Miami se espera a que lleguen todos y luego se consolidan en una sola "
+             "guía para el envío a Perú. Los trackings originales se conservan; no se sustituyen por uno inventado."),
+}
+
+# Palabras de búsqueda extra: la pregunta del banco no siempre usa las mismas palabras que el cliente
+PALABRAS_EXTRA = {
+    "G002": "dirección principal apartamento suite campos separados formulario traducido address line 1 line 2",
+    "G056": "comparando tiendas aún no compro sin orden antes de pagar información cómo usar Miami",
+    "G093": "tres trackings varios códigos de seguimiento paquetes divididos misma cotización",
+}
+
+
 @lru_cache(maxsize=1)
 def entradas() -> Dict[str, Dict]:
     datos = leer_respuestas()
     for gid, pregunta in leer_preguntas().items():
         if gid in datos:
             datos[gid]["pregunta"] = pregunta
+    for gid, texto in RESPUESTAS_ACTUALIZADAS.items():
+        if gid in datos:
+            datos[gid]["respuesta"] = texto
+    for gid, extra in PALABRAS_EXTRA.items():
+        if gid in datos:
+            datos[gid]["pregunta"] = f"{datos[gid].get('pregunta', '')} {extra}"
     # Las FAQ aprobadas del menú (knowledge_base.py) también son candidatas: cubren datos que
     # las 132 no tienen (por ejemplo, que a provincias solo se envía por Shalom y no por Olva)
     from knowledge_base import KB_GLOBEX

@@ -500,6 +500,23 @@ def _bases_desde_total(tax: Optional[float], cantidad: int, textos: List[str]) -
 _DICE_TOTAL = re.compile(r"\b(?:en\s+total|total|inclu\w*|con\s+(?:el\s+|los\s+)?(?:tax|taxes|impuestos?))\b")
 
 
+_MONTO_TAX_INCLUIDO = re.compile(
+    r"\binclu\w*\W+(?:\w+\W+){0,2}?(?:usd\s*|\$\s*)?(\d+(?:[.,]\d+)?)\s*(?:usd\s*|dolares\s*)?de\s+(?:tax|taxes|impuestos?)\b")
+
+
+def tax_incluido_dicho(textos: List[str]) -> Optional[float]:
+    """Monto de TAX que el cliente dice que su precio ya incluye ("ese total ya incluye USD 2,94 de TAX")."""
+    montos = _MONTO_TAX_INCLUIDO.findall(_sin_tildes(" ".join(textos).lower()))
+    valores = {float(m.replace(",", ".")) for m in montos}
+    return valores.pop() if len(valores) == 1 else None
+
+
+def tax_cero_dicho(textos: List[str]) -> bool:
+    """El cliente dijo un TAX de cero ("el checkout confirma TAX de USD 0,00")."""
+    texto = _sin_tildes(" ".join(textos).lower())
+    return bool(re.search(r"\b(?:tax|taxes|impuestos?)\W+(?:\w+\W+){0,3}?(?:usd\s*|\$\s*)?0(?:[.,]0+)?(?![\d.,]*\d)", texto))
+
+
 def _tax_dicho(args: dict, textos: List[str]) -> Optional[float]:
     """Monto de TAX mayor a 0 que el LLM pasó y que el cliente sí dijo (None si no)."""
     tax = _a_numero(args.get("tax_tienda_usd"))
@@ -614,7 +631,7 @@ def validar_datos_parciales(
 
 # Nombre dicho dentro de una frase, en cualquier mensaje ("Hola, me llamo Ana y quiero cotizar")
 _NOMBRE_EN_FRASE = re.compile(
-    r"(?:\bme\s+llamo|\bmi\s+nombre\s+es)\s+(.+?)(?=\s*(?:[,.;:!?¿¡]|\by\b|\be\b|\bpero\b|\bquiero\b|$))",
+    r"(?:\bme\s+llamo|\bmi\s+nombre\s+(?:correcto\s+|real\s+|completo\s+|verdadero\s+)?es)\s+(.+?)(?=\s*(?:[,.;:!?¿¡]|\by\b|\be\b|\bpero\b|\bquiero\b|$))",
     re.IGNORECASE,
 )
 _SOY_NOMBRE = re.compile(r"^(?i:(?:hola|buenas|buenos\s+d[ií]as|buenas\s+tardes|buenas\s+noches)[,!.\s]+)?(?i:soy)\s+"

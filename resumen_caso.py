@@ -25,7 +25,7 @@ MOTIVOS = {
     "consulta": "Consulta que requiere revisión del asesor",
     "sin_derivar": "Sin derivación (vista previa del resumen para el asesor)",
 }
-ULTIMOS_MENSAJES = 3
+ULTIMOS_MENSAJES = 6  # todos los de un chat típico; antes 3 y se perdían hechos del inicio
 
 
 def _ultima_cotizacion(chat_id: str) -> Optional[Dict]:
@@ -96,13 +96,21 @@ def _pendientes(motivo: Optional[str], detalle: str, chat: Dict, cotizacion: Opt
         pendientes.append("Pedir " + ", ".join(cotizacion["pendientes_datos"]))
     elif cotizacion and cotizacion.get("aceptada", True):
         pendientes.append("Validar la cotización y enviar el PDF formal")
+    elif cotizacion and not cotizacion.get("intento", True):
+        pendientes.append("Preparar la cotización con estos datos")
     elif cotizacion:
         pendientes.append("Revisar los datos del pedido: Globix no pudo cotizarlo")
     else:
         pendientes.append("Entender la consulta y responder")
+    if motivo == "asesor":
+        pendientes.insert(0, "Continuar la atención que pidió el cliente")
+    sin_tax = [i["producto"] or "el producto" for i in (cotizacion or {}).get("items", [])
+               if i.get("tax_estado") == "desconocido" and i.get("precio") is not None]
+    if sin_tax:
+        pendientes.append(f"Confirmar el TAX de {', '.join(sin_tax)} (no lo dio; se estimó el 7 %)")
     if not chat.get("nombre_cliente"):
         pendientes.append("Nombre del cliente (Globix ya se lo pidió)")
-    return pendientes[:3]
+    return pendientes[:4]
 
 
 def campos_faltantes(resumen: Optional[str]) -> List[str]:
@@ -165,8 +173,9 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
     items = _productos_del_borrador(borrador) if borrador else _productos_de(cotizacion)
     if borrador:  # para el peso total y los pendientes, el borrador hace de "cotización"
         cotizacion = {"peso_total_kg": borrador.get("peso_total_kg"),
-                      "pendientes_datos": borrador.get("pendientes", []),
-                      "aceptada": bool((borrador.get("ultima_cotizacion") or {}).get("aceptada"))} if items else None
+                      "pendientes_datos": borrador.get("pendientes", []), "items": items,
+                      "aceptada": bool((borrador.get("ultima_cotizacion") or {}).get("aceptada")),
+                      "intento": bool(borrador.get("ultima_cotizacion"))} if items else None
     producto = ", ".join(i["producto"] for i in items if i["producto"])
     servicio = chat.get("servicio") or "—"
     lineas = [
@@ -184,7 +193,7 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
                 texto += f" ({item['tienda']})"
             if item["precio"] is not None:
                 precio = f"USD {item['precio']:,.2f}"
-                texto += f" {item['cantidad']} × {precio}" if item["cantidad"] > 1 else f" {precio}"
+                texto += f" {item['cantidad']} × {precio}"
             if item.get("origen_precio") == "derivado":
                 texto += " (total − TAX)"
             if item["peso"] is not None:
@@ -218,6 +227,6 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
 
     lineas.append("*Pendientes:* " + "; ".join(_pendientes(motivo, detalle, chat, cotizacion, mensajes)))
     if mensajes:
-        lineas.append("*Últimos mensajes del cliente:*")
+        lineas.append("*Mensajes del cliente:*")
         lineas += [f"• {m[:200]}" for m in mensajes]
     return "\n".join(lineas)

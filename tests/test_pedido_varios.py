@@ -71,7 +71,7 @@ def test_herramienta_con_varios_productos_cotiza_y_resume(entorno):  # noqa: F81
     assert "USD 202.70" in texto_bot_registrado("PE.ped1")
     chat = main.obtener_chat("PE.ped1")
     resumen = main.construir_resumen("PE.ped1", "asesor")
-    assert "Polos (Amazon) 2 × USD 20.00, 1 kg" in resumen and "Zapatillas Nike USD 120.00, 1.5 kg" in resumen
+    assert "Polos (Amazon) 2 × USD 20.00, 1 kg" in resumen and "Zapatillas Nike 1 × USD 120.00, 1.5 kg" in resumen
     assert chat["bot_activo"] == 1
 
 

@@ -39,7 +39,7 @@ def test_derivacion_tras_cotizar_guarda_resumen_completo(turno):
     assert chat["motivo_derivacion"] == "asesor" and chat["derivado_at"]
     r = chat["resumen_caso"]
     assert "Pidió hablar con un asesor" in r
-    assert "Zapatillas Nike USD 120.00, 1.5 kg, total USD" in r
+    assert "Zapatillas Nike 1 × USD 120.00, 1.5 kg, total USD" in r
     assert "Aún no dio su nombre" in r
     assert "• quiero hablar con un asesor" in r and "• zapatillas nike de 120 dólares, 1.5 kg" in r
 
@@ -107,7 +107,7 @@ def test_resumen_trae_los_cuatro_campos_del_e3(turno):
                  [_respuesta(tool_calls=[_tool_call("t2", "derivar_a_asesor", {"motivo": "pide asesor"})])])
     r = chat["resumen_caso"]
     assert "*Necesidad:* Continuar con la cotización de Zapatillas Nike" in r
-    assert "*Pendientes:* Validar la cotización y enviar el PDF formal; Nombre del cliente" in r
+    assert "*Pendientes:* Continuar la atención que pidió el cliente; Validar la cotización y enviar el PDF formal" in r
     assert campos_faltantes(r) == []
 
 

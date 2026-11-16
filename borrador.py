@@ -9,11 +9,12 @@ de evaluación, así WhatsApp y la API usan la misma fuente.
 Solo guarda datos ya validados contra el texto del cliente (validaciones.py): nada inventado.
 """
 
+import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
 from database import ahora, guardar_borrador, obtener_borrador
-from validaciones import precio_derivado
+from validaciones import precio_derivado, tax_cero_dicho, tax_incluido_dicho
 
 # Estados del TAX de tienda (guía §2.6)
 TAX_CONFIRMADO = "confirmado"            # el cliente dijo el monto
@@ -40,6 +41,14 @@ def _linea(i: int, item: Dict, bruto: Dict, pesos_catalogo=(), peso_total: Optio
            textos=()) -> Dict:
     tax = item.get("tax")
     estado = estado_tax(bruto, tax) if item.get("precio_unitario") is not None else TAX_DESCONOCIDO
+    # "TAX confirmado de USD 0" aunque el LLM lo marque como incluido: es un cero confirmado (VCHAT001)
+    if estado == TAX_INCLUIDO and tax == 0 and tax_cero_dicho(list(textos)):
+        estado = TAX_CERO
+    # "ese total ya incluye USD 2,94 de TAX" aunque el LLM no pase el monto (VCHAT007)
+    monto_incluido = tax_incluido_dicho(list(textos)) if estado == TAX_INCLUIDO else None
+    if monto_incluido:
+        estado = TAX_INCLUIDO_DESGLOSADO
+        bruto = {**bruto, "tax_tienda_usd": monto_incluido}
     peso = item.get("peso_kg")
     if peso is not None:
         origen = "catalogo" if any(abs(peso - p) < 1e-9 for p in pesos_catalogo) else "cliente"
@@ -130,6 +139,23 @@ def registrar_intento(chat_id: str, cotizacion: Dict):
     guardar(chat_id, anterior, cotizacion)
 
 
+_PESO_EN_TEXTO = re.compile(r"(\d+(?:[.,]\d+)?)\s*(?:kg|kilos?|kilogramos?)(?![a-z])", re.IGNORECASE)
+
+
+def completar_con_mensaje(chat_id: str, texto: str):
+    """Si el último mensaje trae el único peso que faltaba ("Pesa 0,53 kg. Quiero un asesor"), lo
+    registra: el LLM a veces deriva sin guardarlo y el resumen pedía un dato ya dado (VCHAT007)."""
+    datos = obtener_borrador(chat_id)
+    if not datos or not vigente(datos) or datos.get("peso_total_kg") is not None:
+        return
+    sin_peso = [l for l in datos.get("lineas", []) if l.get("peso_kg") is None]
+    pesos = _PESO_EN_TEXTO.findall(texto or "")
+    if len(sin_peso) == 1 and len(pesos) == 1:
+        sin_peso[0]["peso_kg"] = float(pesos[0].replace(",", "."))
+        sin_peso[0]["origen_peso"] = "cliente"
+        guardar(chat_id, {**datos, "pendientes": pendientes_de(datos["lineas"], None)})
+
+
 def leer(chat_id: str) -> Optional[Dict]:
     return obtener_borrador(chat_id)
 
@@ -142,7 +168,8 @@ def productos_para_api(borrador: Optional[Dict]) -> List[Dict]:
         salida.append({
             "id": linea["id"], "producto": linea["producto"] or "", "tienda": linea["tienda"] or "",
             "precio": linea["precio_unitario_usd"], "cantidad": linea["cantidad"], "peso": linea["peso_kg"],
-            "tax_tienda_usd": linea["tax"]["monto_usd"] if estado in (TAX_CONFIRMADO, TAX_CERO) else None,
+            "tax_tienda_usd": (linea["tax"]["monto_usd"]
+                               if estado in (TAX_CONFIRMADO, TAX_CERO, TAX_INCLUIDO_DESGLOSADO) else None),
             "sin_tax": True if estado in (TAX_INCLUIDO, TAX_INCLUIDO_DESGLOSADO) else None,
             "tax_estado": estado, "tipo_precio": linea["tipo_precio"], "origen_peso": linea["origen_peso"],
             "origen_precio": linea.get("origen_precio"),

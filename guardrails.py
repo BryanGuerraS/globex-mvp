@@ -34,6 +34,10 @@ RESTRICCIONES_ADUANA = {
             "biberon",
             "pegamento de pestanas",
             "pegamento para pestanas",
+            "pegamento para colocar pestanas",
+            "adhesivo de pestanas",
+            "adhesivo para pestanas",
+            "adhesivo para colocar pestanas",
         ],
         "entidad": "PROHIBICIÓN ABSOLUTA",
         "mensaje": (
@@ -124,7 +128,8 @@ _PIDE_MAXIMOS = re.compile(r"(?<![a-z])(?:cuant[oa]s|maxim[oa]s?|limites?|cantid
 # (no se deriva). Texto aprobado por el usuario el 15/11 (ya no ofrece cotizar).
 _PRODUCTO_SOLO_NUEVO = (r"(?:ropa|prendas?|polos?|camisas?|camisetas?|chaquetas?|casacas?|pantalon(?:es)?|"
                         r"vestidos?|polera|poleras|blusas?|abrigos?|repuestos?|autopartes?|juguetes?)")
-_USADO = r"(?:usad[oa]s?|de segunda(?: mano)?|seminuev[oa]s?|ya (?:las?|los?) use|ya use)"
+_USADO = (r"(?:usad[oa]s?|utilizad[oa]s?|de segunda(?: mano)?|seminuev[oa]s?|"
+          r"ya (?:(?:las?|los?|lo|la) )?(?:use|uso|usaron|usamos|utilice|utilizo|utilizaron|utilizamos))")
 _SOLO_NUEVOS = re.compile(
     rf"(?<![a-z0-9]){_PRODUCTO_SOLO_NUEVO}(?![a-z0-9])(?:\W+\w+){{0,10}}?\W+{_USADO}(?![a-z0-9])"
     rf"|(?<![a-z0-9]){_USADO}(?:\W+\w+){{0,4}}?\W+{_PRODUCTO_SOLO_NUEVO}(?![a-z0-9])"
@@ -321,7 +326,8 @@ def respuesta_regla(texto: str, producto: Optional[str] = None, revisar_alerta: 
     `texto` es el mensaje del cliente: la cantidad y el estado se toman de ahí (anclados), no del LLM.
     """
     base = f"{producto or ''} {texto or ''}"
-    alerta = verificar_mercancia_restringida(producto or texto or "") if revisar_alerta else None
+    alerta = ((producto and verificar_mercancia_restringida(producto)) or verificar_mercancia_restringida(texto or "")
+              if revisar_alerta else None)
     if alerta and alerta["tipo"] in ("prohibido", "no_admitido", "receta", "baterias", "solo_nuevos"):
         return alerta["mensaje"]
     info = limite_de(producto or "") or limite_de(texto or "")

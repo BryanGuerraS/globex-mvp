@@ -104,7 +104,7 @@ def test_varios_turnos_recopila_datos_y_devuelve_resumen(api):
     assert datos["productos"][0]["peso"] == 2.5 and datos["productos"][0]["tienda"] == "Amazon"
     resumen = r["resumen_caso"]
     assert resumen["publicado"] is False and resumen["campos_faltantes"] == []
-    assert "Laptop Lenovo (Amazon) USD 650.00, 2.5 kg" in resumen["texto"]
+    assert "Laptop Lenovo (Amazon) 1 × USD 650.00, 2.5 kg" in resumen["texto"]
     assert r["cotizacion"]["emitida"] and r["cotizacion"]["total_proforma"] > 650
 
 

@@ -81,6 +81,14 @@ KB_GLOBEX = {
             "pestañas."
         ),
     },
+    # VFAQ021 (16/11): no había respuesta aprobada; coincide con lo que hace el motor (TAX incluido -> 0)
+    "tax_incluido": {
+        "titulo": "Precio final con TAX incluido: no se suma otro 7 %",
+        "contenido": (
+            "🧾 Si tu precio final ya incluye el TAX, usa ese precio tal cual: no se le suma otro 7 % ni hace falta "
+            "separar el impuesto. El 7 % solo se estima cuando no sabes el TAX y tu precio no lo incluye."
+        ),
+    },
     "tarifas": {
         "titulo": "Tarifa del courier: USD 9 por kg, mínimo 1 kg, desaduanaje USD 9",
         "contenido": (
@@ -118,6 +126,7 @@ TEMAS_FAQ = {
     "productos": "reglas_productos",
     "tarifas": "tarifas",
     "tarifa": "tarifas",
+    "tax_incluido": "tax_incluido",
 }
 
 
