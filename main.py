@@ -200,7 +200,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 
    - CUADRANTE 2 [SEGUIMIENTO COURIER]:
      Si quiere saber el estado o la ubicación de SU paquete o pedido concreto (o que comprueben si Globex lo recibió): llama de inmediato a 'clasificar_como_seguimiento', con el código de tracking si lo dio y sin él si no; no le pidas el código antes (el asesor se lo pide).
-     Si pregunta en general cómo funciona el tracking (quién da el código, dónde se ve, qué hacer si son varios paquetes, qué significa "Delivered"), no es un seguimiento: usa 'buscar_faq'.
+     Si pregunta en general cómo funciona el tracking (quién da el código, dónde se ve, si debe informar varios trackings o qué hacer si su compra viene en varios paquetes, qué significa "Delivered"), no es un seguimiento: usa 'buscar_faq'. Solo es seguimiento si pide saber DÓNDE está su paquete o si Globex ya lo recibió.
 
    - CUADRANTE 3 [COTIZACIÓN VIAJERO]:
      Si menciona "viajero" o "maleta": llama a 'clasificar_como_viajero'.
@@ -1149,6 +1149,8 @@ def ejecutar_herramienta(
     # BASE DE CONOCIMIENTO (FAQs)
     if nombre_funcion == "consultar_faq_comercial":
         # Primero el tema que eligió el LLM; si no es uno conocido, las palabras del cliente
+        if str(args.get("tema", "")).lower().startswith("direccion") and re.search(r"factur", texto_consolidado.lower()):
+            return {"error": "Es una pregunta puntual sobre la dirección de facturación: usa buscar_faq."}, None
         info_faq = (
             buscar_faq_por_tema(args.get("tema"))
             or buscar_faq_comercial(texto_consolidado)
@@ -1180,7 +1182,16 @@ def ejecutar_herramienta(
             candidatos = faq_globex.candidatos_para_llm(pregunta, k=5)
             estado.setdefault("candidatos_faq", []).extend(c["id"] for c in candidatos)
             resultados.append({"pregunta": pregunta, "candidatos": candidatos})
-        return {"busquedas": resultados,
+        # El LLM a veces resume la pregunta y pierde datos ("¿puedo contratar ese trayecto?" sin "Madrid"):
+        # también van las candidatas del mensaje completo del cliente, aparte
+        vistos = {c["id"] for r in resultados for c in r["candidatos"]}
+        extra = [c for c in faq_globex.candidatos_para_llm(texto_consolidado, k=3) if c["id"] not in vistos]
+        estado.setdefault("candidatos_faq", []).extend(c["id"] for c in extra)
+        if extra:
+            resultados_extra = {"candidatos_del_mensaje_completo": extra}
+        else:
+            resultados_extra = {}
+        return {"busquedas": resultados, **resultados_extra,
                 "instruccion": "Para cada pregunta elige la candidata que la responde (si ninguna la responde, "
                                "omítela) y llama una sola vez a enviar_faq con todos los ids."}, None
 

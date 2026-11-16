@@ -108,6 +108,10 @@ def _pendientes(motivo: Optional[str], detalle: str, chat: Dict, cotizacion: Opt
                if i.get("tax_estado") == "desconocido" and i.get("precio") is not None]
     if sin_tax:
         pendientes.append(f"Confirmar el TAX de {', '.join(sin_tax)} (no lo dio; se estimó el 7 %)")
+    incluido = [i["producto"] or "el producto" for i in (cotizacion or {}).get("items", [])
+                if i.get("tax_estado") == "incluido_sin_desglose"]
+    if incluido:
+        pendientes.append(f"El precio de {', '.join(incluido)} ya incluye el TAX (sin desglose): no sumar otro 7 %")
     if not chat.get("nombre_cliente"):
         pendientes.append("Nombre del cliente (Globix ya se lo pidió)")
     return pendientes[:4]
@@ -192,10 +196,13 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
             if item["tienda"]:
                 texto += f" ({item['tienda']})"
             if item["precio"] is not None:
-                precio = f"USD {item['precio']:,.2f}"
-                texto += f" {item['cantidad']} × {precio}"
-            if item.get("origen_precio") == "derivado":
-                texto += " (total − TAX)"
+                derivado = (item.get("origen_precio") == "derivado" and item.get("tax_estado") == "confirmado"
+                            and item.get("tax_monto") is not None)
+                if derivado:  # el cliente dio el precio final con el TAX incluido: se muestra ese precio
+                    final = item["precio"] + item["tax_monto"] / max(item["cantidad"], 1)
+                    texto += f" {item['cantidad']} × USD {final:,.2f} (precio final, incluye TAX USD {item['tax_monto']:,.2f})"
+                else:
+                    texto += f" {item['cantidad']} × USD {item['precio']:,.2f}"
             if item["peso"] is not None:
                 texto += f", {item['peso']:g} kg"
                 if item.get("origen_peso") == "catalogo":
@@ -207,7 +214,8 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
                 texto += f" (incluye TAX USD {item['tax_monto']:,.2f})"
             elif item.get("tax_estado") == "cero_confirmado":
                 texto += " (TAX 0 confirmado)"
-            elif item.get("tax_estado") == "confirmado" and item.get("tax_monto") is not None:
+            elif (item.get("tax_estado") == "confirmado" and item.get("tax_monto") is not None
+                  and item.get("origen_precio") != "derivado"):
                 texto += f" (TAX USD {item['tax_monto']:,.2f})"
             partes.append(texto)
         if cotizacion and cotizacion.get("peso_total_kg") is not None:
