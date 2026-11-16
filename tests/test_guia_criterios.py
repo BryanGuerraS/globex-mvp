@@ -235,3 +235,45 @@ def test_monto_de_tax_incluido_se_registra_aunque_el_llm_no_lo_pase():
     items, _ = validar_datos_parciales({"productos": [bruto]}, textos)
     api = borrador.productos_para_api(borrador.construir(items, [bruto], None, textos=textos))[0]
     assert api["tax_estado"] == "incluido_desglosado" and api["tax_tienda_usd"] == 2.94 and api["sin_tax"] is True
+
+
+# ---- El máximo se revisa antes de pedir precio o peso (16/11) ----
+@pytest.mark.parametrize("texto, detalle", [
+    ("Quiero cotizar 5 perfumes nuevos de Sephora", "5 unidades de perfumes"),
+    ("Quiero traer seis pares de zapatillas", "6 pares de calzado"),
+    ("Necesito cotizar tres botellas de shampoo", "3 unidades de shampoo"),
+])
+def test_pedido_sobre_el_maximo_se_detecta_en_el_mensaje(texto, detalle):
+    assert detalle in main.limite_en_mensaje(texto)["detalle"]
+
+
+@pytest.mark.parametrize("texto", ["¿5 perfumes cumplen el máximo?", "Quiero cotizar 3 perfumes",
+                                   "Quiero traer 6 figuras de colección"])
+def test_dentro_del_maximo_o_pregunta_no_deriva(texto):
+    assert main.limite_en_mensaje(texto) is None
+
+
+def test_pedido_sobre_el_maximo_no_pide_precio(api):  # noqa: F811
+    cliente, con_llm = api
+    con_llm([])  # no debe llegar al LLM
+    r = cliente.post("/api/eval/caso", headers=KEY, json={
+        "corrida_id": "L1", "id": "LIM-1", "pregunta": "Quiero cotizar 5 perfumes nuevos de Sephora"}).json()
+    assert "máximo por DNI es de 4 unidades de perfumes" in r["respuesta_bot"]
+    assert r["registros_acciones"]["bot_pausado"] and r["tipo_respuesta"] == "guardrail"
+
+
+def test_registrar_con_cantidad_sobre_el_maximo_deriva(api):  # noqa: F811
+    cliente, con_llm = api
+    con_llm([_respuesta(tool_calls=[_tool_call("r1", "registrar_datos_pedido", {"productos": [
+        {"producto": "juguetes", "cantidad": 5}]})])])
+    r = cliente.post("/api/eval/caso", headers=KEY, json={
+        "corrida_id": "L2", "id": "LIM-2", "pregunta": "Me cotizas cinco juguetes para mi sobrino, son 5 en total"}).json()
+    assert "máximo por consignatario es de 4 unidades de juguetes" in r["respuesta_bot"]
+
+
+@pytest.mark.parametrize("texto, tipo", [("Quiero traer una pistola real", "prohibido"),
+                                         ("Una pistola de agua para mi hijo", None),
+                                         ("Una pistola masajeadora", None)])
+def test_pistola_arma_si_y_de_agua_no(texto, tipo):
+    r = verificar(texto)
+    assert (r["tipo"] if r else None) == tipo

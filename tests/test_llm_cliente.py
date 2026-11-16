@@ -205,3 +205,18 @@ def test_otro_error_http_se_propaga():
     c = ClienteGroqConRespaldo([("principal", p), ("respaldo", Falso("respaldo"))])
     with pytest.raises(Exception):
         c.create(model="m")
+
+
+def test_cliente_mixto_usa_el_modelo_de_cada_proveedor():
+    """Regresiones con Groq y Cerebras gratuitas en un solo cliente: cada key con su nombre de modelo."""
+    vistos = []
+
+    class ConModelo(Falso):
+        def create(self, **kwargs):
+            vistos.append((self.nombre, kwargs["model"]))
+            return super().create(**kwargs)
+
+    g, c = ConModelo("groq", falla=True), ConModelo("cerebras")
+    cliente = ClienteGroqConRespaldo([("groq 1", g, "openai/gpt-oss-120b"), ("cerebras 1", c, "gpt-oss-120b")])
+    assert cliente.create(model="openai/gpt-oss-120b") == "respuesta de cerebras"
+    assert vistos == [("groq", "openai/gpt-oss-120b"), ("cerebras", "gpt-oss-120b")]

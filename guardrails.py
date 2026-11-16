@@ -22,6 +22,8 @@ RESTRICCIONES_ADUANA = {
             "arma",
             "armas",
             "revolver",
+            "pistola",
+            "pistolas",
             "rifle",
             "escopeta",
             "fusil",
@@ -206,6 +208,11 @@ _NEGACION_DESPUES = re.compile(
     r"^\W*(?:\w+\W+){0,4}?(?:no|ya\s+no)\s+(?:lo|la|los|las)\s+(?:compro|comprare|traigo|traere|voy|quiero|pido)")
 
 
+# "pistola" solo es arma si no es de agua, juguete, silicona, calor, pintura, pegamento...
+_PISTOLA_NO_ARMA = re.compile(r"(?<![a-z])pistolas?\s+(?:de\s+|para\s+)?(?:agua|juguete|silicona|calor|aire|pintura|"
+                              r"pegamento|clavos|grapas|masajes?|masajeadora|hidrogel|burbujas|riego|lavado|soldar)")
+
+
 def _negada(texto: str, inicio: int, fin: Optional[int] = None) -> bool:
     if _NEGACION.search(texto[max(0, inicio - 60):inicio].rstrip(" ,")):
         return True
@@ -220,7 +227,8 @@ def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
         for palabra, patron in _PATRONES[tipo]:
             # Búsqueda de la palabra completa (no como parte de otra palabra)
             m = next((m for m in patron.finditer(texto_normalizado)
-                      if not _negada(texto_normalizado, m.start(), m.end())),
+                      if not _negada(texto_normalizado, m.start(), m.end())
+                      and not (palabra.startswith("pistola") and _PISTOLA_NO_ARMA.match(texto_normalizado, m.start()))),
                      None)
             if m:
                 pide_detalle = "mensaje_detalle" in datos and _PIDE_MAXIMOS.search(texto_normalizado)

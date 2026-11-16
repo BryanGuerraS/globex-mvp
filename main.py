@@ -10,13 +10,16 @@ from datetime import datetime, timedelta
 import json
 import os
 import re
+import sys
+import tempfile
+from pathlib import Path
 import time
 import uuid
 from typing import Dict, List, Optional
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, Request, Response
 import httpx
-from llm_cliente import CEREBRAS_BASE_URL, crear_cliente, keys_de_respaldo, tomar_espera_ms
+from llm_cliente import CEREBRAS_BASE_URL, GROQ_BASE_URL, crear_cliente, crear_cliente_mixto, keys_de_respaldo, tomar_espera_ms
 
 # ✅ AHORA (Con todos los métodos necesarios):
 from database import (
@@ -48,6 +51,8 @@ from database import (
 )
 from guardrails import (
     SOLO_NUEVOS,
+    cantidad_del_producto,
+    limite_de,
     respuesta_regla,
     dice_que_es_nuevo,
     es_categoria_solo_nuevos,
@@ -95,7 +100,16 @@ app = FastAPI(title="Globex Atiende - Servidor Oficial Meta Cloud API")
 # siguiente key (llm_cliente.py).
 # LLM_PROVEEDOR=cerebras usa el mismo modelo en Cerebras (comparación de velocidad, 14/11); por defecto, Groq
 PROVEEDOR_LLM = os.getenv("LLM_PROVEEDOR", "groq").strip().lower()
-if PROVEEDOR_LLM == "cerebras":
+if PROVEEDOR_LLM == "mixto":
+    # Regresiones locales (decisión del usuario 16/11): keys de Groq y las GRATUITAS de Cerebras
+    # (CEREBRAS_API_KEY_RESPALDO, _2...); nunca CEREBRAS_API_KEY, que en local es la de pago.
+    client = crear_cliente_mixto([
+        ("groq", [os.getenv("GROQ_API_KEY")] + keys_de_respaldo(os.environ, "GROQ_API_KEY"),
+         GROQ_BASE_URL, os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")),
+        ("cerebras gratuita", keys_de_respaldo(os.environ, "CEREBRAS_API_KEY"), CEREBRAS_BASE_URL,
+         os.getenv("CEREBRAS_MODEL", "gpt-oss-120b")),
+    ])
+elif PROVEEDOR_LLM == "cerebras":
     client = crear_cliente(os.getenv("CEREBRAS_API_KEY"), keys_de_respaldo(os.environ, "CEREBRAS_API_KEY"),
                            CEREBRAS_BASE_URL)
 else:
@@ -973,6 +987,27 @@ def _sigue_siendo_usado(producto: Optional[str], texto_usado: str, textos_client
     return not any(dice_que_es_nuevo(t) for t in posteriores)
 
 
+def derivar_por_limite(chat_id: str, limite: Dict) -> str:
+    """Pedido por encima del máximo de su categoría: mensaje aprobado con el ámbito y derivación."""
+    print(f"🚨 [Límite por DNI] {limite['detalle']} en [{chat_id}]")
+    actualizar_clasificacion_chat(chat_id, servicio="Restringido (LÍMITE POR DNI)", estado="Listo para Asesor", paso=4)
+    actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+    registrar_derivacion(chat_id, "restringido", limite["detalle"])
+    return con_pedido_de_nombre(limite["mensaje"], chat_id)
+
+
+def limite_en_mensaje(texto: str) -> Optional[Dict]:
+    """El cliente pide traer o cotizar una cantidad que pasa el máximo de su categoría ("Quiero cotizar
+    5 perfumes"). Una pregunta ("¿5 perfumes cumplen?") la responde la regla por código, no esto."""
+    if "?" in texto:
+        return None
+    info = limite_de(texto)
+    if not info or info["excepcion"]:
+        return None
+    cantidad = cantidad_del_producto(texto, info["lim"])
+    return limite_por_dni_excedido([texto], cantidad) if cantidad else None
+
+
 def aplicar_guardrail(chat_id: str, alerta: Dict, texto_cliente: str = "") -> str:
     """Clasifica el chat según la alerta de mercancía (y deriva si corresponde); devuelve el mensaje."""
     entidad = alerta["entidad"]
@@ -1057,6 +1092,11 @@ def ejecutar_herramienta(
         if isinstance(validacion, str):
             return {"error": validacion}, None
         items, peso_total = validacion
+        for item in items:
+            limite = limite_por_dni_excedido([item["producto"]] if item["producto"] else textos_cliente,
+                                             item["cantidad"])
+            if limite:
+                return {"derivado": True}, derivar_por_limite(chat_id, limite)
         datos = borrador.guardar(chat_id, borrador.construir(items, args.get("productos") or [], peso_total,
                                                              estado["pesos_referenciales"], textos_cliente))
         # El catálogo va antes de pedirle el peso al cliente (el LLM a veces se lo salta)
@@ -1109,13 +1149,7 @@ def ejecutar_herramienta(
             limite = limite_por_dni_excedido([prod["producto"]] if prod["producto"] else textos_cliente,
                                              prod["cantidad"])
             if limite:
-                print(f"🚨 [Límite por DNI] {limite['detalle']} en [{chat_id}]")
-                actualizar_clasificacion_chat(
-                    chat_id, servicio="Restringido (LÍMITE POR DNI)", estado="Listo para Asesor", paso=4
-                )
-                actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
-                registrar_derivacion(chat_id, "restringido", limite["detalle"])
-                return {"derivado": True}, con_pedido_de_nombre(limite["mensaje"], chat_id)
+                return {"derivado": True}, derivar_por_limite(chat_id, limite)
         if GlobexPricingEngine.requiere_asesor_pedido(productos):
             print(f"💼 [Tope USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}] el pedido (+ TAX) supera el cálculo automático en [{chat_id}]")
             actualizar_clasificacion_chat(
@@ -1418,6 +1452,13 @@ async def _procesar_turno(
 
     # 🛡️ 2. GUARDRAIL DE MERCANCÍA RESTRINGIDA / SUNAT (CE11, CE12, F28, F31)
     alerta_aduanera = verificar_mercancia_restringida(texto_consolidado)
+    limite = None if alerta_aduanera else limite_en_mensaje(texto_consolidado)
+    if limite:
+        bot_reply = derivar_por_limite(chat_id, limite)
+        medidor.tipo_respuesta = "guardrail"
+        registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
+        await send_meta_whatsapp_message(chat_id, bot_reply)
+        return
     if alerta_aduanera:
         entidad = alerta_aduanera["entidad"]
         print(
@@ -2367,9 +2408,15 @@ async def api_eval_caso(payload: EvalCasoPayload):
                                                     "cada uno de 1 a 2000 caracteres")
     cliente = _cliente_cerebras_eval()
     _controlar_cupo_eval()
+    return await ejecutar_caso_eval(payload.corrida_id, payload.id, mensajes, payload.banco_id, cliente)
 
+
+async def ejecutar_caso_eval(corrida_id: str, caso_id: str, mensajes: List[str], banco_id: Optional[str],
+                             cliente) -> Dict:
+    """Un caso de un banco en una sesión nueva, con el cliente de LLM indicado. Lo usan /api/eval/caso y
+    la corrida del banco final (/api/eval/banco-final). Nada sale a Meta."""
     # Sesión nueva siempre: el mismo id en otra repetición no hereda historial
-    chat_id = f"{_prefijo_eval(payload.corrida_id)}{payload.id}-{uuid.uuid4().hex[:6]}"
+    chat_id = f"{_prefijo_eval(corrida_id)}{caso_id}-{uuid.uuid4().hex[:6]}"
     token_cliente = _cliente_externo.set(cliente)
     token_modelo = _modelo_externo.set(os.getenv("CEREBRAS_MODEL", "gpt-oss-120b"))
     turnos: List[Dict] = []
@@ -2403,7 +2450,7 @@ async def api_eval_caso(payload: EvalCasoPayload):
         _cliente_externo.reset(token_cliente)
         _modelo_externo.reset(token_modelo)
     return {
-        "banco_id": payload.banco_id, "corrida_id": payload.corrida_id, "id": payload.id,
+        "banco_id": banco_id, "corrida_id": corrida_id, "id": caso_id,
         "pregunta": mensajes[0] if len(mensajes) == 1 else None, "mensajes": mensajes,
         "ejecutado": True, "duracion_ms": round((time.monotonic() - inicio) * 1000, 1),
         "control_versiones": {"proveedor_chatbot": "Cerebras",
@@ -2454,3 +2501,116 @@ def api_limpiar_datos():
         borrados = len(archivos)
 
     return {"status": "cleaned", "pdfs_borrados": borrados}
+
+# ---------------------------------------------------------------------------------------------
+# Banco final desde un endpoint (16/11, pedido del usuario): se envía el banco, se corren todos los
+# casos, el juez (key de pago) califica y el informe se genera en ese momento. Ver docs/api_evaluacion.md.
+import banco_final  # noqa: E402
+
+_trabajos_banco: Dict[str, Dict] = {}
+
+
+async def _correr_banco_final(trabajo: Dict, carpeta, banco: Dict):
+    """Corre los casos, la revisión automática y el juez; deja el informe en el trabajo."""
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "evaluacion"))
+    import juez_banco
+    import revisar_banco_api
+
+    inicio = time.monotonic()
+    salida = Path(trabajo["carpeta"]) / "resultados.jsonl"
+    try:
+        cliente = _cliente_cerebras_eval()
+        filas = []
+        for caso in banco["casos"]:
+            mensajes = caso.get("mensajes") or [caso["pregunta"]]
+            fila = await ejecutar_caso_eval(trabajo["corrida_id"], caso["id"], mensajes, caso.get("banco_id"), cliente)
+            fila.update({"banco": caso["banco"], "universo": caso.get("universo")})
+            filas.append(fila)
+            with salida.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(fila, ensure_ascii=False) + "\n")
+            trabajo["casos_hechos"] = len(filas)
+        trabajo["fase"] = "juez"
+        revision = revisar_banco_api.revisar(salida, carpeta, banco.get("ids_bloqueados_productos"))
+        destinos = juez_banco.destinos_pago(os.environ)
+        if not destinos:
+            raise RuntimeError("No hay key de Cerebras para el juez (JUEZ_CEREBRAS_API_KEY o CEREBRAS_API_KEY)")
+
+        def avance(hechos, total):
+            trabajo["juez_hechos"], trabajo["juez_total"] = hechos, total
+
+        juez = await asyncio.to_thread(
+            juez_banco.juzgar, filas, carpeta, banco, juez_banco.Juez(destinos=destinos),
+            Path(trabajo["carpeta"]) / "juez.jsonl", ("FAQ", "PRODUCTOS", "CHATS_COMPARTIDOS"), 4, avance)
+        indice = json.loads((carpeta / "00_Indice_Bancos.txt").read_text(encoding="utf-8"))
+        kpis = banco_final.calcular_kpis(filas, revision, juez, indice)
+        meta = {
+            "generado": ahora().strftime("%Y-%m-%d %H:%M"), "commit": os.getenv("RENDER_GIT_COMMIT"),
+            "modelo_chatbot": f"Cerebras {os.getenv('CEREBRAS_MODEL', 'gpt-oss-120b')}",
+            "version_banco": banco.get("version_paquete"), "sha_manifiesto": trabajo["sha_manifiesto"],
+            "modelo_juez": juez_banco.MODELO_JUEZ, "total": len(banco["casos"]), "ejecutados": len(filas),
+            "errores": sum(1 for f in filas if f.get("error_ejecucion")),
+            "duracion_min": round((time.monotonic() - inicio) / 60, 1),
+            "errores_del_juez": juez.get("errores_del_juez", []),
+        }
+        t = banco_final.tiempos(filas)
+        trabajo["informe_md"] = banco_final.informe_markdown(meta, kpis, t)
+        trabajo["resultado"] = {"meta": meta, "kpis": kpis, "tiempos": t}
+        trabajo["estado"], trabajo["fase"] = "listo", "listo"
+    except Exception as e:  # el error queda en el trabajo para consultarlo
+        trabajo["estado"], trabajo["error"] = "error", f"{e.__class__.__name__}: {str(e)[:300]}"
+        print(f"❌ [Banco final] {trabajo['error']}")
+    finally:
+        trabajo["fin"] = ahora().strftime("%Y-%m-%d %H:%M:%S")
+
+
+@app.post("/api/eval/banco-final", status_code=202, dependencies=[Depends(verificar_eval_key)])
+async def api_banco_final(request: Request):
+    """Recibe el banco final (zip de Globex_Bancos_V2 en el cuerpo, Content-Type: application/zip) y lanza
+    la corrida completa con su informe. Responde de inmediato con el id del trabajo."""
+    if any(t["estado"] == "en_curso" for t in _trabajos_banco.values()):
+        raise HTTPException(status_code=409, detail="Ya hay una corrida del banco final en curso")
+    try:
+        carpeta, banco, sha = banco_final.preparar(await request.body())
+    except banco_final.BancoInvalido as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    trabajo_id = ahora().strftime("BF-%m%d-%H%M%S")
+    trabajo = {"id": trabajo_id, "corrida_id": trabajo_id, "estado": "en_curso", "fase": "casos",
+               "casos_total": len(banco["casos"]), "casos_hechos": 0, "juez_hechos": 0, "juez_total": None,
+               "inicio": ahora().strftime("%Y-%m-%d %H:%M:%S"), "fin": None, "sha_manifiesto": sha,
+               "carpeta": tempfile.mkdtemp(prefix=f"{trabajo_id}_"), "error": None}
+    _trabajos_banco[trabajo_id] = trabajo
+    _en_segundo_plano(_correr_banco_final(trabajo, carpeta, banco))
+    return {"trabajo_id": trabajo_id, "estado": "en_curso", "casos": len(banco["casos"]),
+            "sha_manifiesto": sha, "consultar": f"/api/eval/banco-final/{trabajo_id}"}
+
+
+@app.get("/api/eval/banco-final/{trabajo_id}", dependencies=[Depends(verificar_eval_key)])
+def api_banco_final_estado(trabajo_id: str):
+    trabajo = _trabajos_banco.get(trabajo_id)
+    if not trabajo:
+        raise HTTPException(status_code=404, detail="Trabajo no encontrado (se pierde si el servidor se reinicia)")
+    visible = {k: v for k, v in trabajo.items() if k not in ("carpeta", "informe_md")}
+    if trabajo["estado"] == "listo":
+        visible["informe"] = f"/api/eval/banco-final/{trabajo_id}/informe"
+        visible["resultados"] = f"/api/eval/banco-final/{trabajo_id}/resultados"
+    return visible
+
+
+@app.get("/api/eval/banco-final/{trabajo_id}/informe", dependencies=[Depends(verificar_eval_key)])
+def api_banco_final_informe(trabajo_id: str):
+    trabajo = _trabajos_banco.get(trabajo_id)
+    if not trabajo or trabajo["estado"] != "listo":
+        raise HTTPException(status_code=404, detail="Informe no disponible todavía")
+    return Response(trabajo["informe_md"], media_type="text/markdown; charset=utf-8")
+
+
+@app.get("/api/eval/banco-final/{trabajo_id}/resultados", dependencies=[Depends(verificar_eval_key)])
+def api_banco_final_resultados(trabajo_id: str, tipo: str = "casos"):
+    """Respuestas de cada caso (tipo=casos) o veredictos del juez (tipo=juez), una línea JSON por caso."""
+    trabajo = _trabajos_banco.get(trabajo_id)
+    if not trabajo:
+        raise HTTPException(status_code=404, detail="Trabajo no encontrado")
+    ruta = os.path.join(trabajo["carpeta"], "juez.jsonl" if tipo == "juez" else "resultados.jsonl")
+    if not os.path.exists(ruta):
+        raise HTTPException(status_code=404, detail="Todavía no hay resultados")
+    return FileResponse(ruta, media_type="application/x-ndjson", filename=f"{trabajo_id}-{tipo}.jsonl")

@@ -2883,7 +2883,8 @@
       ],
       "esperado": {
         "tipo_final": [
-          "derivacion"
+          "derivacion",
+          "guardrail"
         ],
         "cotiza": false,
         "deriva": true

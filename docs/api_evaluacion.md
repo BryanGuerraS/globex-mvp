@@ -163,3 +163,30 @@ def correr_banco(casos, banco_id, corrida_id, salida="resultados.jsonl"):
 - `datos_recopilados.nombre_cliente` se llena cuando el cliente dice su nombre en cualquier mensaje ("me llamo Ana") o lo da después de que Globix se lo pide al derivar.
 - Una vez que Globix deriva, no responde más en esa sesión (como en WhatsApp): los turnos siguientes salen
   con `tipo_respuesta: "bot_pausado"`.
+
+## Banco final en una sola llamada: `POST /api/eval/banco-final`
+
+Corre el banco final completo en el servidor y genera su informe en ese momento: se envía la carpeta del
+banco (`Globex_Bancos_V2`) comprimida en zip, el servidor verifica cada archivo contra su
+`MANIFIESTO_SHA256.txt`, ejecuta todos los casos con el mismo flujo de `/api/eval/caso`, califica FAQ,
+productos y chats con el juez del equipo (prompts de `01_System_Prompts`, modelo `qwen-3.8-27b` en
+Cerebras con la key de **pago**) y arma el informe con los 6 indicadores, sus intervalos y las metas del
+índice del banco. El banco no se guarda en el repositorio: llega en la llamada.
+
+| Llamada | Qué hace |
+| --- | --- |
+| `POST /api/eval/banco-final` (cuerpo: el zip, `Content-Type: application/zip`) | Verifica y lanza la corrida. Responde 202 con `trabajo_id` (422 si el zip o el manifiesto no son válidos; 409 si ya hay una en curso) |
+| `GET /api/eval/banco-final/{trabajo_id}` | Estado: `fase` (`casos`, `juez`, `listo`), avance (`casos_hechos`, `juez_hechos`) y, al terminar, `resultado` con los KPI |
+| `GET /api/eval/banco-final/{trabajo_id}/informe` | Informe en Markdown |
+| `GET /api/eval/banco-final/{trabajo_id}/resultados?tipo=casos` o `tipo=juez` | Respuestas de cada caso o veredictos del juez (una línea JSON por caso) |
+
+Todas con `X-API-Key: <EVAL_API_KEY>`. En un comando, desde el repositorio:
+
+```bash
+python evaluacion/enviar_banco_final.py Globex_Bancos_Prompts_Compactos_V2_1_20261115/Globex_Bancos_V2
+```
+
+Tarda unos 20 a 40 minutos (228 casos + 164 calificaciones). El trabajo vive en la memoria del servidor:
+si Render se reinicia o se despliega otra versión durante la corrida, hay que lanzarla de nuevo.
+Keys: el chatbot usa las de Cerebras en el orden configurado en Render; el juez, `JUEZ_CEREBRAS_API_KEY`
+si está definida (recomendado: la de pago) o, si no, la última key de Cerebras configurada.

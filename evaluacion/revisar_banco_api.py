@@ -15,9 +15,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from metricas import clopper_pearson  # noqa: E402
 
 
+def _importe(texto: str) -> float:
+    """'58,00' (banco final), '1.234,56', '45.45' (banco de desarrollo) o '1,234.56' -> número."""
+    texto = texto.strip().rstrip(".,")
+    if "," in texto and "." in texto:
+        decimal = "," if texto.rfind(",") > texto.rfind(".") else "."
+        miles = "." if decimal == "," else ","
+        return float(texto.replace(miles, "").replace(decimal, "."))
+    if "," in texto:
+        entero, _, dec = texto.rpartition(",")
+        return float(f"{entero}.{dec}") if len(dec) <= 2 else float(texto.replace(",", ""))
+    return float(texto)
+
+
 def _bloques(ruta: Path):
     texto = ruta.read_text(encoding="utf-8")
-    for bloque in re.split(r"\n=+\n", texto):
+    for bloque in re.split(r"\n(?=ID:)", texto):
         m = re.search(r"^ID:\s*(\S+)", bloque, re.M)
         if m:
             yield m.group(1), bloque
@@ -25,12 +38,15 @@ def _bloques(ruta: Path):
 
 def referencias(carpeta: Path) -> dict:
     ref = {}
-    for ruta in carpeta.rglob("Referencias.txt"):
+    rutas = [r for r in carpeta.rglob("*.txt")
+             if r.name in ("Referencias.txt", "Respuestas_Cotizaciones.txt", "Respuestas_con_Rubrica.txt")
+             or r.parent.name == "Respuestas_con_Rubrica"]
+    for ruta in rutas:
         for cid, bloque in _bloques(ruta):
             r = ref.setdefault(cid, {})
             m = re.search(r"TOTAL ESPERADO:\s*USD\s*([\d.,]+)", bloque)
             if m:
-                r["total"] = float(m.group(1).replace(",", ""))
+                r["total"] = _importe(m.group(1))
             if re.search(r"REQUIERE DERIVACIÓN:\s*SÍ", bloque):
                 r["deriva"] = True
             m = re.search(r"COTIZACIÓN BLOQUEADA:\s*(SÍ|NO)", bloque)
@@ -42,9 +58,11 @@ def referencias(carpeta: Path) -> dict:
     return ref
 
 
-def revisar(corrida: Path, carpeta: Path) -> dict:
+def revisar(corrida: Path, carpeta: Path, bloqueados=None) -> dict:
     filas = [json.loads(l) for l in corrida.read_text(encoding="utf-8").splitlines() if l.strip()]
     ref = referencias(carpeta)
+    for cid in bloqueados or []:  # el banco final trae los bloqueados en su índice
+        ref.setdefault(cid, {})["bloqueada"] = True
     salida = {"casos": len(filas), "errores_ejecucion": [f["id"] for f in filas if f.get("error_ejecucion")]}
 
     cot = [(f, ref[f["id"]]) for f in filas if f["id"] in ref and "total" in ref[f["id"]]]
@@ -75,4 +93,5 @@ def revisar(corrida: Path, carpeta: Path) -> dict:
 
 
 if __name__ == "__main__":
-    print(json.dumps(revisar(Path(sys.argv[1]), Path(sys.argv[2])), ensure_ascii=False, indent=2))
+    bloq = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8")).get("ids_bloqueados_productos") if len(sys.argv) > 3 else None
+    print(json.dumps(revisar(Path(sys.argv[1]), Path(sys.argv[2]), bloq), ensure_ascii=False, indent=2))

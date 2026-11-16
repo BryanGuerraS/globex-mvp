@@ -83,9 +83,12 @@ def leer_limite(error: Exception) -> Tuple[str, float]:
 
 
 class ClienteGroqConRespaldo:
-    def __init__(self, clientes: List[Tuple[str, object]], reloj: Callable[[], float] = time.monotonic,
+    def __init__(self, clientes: List[Tuple], reloj: Callable[[], float] = time.monotonic,
                  dormir: Callable[[float], None] = time.sleep):
-        """clientes: [(nombre, cliente_openai), ...] en orden de preferencia."""
+        """clientes: [(nombre, cliente_openai), ...] o [(nombre, cliente_openai, modelo), ...] en orden de
+        preferencia. Con modelo, esa key usa su propio nombre de modelo (proveedores mezclados)."""
+        self._modelos = {c[0]: c[2] for c in clientes if len(c) > 2 and c[2]}
+        clientes = [(c[0], c[1]) for c in clientes]
         self._clientes = clientes
         self._reloj = reloj
         self._dormir = dormir
@@ -110,7 +113,8 @@ class ClienteGroqConRespaldo:
         for nombre, cliente in candidatos:
             inicio = self._reloj()
             try:
-                respuesta = self._llamar(cliente, kwargs)
+                respuesta = self._llamar(cliente, {**kwargs, "model": self._modelos[nombre]}
+                                         if nombre in self._modelos else kwargs)
                 self.ultimo_usado = nombre
                 return respuesta, None
             except RateLimitError as e:
@@ -155,6 +159,18 @@ def keys_de_respaldo(entorno, prefijo: str = "GROQ_API_KEY") -> List[str]:
     """<prefijo>_RESPALDO, <prefijo>_RESPALDO_2, _3... en ese orden (sin vacías)."""
     nombres = [f"{prefijo}_RESPALDO"] + [f"{prefijo}_RESPALDO_{i}" for i in range(2, 21)]
     return [entorno.get(n) for n in nombres if entorno.get(n)]
+
+
+def crear_cliente_mixto(grupos: List[Tuple[str, List[str], str, str]]) -> ClienteGroqConRespaldo:
+    """Varias keys de distintos proveedores en un solo cliente, en orden.
+
+    grupos: [(prefijo, keys, base_url, modelo), ...]; cada key usa el modelo de su proveedor.
+    """
+    clientes = []
+    for prefijo, keys, base_url, modelo in grupos:
+        for i, k in enumerate([k for k in keys if k], 1):
+            clientes.append((f"{prefijo} {i}", OpenAI(api_key=k, base_url=base_url, max_retries=0), modelo))
+    return ClienteGroqConRespaldo(clientes)
 
 
 def crear_cliente(key_principal: Optional[str], respaldos: Optional[List[str]] = None,

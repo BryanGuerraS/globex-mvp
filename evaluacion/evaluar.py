@@ -445,7 +445,7 @@ def main_cli(argv=None):
     parser.add_argument("--solo", default="", help="IDs separados por coma")
     parser.add_argument("--pausa", type=float, default=0.0, help="Segundos entre corridas (límites de Groq)")
     parser.add_argument("--salida", default=os.path.join(REPO, "evaluacion", "reportes"))
-    parser.add_argument("--proveedor", choices=["groq", "cerebras"], default=None,
+    parser.add_argument("--proveedor", choices=["groq", "cerebras", "mixto"], default=None,
                         help="Proveedor del LLM (por defecto, el de LLM_PROVEEDOR en el .env o Groq)")
     parser.add_argument("--reglas", action="store_true",
                         help="Baseline sin LLM: reemplaza el LLM por reglas (evaluacion/baseline_reglas.py)")
