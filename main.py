@@ -73,6 +73,7 @@ import faq_globex
 from resumen_caso import construir_resumen
 from validaciones import (
     extraer_nombre,
+    nombre_en_frase,
     limpiar_respuesta_llm,
     revisar_respuesta_libre,
     pide_dato_indispensable,
@@ -223,7 +224,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
    Si el pedido tiene varios productos (de una o varias tiendas), pásalos todos en 'productos', uno por elemento, en una sola llamada. Cada uno necesita su precio y su peso; si el cliente dio un solo peso para todo, pásalo en peso_total_kg.
    Si el cliente da el precio de UNA unidad y varias unidades ("3 polos de USD 20 cada uno"), pasa el precio unitario en precio_unitario_usd y las unidades en cantidad. Si da el precio total, deja cantidad vacía.
    No preguntes por el TAX de la tienda: si el cliente no lo menciona, el motor usa un 7 % de referencia.
-   Si dice que su precio ya incluye el TAX (o que la tienda no le cobra TAX), pasa sin_tax=true; comprar en Amazon o eBay no basta. "Sin tax" significa que el precio NO lo incluye: deja sin_tax vacío. Si dice el monto del TAX en USD, pásalo en tax_tienda_usd.
+   Si dice que su precio ya incluye el TAX (o que la tienda no le cobra TAX), pasa sin_tax=true; comprar en Amazon o eBay no basta. "Sin tax" significa que el precio NO lo incluye: deja sin_tax vacío. Si dice el monto del TAX en USD, pásalo en tax_tienda_usd. Solo si dice que su monto es el TOTAL con TAX y cuánto es el TAX ("pagué USD 107 en total, de eso 7 de TAX"), pasa precio_unitario_usd = total − TAX (100) y tax_tienda_usd = 7. Si da un precio y aparte el TAX ("una tablet de 400 dólares, el tax fue 28"), el precio es 400 y el TAX 28: no restes.
 
 6. ALCANCE (MUY IMPORTANTE):
    Solo atiendes temas de Globex Courier: importaciones de EE. UU. a Perú, cotizaciones, envíos, seguimiento, pagos y el servicio.
@@ -968,7 +969,7 @@ def _borrador_de_intento(chat_id: str, args: Dict, textos_cliente: List[str], es
             borrador.registrar_intento(chat_id, intento)
         else:
             borrador.guardar(chat_id, borrador.construir(parcial[0], brutos, parcial[1],
-                                                         estado["pesos_referenciales"]), intento)
+                                                         estado["pesos_referenciales"], textos_cliente), intento)
     except Exception as e:  # el borrador nunca interrumpe la respuesta al cliente
         print(f"Error guardando el borrador: {e}")
 
@@ -1008,7 +1009,7 @@ def ejecutar_herramienta(
             return {"error": validacion}, None
         items, peso_total = validacion
         datos = borrador.guardar(chat_id, borrador.construir(items, args.get("productos") or [], peso_total,
-                                                             estado["pesos_referenciales"]))
+                                                             estado["pesos_referenciales"], textos_cliente))
         # El catálogo va antes de pedirle el peso al cliente (el LLM a veces se lo salta)
         catalogo = {}
         if peso_total is None:
@@ -1040,7 +1041,7 @@ def ejecutar_herramienta(
             return {"error": validacion}, None
         productos, peso_total = validacion
         brutos = args.get("productos") if isinstance(args.get("productos"), list) else [args]
-        datos_pedido = borrador.construir(productos, brutos, peso_total, estado["pesos_referenciales"])
+        datos_pedido = borrador.construir(productos, brutos, peso_total, estado["pesos_referenciales"], textos_cliente)
         borrador.guardar(chat_id, datos_pedido, {"aceptada": True, "error": None, "total_usd": None})
         # El producto puede venir de un mensaje anterior: se revisa de nuevo antes de cotizar (guía §3.7)
         usado = borrador.texto_usado(chat_id)
@@ -1080,7 +1081,8 @@ def ejecutar_herramienta(
         resultado = GlobexPricingEngine.calcular_pedido(productos, peso_total)
         estado["resultado_calculo"] = resultado
         borrador.guardar(chat_id, datos_pedido, {"aceptada": True, "error": None,
-                                                 "total_usd": resultado["costo_total"]})
+                                                 "total_usd": resultado["costo_total"],
+                                                 "lineas": datos_pedido["lineas"]})
         actualizar_clasificacion_chat(chat_id, servicio="Cotización Courier", paso=3)
         # Lo entendido queda solo en el registro interno (el cliente ve la proforma, sin "Entendí")
         pesos = [prod["peso_kg"] for prod in productos if prod["peso_kg"] is not None] + \
@@ -1341,11 +1343,10 @@ async def _procesar_turno(
 
     inicio_turno = len(history)
     nombre = nombre_para_saludo(chat_id, sender_name)
-    if nombre:
-        history[0] = {
-            "role": "system",
-            "content": SYSTEM_PROMPT + f"\n\nEl cliente se llama {nombre}.",
-        }
+    # El nombre y el pedido vigente (borrador) van en el system prompt de este turno
+    extra = (f"\n\nEl cliente se llama {nombre}." if nombre else "") + borrador.bloque_para_llm(borrador.leer(chat_id))
+    if extra:
+        history[0] = {"role": "system", "content": SYSTEM_PROMPT + extra}
     previas_del_bot = [m["content"] for m in history[:-1] if m.get("role") == "assistant"]
     estado = {
         "resultado_calculo": None,
@@ -1539,6 +1540,30 @@ def _en_segundo_plano(corrutina):
     _tareas_fondo.add(tarea)
     tarea.add_done_callback(_tareas_fondo.discard)
     return tarea
+
+
+def capturar_nombre(chat_id: str, texto: str, es_opcion: bool = False) -> Optional[str]:
+    """Nombre del cliente, en la ruta común de WhatsApp y de las API (guía §5.4).
+
+    - Si Globix se lo pidió al derivar, el mensaje se lee como respuesta (una sola vez) y se devuelve
+      el agradecimiento que hay que enviar.
+    - En cualquier otro mensaje, si lo dice de forma clara ("me llamo Ana", "Hola, soy Luis Pérez"),
+      se guarda sin interrumpir la conversación (devuelve None).
+    """
+    chat = obtener_chat(chat_id) or {}
+    if chat.get("esperando_nombre") and not es_opcion:
+        marcar_esperando_nombre(chat_id, False)
+        nombre = extraer_nombre(texto) or nombre_en_frase(texto)
+        if nombre:
+            guardar_nombre_cliente(chat_id, nombre)
+            actualizar_resumen(chat_id)
+            return f"¡Gracias, {nombre.split()[0]}! Tu asesor te escribirá en breve por este chat. 🙌"
+        return None
+    nombre = nombre_en_frase(texto)
+    if nombre and nombre != chat.get("nombre_cliente"):
+        guardar_nombre_cliente(chat_id, nombre)
+        actualizar_resumen(chat_id)
+    return None
 
 
 def registrar_derivacion(chat_id: str, motivo: str, detalle: str = ""):
@@ -1735,17 +1760,11 @@ async def meta_webhook(request: Request, background_tasks: BackgroundTasks):
 
             # 👤 Respuesta a "¿me compartes tu nombre?" (se pidió al derivar).
             # Se intenta una sola vez; si no parece un nombre, lo ve el asesor.
-            chat_info = obtener_chat(chat_id) or {}
-            if chat_info.get("esperando_nombre") and not opcion_elegida:
-                marcar_esperando_nombre(chat_id, False)
-                nombre_dado = extraer_nombre(user_text)
-                if nombre_dado:
-                    guardar_nombre_cliente(chat_id, nombre_dado)
-                    actualizar_resumen(chat_id)
-                    gracias = f"¡Gracias, {nombre_dado.split()[0]}! Tu asesor te escribirá en breve por este chat. 🙌"
-                    registrar_mensaje_saliente(chat_id, "bot", gracias, None)
-                    await send_meta_whatsapp_message(chat_id, gracias)
-                    return {"status": "name_saved"}
+            gracias = capturar_nombre(chat_id, user_text, es_opcion=bool(opcion_elegida))
+            if gracias:
+                registrar_mensaje_saliente(chat_id, "bot", gracias, None)
+                await send_meta_whatsapp_message(chat_id, gracias)
+                return {"status": "name_saved"}
 
             # Silencio si el asesor humano tiene el control
             if not esta_bot_activo(chat_id):
@@ -2102,6 +2121,11 @@ async def api_chat(payload: ChatPruebaPayload, x_groq_key: str = Header(None, al
     chat_id = PREFIJO_CHAT_PRUEBA + payload.sesion_id
     texto = _texto_de_opcion(mensaje)
     registrar_mensaje_entrante(chat_id, "Prueba API", texto)
+    gracias = capturar_nombre(chat_id, texto, es_opcion=texto != mensaje)
+    if gracias:
+        registrar_mensaje_saliente(chat_id, "bot", gracias, None)
+        return {"sesion_id": payload.sesion_id, "bot_activo": esta_bot_activo(chat_id),
+                "respuestas": [{"tipo": "texto", "texto": gracias, "opciones": []}]}
     if not esta_bot_activo(chat_id):
         return {"sesion_id": payload.sesion_id, "bot_activo": False, "respuestas": [],
                 "nota": "La conversación pasó a un asesor: Globix ya no responde en esta sesión. Usa otra sesion_id."}
@@ -2253,6 +2277,12 @@ async def api_eval_caso(payload: EvalCasoPayload):
         for mensaje in mensajes:
             texto = _texto_de_opcion(mensaje)  # un título de botón entra como en WhatsApp
             registrar_mensaje_entrante(chat_id, "Evaluación", texto)
+            gracias = capturar_nombre(chat_id, texto, es_opcion=texto != mensaje)
+            if gracias:  # respondió al "¿me indicas tu nombre?" de la derivación
+                registrar_mensaje_saliente(chat_id, "bot", gracias, None)
+                turnos.append({"mensaje": mensaje, "tipo_respuesta": "nombre",
+                               "respuestas": [{"tipo": "texto", "texto": gracias, "opciones": []}]})
+                continue
             if not esta_bot_activo(chat_id):  # ya derivó: Globix no responde más, como en WhatsApp
                 turnos.append({"mensaje": mensaje, "respuestas": [], "tipo_respuesta": "bot_pausado"})
                 continue

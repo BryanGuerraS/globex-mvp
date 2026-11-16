@@ -2905,6 +2905,100 @@
         "cotiza": false,
         "deriva": false
       }
+    },
+    {
+      "id": "PED-06",
+      "categoria": "multiturno",
+      "descripcion": "Agrega un producto a un pedido ya cotizado (no reemplaza)",
+      "mensajes": [
+        "Quiero cotizar una mochila de 60 dólares, 1 kg",
+        "Agrégale unos audífonos de 90 dólares, 0.5 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "productos": [
+            {
+              "valor": 60,
+              "peso": 1
+            },
+            {
+              "valor": 90,
+              "peso": 0.5
+            }
+          ],
+          "total": 183.0
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "PED-07",
+      "categoria": "multiturno",
+      "descripcion": "Corrige el peso de un producto de un pedido de dos (no agrega otra línea)",
+      "mensajes": [
+        "Una casaca de 80 dólares de 1.2 kg y una mochila de 60 dólares de 1 kg",
+        "La casaca en realidad pesa 2 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "productos": [
+            {
+              "valor": 80,
+              "peso": 2
+            },
+            {
+              "valor": 60,
+              "peso": 1
+            }
+          ],
+          "total": 185.8
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "NEG-01",
+      "categoria": "falso_amigo",
+      "descripcion": "Mención negada de un prohibido: cotiza",
+      "mensajes": [
+        "No es un vape, es un parlante de 40 dólares que pesa 1 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "total": 60.8
+        },
+        "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "TAX-06",
+      "categoria": "cotizacion",
+      "descripcion": "Total con TAX desglosado: base = total − TAX",
+      "mensajes": [
+        "Una cafetera, pagué USD 107 en total, de eso 7 son de TAX, pesa 2 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "cotizacion"
+        ],
+        "cotizacion": {
+          "total": 134.0
+        },
+        "cotiza": true,
+        "deriva": false
+      }
     }
   ]
 }

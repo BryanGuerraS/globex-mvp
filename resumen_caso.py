@@ -10,6 +10,7 @@ import json
 import re
 from typing import Dict, List, Optional
 
+from borrador import vigente
 from database import obtener_borrador, obtener_chat, obtener_mensajes_chat, obtener_metricas_chat
 from pricing_engine import GlobexPricingEngine
 
@@ -138,8 +139,14 @@ def _productos_del_borrador(borrador: Optional[Dict]) -> List[Dict]:
     """Líneas del borrador del pedido en el formato del resumen."""
     return [{"producto": (l.get("producto") or "").strip(), "tienda": (l.get("tienda") or "").strip(),
              "precio": l.get("precio_unitario_usd"), "cantidad": int(l.get("cantidad") or 1),
-             "peso": l.get("peso_kg"), "tax_estado": (l.get("tax") or {}).get("estado")}
+             "peso": l.get("peso_kg"), "tax_estado": (l.get("tax") or {}).get("estado"),
+             "tax_monto": (l.get("tax") or {}).get("monto_usd"), "origen_peso": l.get("origen_peso"),
+             "origen_precio": l.get("origen_precio")}
             for l in (borrador or {}).get("lineas", [])]
+
+
+def _sin_ids(lineas: List[Dict]) -> List[Dict]:
+    return [{k: v for k, v in l.items() if k != "id"} for l in lineas]
 
 
 def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") -> str:
@@ -151,6 +158,8 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
     chat = obtener_chat(chat_id) or {}
     nombre = chat.get("nombre_cliente") or "Aún no dio su nombre"
     borrador = obtener_borrador(chat_id)
+    if borrador and not vigente(borrador):  # de una conversación anterior (más de 12 h)
+        borrador = None
     cotizacion = None if borrador else _ultima_cotizacion(chat_id)
     mensajes = _ultimos_mensajes_cliente(chat_id)
     items = _productos_del_borrador(borrador) if borrador else _productos_de(cotizacion)
@@ -176,17 +185,34 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
             if item["precio"] is not None:
                 precio = f"USD {item['precio']:,.2f}"
                 texto += f" {item['cantidad']} × {precio}" if item["cantidad"] > 1 else f" {precio}"
+            if item.get("origen_precio") == "derivado":
+                texto += " (total − TAX)"
             if item["peso"] is not None:
                 texto += f", {item['peso']:g} kg"
+                if item.get("origen_peso") == "catalogo":
+                    texto += " (estimado de catálogo)"
+            # Estado del TAX: declarado por el cliente o estimado (guía §7.2)
             if item.get("tax_estado") == "incluido_sin_desglose":
                 texto += " (TAX incluido)"
+            elif item.get("tax_estado") == "cero_confirmado":
+                texto += " (TAX 0 confirmado)"
+            elif item.get("tax_estado") == "confirmado" and item.get("tax_monto") is not None:
+                texto += f" (TAX USD {item['tax_monto']:,.2f})"
             partes.append(texto)
         if cotizacion and cotizacion.get("peso_total_kg") is not None:
             partes.append(f"peso total {float(cotizacion['peso_total_kg']):g} kg")
-        if chat.get("cotizacion_total"):
+        intento = (borrador or {}).get("ultima_cotizacion") or {}
+        # Una corrección posterior aún no cotizada no se mezcla con la cotización emitida (guía §7.1)
+        cambio = bool(intento.get("lineas")) and _sin_ids(intento["lineas"]) != _sin_ids(borrador.get("lineas", []))
+        if chat.get("cotizacion_total") and not cambio:
             partes.append(f"total USD {chat['cotizacion_total']:,.2f}")
-        rotulo = "*Cotización:*" if (cotizacion or {}).get("aceptada", True) else "*Pedido (sin cotizar):*"
+        if cambio:
+            rotulo = "*Pedido vigente (sin recotizar):*"
+        else:
+            rotulo = "*Cotización:*" if (cotizacion or {}).get("aceptada", True) else "*Pedido (sin cotizar):*"
         lineas.append(f"{rotulo} {', '.join(partes)}")
+        if cambio and intento.get("total_usd"):
+            lineas.append(f"*Cotización previa:* total USD {intento['total_usd']:,.2f} (antes de la corrección)")
 
     lineas.append("*Pendientes:* " + "; ".join(_pendientes(motivo, detalle, chat, cotizacion, mensajes)))
     if mensajes:

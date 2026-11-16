@@ -173,6 +173,23 @@ _PATRONES_LIMITE = [(lim, [_patron(p) for p in lim["palabras"]], [_patron(p) for
                     for lim in LIMITES_POR_DNI]
 
 
+# Mención negada (guía §3.3 y §3.7): "no es un vape", "no traigo armas", "sin pilas ni baterías sueltas".
+# Se mira hasta 4 palabras antes de la coincidencia.
+_NEGACION = re.compile(
+    r"(?<![a-z])(?:no\s+(?:es|son|sera|seran|lleva|llevan|tiene|tienen|incluye|incluyen|contiene|contienen|"
+    r"traigo|traere|traeria|voy\s+a\s+traer|quiero|necesito|compro|comprare|vendo)|sin|ni|tampoco|nada\s+de)"
+    r"(?:\s+\w+){0,3}\s*$"
+)
+
+
+# "ropa nueva, no usada": la negación queda dentro de la coincidencia
+_USADO_NEGADO = re.compile(r"(?<![a-z])(?:nuev[oa]s?|no\s+(?:es\s+|son\s+|esta\s+|estan\s+)?(?:usad|de\s+segunda|seminuev))")
+
+
+def _negada(texto: str, inicio: int) -> bool:
+    return bool(_NEGACION.search(texto[max(0, inicio - 60):inicio].rstrip(" ,")))
+
+
 def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
     """Analiza si el texto menciona algún producto prohibido o restringido."""
     texto_normalizado = _normalizar(texto)
@@ -180,7 +197,9 @@ def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
     for tipo, datos in RESTRICCIONES_ADUANA.items():
         for palabra, patron in _PATRONES[tipo]:
             # Búsqueda de la palabra completa (no como parte de otra palabra)
-            if patron.search(texto_normalizado):
+            m = next((m for m in patron.finditer(texto_normalizado) if not _negada(texto_normalizado, m.start())),
+                     None)
+            if m:
                 pide_detalle = "mensaje_detalle" in datos and _PIDE_MAXIMOS.search(texto_normalizado)
                 if datos.get("solo_si_pregunta") and not pide_detalle:
                     break  # se cotiza: el máximo se revisa con la cantidad al calcular
@@ -193,7 +212,8 @@ def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
                     "palabra_detectada": palabra,
                 }
 
-    m = _SOLO_NUEVOS.search(texto_normalizado)
+    m = next((m for m in _SOLO_NUEVOS.finditer(texto_normalizado)
+              if not _negada(texto_normalizado, m.start()) and not _USADO_NEGADO.search(m.group(0))), None)
     if m:
         return {"restringido": True, "tipo": "solo_nuevos", **SOLO_NUEVOS, "palabra_detectada": m.group(0)}
 

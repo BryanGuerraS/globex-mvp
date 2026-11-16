@@ -158,6 +158,7 @@ def validar_argumentos_cotizacion(
     textos_cliente: Iterable[str],
     pesos_referenciales: Iterable[float] = (),
     cantidad: int = 1,
+    valores_derivados: Iterable[float] = (),
 ) -> Union[Tuple[float, float], str]:
     """Valida los argumentos que el LLM pasa a calcular_cotizacion.
 
@@ -174,7 +175,8 @@ def validar_argumentos_cotizacion(
 
     numeros = numeros_en_texto(textos_cliente)
 
-    if not any(_cerca(valor, n) for n in numeros):
+    # valores_derivados: precio base calculado desde un total y un TAX que dijo el cliente (guía §5.5)
+    if not any(_cerca(valor, n) for n in numeros) and not any(_cerca(valor, d) for d in valores_derivados):
         return (
             f"El valor {valor} USD no aparece en los mensajes del cliente. "
             "No lo supongas: pide al cliente que confirme el precio del producto en USD."
@@ -294,7 +296,7 @@ def extraer_nombre(texto: str) -> Optional[str]:
 
     Devuelve None si el mensaje no parece un nombre (una pregunta, "ok", etc.).
     """
-    if not texto:
+    if not texto or "?" in texto:  # una pregunta ("¿Sigues ahí?") no es un nombre
         return None
     limpio = texto.strip().strip(".!¡¿?,;:").strip()
     limpio = _PREFIJOS_NOMBRE.sub("", limpio).strip().strip(".!¡¿?,;:")
@@ -458,13 +460,14 @@ def validar_productos(
             return (f"{etiqueta}: falta su peso. Pide el peso de cada producto o el peso total del pedido "
                     "(peso_total_kg), o usa consultar_peso_producto.")
         legado["peso_kg"] = peso_item if peso_item is not None else peso_total
-        validacion = validar_argumentos_cotizacion(legado, textos, pesos_ref, cantidad)
-        if isinstance(validacion, str):
-            return f"{etiqueta}: {validacion}"
-        valor, peso = validacion
         tax = validar_tax_tienda(legado, textos)
         if isinstance(tax, str):
             return f"{etiqueta}: {tax}"
+        validacion = validar_argumentos_cotizacion(legado, textos, pesos_ref, cantidad,
+                                                   _bases_desde_total(tax, cantidad, textos))
+        if isinstance(validacion, str):
+            return f"{etiqueta}: {validacion}"
+        valor, peso = validacion
         salida.append({"producto": (str(b.get("producto") or "").strip()[:40] or None),
                        "tienda": (str(b.get("tienda") or "").strip()[:30] or None),
                        "precio_unitario": valor, "cantidad": cantidad,
@@ -472,6 +475,26 @@ def validar_productos(
     if peso_total is None and any(p["peso_kg"] is None for p in salida):
         return "Falta el peso de algún producto."
     return salida, peso_total
+
+
+def _bases_desde_total(tax: Optional[float], cantidad: int, textos: List[str]) -> List[float]:
+    """Precios base que salen de restar a un total del cliente el TAX que él mismo dijo (por unidad
+    si hay cantidad): "pagué USD 107 con 7 de TAX" -> 100. Solo con un TAX confirmado mayor a 0."""
+    # Solo si el cliente dice que su monto es un total o que ya trae el TAX: "una tablet de 400, el tax
+    # fue 28" es base 400 + TAX 28, no 372 + 28
+    if not tax or not _DICE_TOTAL.search(_sin_tildes(" ".join(textos).lower())):
+        return []
+    return [round((n - tax) / cantidad, 2) for n in numeros_en_texto(textos) if n > tax]
+
+
+_DICE_TOTAL = re.compile(r"\b(?:en\s+total|total|inclu\w*|con\s+(?:el\s+|los\s+)?(?:tax|taxes|impuestos?))\b")
+
+
+def precio_derivado(precio: Optional[float], tax: Optional[float], cantidad: int, textos: List[str]) -> bool:
+    """El precio no está en el texto: salió de total − TAX (para la procedencia en el borrador)."""
+    if precio is None or any(_cerca(precio, n) for n in numeros_en_texto(textos)):
+        return False
+    return any(_cerca(precio, d) for d in _bases_desde_total(tax, cantidad, textos))
 
 
 def validar_datos_parciales(
@@ -507,11 +530,13 @@ def validar_datos_parciales(
         if isinstance(cantidad, str):
             return f"{etiqueta}: {cantidad}"
         precio = None
+        tax_dicho = validar_tax_tienda(legado, textos) if b.get("tax_tienda_usd") else None
+        bases = _bases_desde_total(tax_dicho, cantidad, textos) if isinstance(tax_dicho, float) else []
         if b.get("precio_unitario_usd") is not None:
             precio = _a_numero(b.get("precio_unitario_usd"))
             if precio is None or precio <= 0:
                 return f"{etiqueta}: el precio debe ser un número mayor a cero."
-            if not any(_cerca(precio, n) for n in numeros):
+            if not any(_cerca(precio, n) for n in numeros) and not any(_cerca(precio, d) for d in bases):
                 return f"{etiqueta}: el precio {precio} USD no aparece en los mensajes del cliente. No lo supongas."
         peso = None
         if b.get("peso_kg") is not None:
@@ -529,3 +554,29 @@ def validar_datos_parciales(
                        "tienda": (str(b.get("tienda") or "").strip()[:30] or None),
                        "precio_unitario": precio, "cantidad": cantidad, "peso_kg": peso, "tax": tax})
     return salida, peso_total
+
+
+# Nombre dicho dentro de una frase, en cualquier mensaje ("Hola, me llamo Ana y quiero cotizar")
+_NOMBRE_EN_FRASE = re.compile(
+    r"(?:\bme\s+llamo|\bmi\s+nombre\s+es)\s+(.+?)(?=\s*(?:[,.;:!?¿¡]|\by\b|\be\b|\bpero\b|\bquiero\b|$))",
+    re.IGNORECASE,
+)
+_SOY_NOMBRE = re.compile(r"^(?i:(?:hola|buenas|buenos\s+d[ií]as|buenas\s+tardes|buenas\s+noches)[,!.\s]+)?(?i:soy)\s+"
+                         r"([A-ZÁÉÍÓÚÑ][a-záéíóúñ'-]+(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ'-]+){0,2})(?=\s*(?:[,.;:!?]|\by\b|$))")
+
+
+def nombre_en_frase(texto: str) -> Optional[str]:
+    """Nombre que el cliente dice en cualquier mensaje ("me llamo Ana", "mi nombre es Luis Pérez",
+    "Hola, soy Carla"). None si no lo dice de forma clara."""
+    if not texto:
+        return None
+    m = _NOMBRE_EN_FRASE.search(texto)
+    if not m:
+        m = _SOY_NOMBRE.search(texto.strip())
+        if m and _sin_tildes(m.group(1).split()[0].lower()) in _NO_NOMBRE_SOY:
+            return None  # "Soy peruano", "Soy cliente nuevo"
+    return extraer_nombre(m.group(1)) if m else None
+
+
+_NO_NOMBRE_SOY = {"peruano", "peruana", "cliente", "nuevo", "nueva", "estudiante", "empresa", "emprendedor",
+                  "emprendedora", "asesor", "asesora", "importador", "importadora", "comerciante", "de", "del"}
