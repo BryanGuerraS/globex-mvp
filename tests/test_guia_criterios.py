@@ -144,3 +144,48 @@ def test_precio_final_que_ya_incluye_un_tax_dicho_no_lo_suma_otra_vez():
                                    "El vape ya no lo voy a traer, solo una laptop"])
 def test_producto_descartado_no_activa_el_guardrail(texto):
     assert verificar(texto) is None
+
+
+# ---- El total no depende de cómo el LLM pasa el TAX (banco de desarrollo, 16/11) ----
+def _total(args, texto):
+    from pricing_engine import GlobexPricingEngine
+    v = validar_productos({"productos": [args]}, [texto])
+    assert not isinstance(v, str), v
+    return GlobexPricingEngine.calcular_pedido(*v)["costo_total"]
+
+
+_INCLUYE = "El precio final es USD 128,40 y ya incluye USD 8,40 de TAX confirmado. El peso con embalaje es 1 kg."
+
+
+@pytest.mark.parametrize("args", [
+    {"precio_unitario_usd": 128.40, "peso_kg": 1, "tax_tienda_usd": 8.40},                  # monto sin sin_tax
+    {"precio_unitario_usd": 128.40, "peso_kg": 1, "tax_tienda_usd": 8.40, "sin_tax": True},  # monto y sin_tax
+    {"precio_unitario_usd": 128.40, "peso_kg": 1, "sin_tax": True},                          # solo sin_tax
+    {"precio_unitario_usd": 120.00, "peso_kg": 1, "tax_tienda_usd": 8.40},                   # base calculada
+])
+def test_precio_final_con_tax_incluido_cualquier_forma(args):
+    assert _total(args, _INCLUYE) == 146.40
+
+
+@pytest.mark.parametrize("args, texto, total", [
+    ({"precio_unitario_usd": 199.61, "peso_kg": 1, "sin_tax": True},
+     "El producto cuesta USD 199,61 antes de TAX y el checkout confirma TAX de USD 0,00. Pesa 1 kg.", 217.61),
+    ({"precio_unitario_usd": 185.42, "peso_kg": 2.375},
+     "El checkout confirma USD 185,42 finales con TAX incluido, sin desglosar el importe del impuesto. Pesa 2,375 kg.",
+     215.80),
+    ({"precio_unitario_usd": 31.55, "peso_kg": 1},
+     "El precio es USD 31,55 antes de TAX. No cuento con el TAX y no tengo un precio final confirmado. Pesa 1 kg.",
+     51.76),
+    ({"precio_unitario_usd": 400, "peso_kg": 1, "tax_tienda_usd": 28},
+     "Una tablet de 400 dólares, el tax fue 28 dólares, pesa 1 kg", 548.72),
+])
+def test_tax_cero_incluido_y_desconocido(args, texto, total):
+    assert _total(args, texto) == pytest.approx(round(total, 2))
+
+
+def test_precio_unitario_desde_un_total_por_cantidad():
+    """CAN-02: '2 pares, en total 180 dólares' -> el LLM puede pasar 90 × 2 o 180 sin cantidad."""
+    texto = "Son 2 pares de zapatillas, en total 180 dólares, pesan 2 kg"
+    unitario = _total({"producto": "zapatillas", "precio_unitario_usd": 90, "cantidad": 2, "peso_kg": 2}, texto)
+    total = _total({"producto": "zapatillas", "precio_unitario_usd": 180, "peso_kg": 2}, texto)
+    assert unitario == total

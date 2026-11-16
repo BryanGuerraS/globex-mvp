@@ -230,7 +230,7 @@ _MENCIONA_TAX = re.compile(r"\b(tax|taxes|impuestos?|sales)\b")
 _SIN_TAX = re.compile(
     r"\binclu\w*\W+(?:\w+\W+){0,5}?(?:tax|taxes|impuestos?)\b"  # "ya incluye USD 3,00 de TAX"
     r"|\b(?:tax|taxes|impuestos?)\W+(?:\w+\W+){0,3}?inclu\w*"
-    r"|\bcon\s+(?:el\s+|los\s+)?(?:tax|taxes|impuestos?)\b"
+    r"|(?<!cuento )(?<!cuenta )(?<!conto )\bcon\s+(?:el\s+|los\s+)?(?:tax|taxes|impuestos?)\b"
     r"|\bno\s+(?:me\s+)?(?:cobra|cobran|paga|pague|pago|hay|tiene)\s+(?:el\s+)?(?:tax|taxes|impuestos?)\b"
 )
 
@@ -266,7 +266,8 @@ def validar_tax_tienda(args: dict, textos_cliente: Iterable[str]) -> Union[Optio
         else:
             return tax
     if args.get("sin_tax") is True:
-        if not _SIN_TAX.search(texto):
+        tax_cero = _MENCIONA_TAX.search(texto) and any(n == 0 for n in numeros_en_texto(textos))
+        if not _SIN_TAX.search(texto) and not tax_cero:
             return (
                 "El cliente no dijo que su precio incluye el TAX ni que la tienda no se lo cobra. "
                 "Deja sin_tax vacío y el motor usa el 7 % de referencia."
@@ -467,11 +468,16 @@ def validar_productos(
         tax = validar_tax_tienda(legado, textos)
         if isinstance(tax, str):
             return f"{etiqueta}: {tax}"
-        validacion = validar_argumentos_cotizacion(legado, textos, pesos_ref, cantidad,
-                                                   _bases_desde_total(tax, cantidad, textos))
+        dicho = _tax_dicho(legado, textos)
+        # Derivados aceptados: base = total − TAX, y precio unitario = total / cantidad ("2 pares, en
+        # total 180 dólares" -> 90 c/u)
+        derivados = _bases_desde_total(dicho, cantidad, textos) + (
+            [round(n / cantidad, 2) for n in numeros_en_texto(textos)] if cantidad > 1 else [])
+        validacion = validar_argumentos_cotizacion(legado, textos, pesos_ref, cantidad, derivados)
         if isinstance(validacion, str):
             return f"{etiqueta}: {validacion}"
         valor, peso = validacion
+        tax = _tax_final(tax, dicho, valor, cantidad, textos, un_producto=len(brutos) == 1)
         salida.append({"producto": (str(b.get("producto") or "").strip()[:40] or None),
                        "tienda": (str(b.get("tienda") or "").strip()[:30] or None),
                        "precio_unitario": valor, "cantidad": cantidad,
@@ -492,6 +498,52 @@ def _bases_desde_total(tax: Optional[float], cantidad: int, textos: List[str]) -
 
 
 _DICE_TOTAL = re.compile(r"\b(?:en\s+total|total|inclu\w*|con\s+(?:el\s+|los\s+)?(?:tax|taxes|impuestos?))\b")
+
+
+def _tax_dicho(args: dict, textos: List[str]) -> Optional[float]:
+    """Monto de TAX mayor a 0 que el LLM pasó y que el cliente sí dijo (None si no)."""
+    tax = _a_numero(args.get("tax_tienda_usd"))
+    texto = _sin_tildes(" ".join(textos).lower())
+    if tax and tax > 0 and _MENCIONA_TAX.search(texto) and any(_cerca(tax, n) for n in numeros_en_texto(textos)):
+        return tax
+    return None
+
+
+# Precio que YA trae el TAX, dicho de forma explícita ("ya incluye USD 8,40 de TAX", "con TAX
+# incluido"); no vale si el cliente habla de un precio "antes de TAX" o dice que "no incluye".
+_INCLUYE_TAX = re.compile(r"\binclu\w*\W+(?:\w+\W+){0,5}?(?:tax|taxes|impuestos?)\b"
+                          r"|\b(?:tax|taxes|impuestos?)\W+(?:\w+\W+){0,3}?inclu\w*")
+_BASE_SIN_TAX = re.compile(r"\b(?:antes\s+de|sin\s+(?:el\s+)?|no\s+inclu\w*\s+(?:el\s+)?)(?:tax|taxes|impuestos?)\b")
+
+
+def _incluye_tax(texto: str) -> bool:
+    return bool(_INCLUYE_TAX.search(texto)) and not _BASE_SIN_TAX.search(texto)
+
+
+def _tax_final(tax: Optional[float], dicho: Optional[float], valor: float, cantidad: int,
+               textos: List[str], un_producto: bool) -> Optional[float]:
+    """TAX que va al motor, decidido con lo que dijo el cliente (banco de desarrollo, 16/11).
+
+    El LLM expresa lo mismo de varias formas (sin_tax, monto, precio base calculado); el total no
+    debe depender de cuál use:
+    - "precio final 128,40 y ya incluye 8,40 de TAX": el precio dicho ya trae el TAX -> 0.
+    - "cuesta 100 antes de TAX y con TAX son 107" o "una tablet de 400, el tax fue 28": se suma el TAX.
+    - precio base calculado (total − TAX): se suma el TAX dicho.
+    - "USD 185,42 finales con TAX incluido" sin monto, en un pedido de un producto: 0.
+    """
+    texto = _sin_tildes(" ".join(textos).lower())
+    numeros = numeros_en_texto(textos)
+    if dicho:
+        if not any(_cerca(valor, n) for n in numeros):
+            return dicho  # precio base calculado: total − TAX
+        if any(_cerca(valor * cantidad + dicho, n) for n in numeros):
+            return dicho  # el cliente dio base y total
+        if _incluye_tax(texto):
+            return 0.0  # el precio que dijo ya incluye ese TAX
+        return dicho
+    if tax is None and un_producto and _incluye_tax(texto):
+        return 0.0  # "precio final con TAX incluido, sin desglosar"
+    return tax
 
 
 def precio_derivado(precio: Optional[float], tax: Optional[float], cantidad: int, textos: List[str]) -> bool:

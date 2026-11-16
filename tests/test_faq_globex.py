@@ -144,3 +144,12 @@ def test_ultima_ronda_obliga_a_elegir_la_faq(entorno):  # noqa: F811
         _respuesta(tool_calls=[_tool_call("r1", "enviar_faq", {"ids": ["G059"]})]),
     ])
     assert "almacén de Miami" in _texto(enviado)
+
+
+def test_consultar_regla_producto_responde_por_codigo(entorno):  # noqa: F811
+    texto = "El pedido tiene seis pares de zapatos nuevos para un solo consignatario. ¿Cumple el máximo de calzado?"
+    _, enviado = entorno("PE.regla", texto, [
+        _respuesta(tool_calls=[_tool_call("r1", "consultar_regla_producto", {"producto": "seis pares de zapatos"})]),
+    ])
+    assert "No: el máximo es de 5 pares de calzado por consignatario, así que 6 lo supera" in _texto(enviado)
+    assert main.obtener_chat("PE.regla")["bot_activo"] == 1

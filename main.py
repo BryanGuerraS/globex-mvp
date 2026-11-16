@@ -48,6 +48,7 @@ from database import (
 )
 from guardrails import (
     SOLO_NUEVOS,
+    respuesta_regla,
     dice_que_es_nuevo,
     es_categoria_solo_nuevos,
     limite_por_dni_excedido,
@@ -206,7 +207,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 
 3. PREGUNTAS GENERALES (FAQs):
    Si preguntan por dirección de Miami, plazos de entrega, entregas en Lima (recojo en oficina, delivery), envíos a provincias o agencias (Olva, Shalom), cómo funciona o formas de pago, usa 'consultar_faq_comercial'.
-   Si preguntan si un producto cumple una regla (si es nuevo o usado, cuántas unidades se pueden traer, el máximo de una categoría, figuras de colección, receta, productos no admitidos), usa 'consultar_faq_comercial' con tema 'reglas_productos'. Si preguntan la tarifa por kg, el peso mínimo o qué peso se cobra, usa tema 'tarifas'. No respondas "no tengo ese dato" para estos temas.
+   Si preguntan si un producto CONCRETO cumple una regla (si su cantidad está dentro del máximo, si nuevo cumple, figuras de colección, si la receta basta), llama a 'consultar_regla_producto' con el producto y la cantidad que dijo: el código responde sí o no. Si preguntan las reglas en general, usa 'consultar_faq_comercial' con tema 'reglas_productos'. Si preguntan la tarifa por kg, el peso mínimo o qué peso se cobra, usa tema 'tarifas'. No respondas "no tengo ese dato" para estos temas.
    Los datos de Globex (direcciones, oficinas, agencias, horarios, socios, plazos) SOLO salen de 'consultar_faq_comercial'.
    Si el cliente hace varias preguntas en un mensaje, usa 'buscar_faq' para todas (también las de dirección, plazos o pagos): pásalas por separado en 'preguntas' y respóndelas en una sola llamada con sus 'ids'.
    Para CUALQUIER otra pregunta sobre el servicio (TAX y free tax, identificador GX, campos de la dirección en la tienda, tracking, documentos, compras en tiendas, Shalom, consolidación, reempaque, pagos, recojo, plazos de un caso, incidencias...), llama a 'buscar_faq' con la pregunta del cliente. Elige la candidata que responde lo que el cliente preguntó, con los datos que ya dio (nunca una que le pida un dato que ya mencionó), y llama a 'enviar_faq' con su id: Globix envía esa respuesta aprobada tal cual.
@@ -321,6 +322,21 @@ TOOLS = [
                                       "description": "Peso total del pedido, solo si el cliente dio un único peso para todo."},
                 },
                 "required": ["productos"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "consultar_regla_producto",
+            "description": "Responde si un producto concreto cumple una regla de Globex: cantidad frente al máximo de su categoría, si es nuevo o usado, figuras de colección, receta o no admitidos. El código decide el sí o el no.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "producto": {"type": "string",
+                                 "description": "Producto o categoría por el que pregunta, con la cantidad si la dijo (ej.: 'seis pares de zapatos', 'tres botellas de shampoo', 'bufanda nueva')."}
+                },
+                "required": ["producto"],
             },
         },
     },
@@ -1007,6 +1023,17 @@ def ejecutar_herramienta(
             estado["pesos_referenciales"].append(float(info_prod["peso_kg"]))
         return (info_prod if info_prod else {"encontrado": False}), None
 
+    # ¿ESTE PRODUCTO CUMPLE LA REGLA? La respuesta (sí/no, máximo, condición) la arma el código.
+    # La cantidad y el estado se leen del mensaje del cliente, no de lo que diga el LLM.
+    if nombre_funcion == "consultar_regla_producto":
+        texto = respuesta_regla(texto_consolidado, str(args.get("producto") or ""))
+        if not texto:
+            return {"sin_regla": True, "instruccion": "No hay una regla específica para ese producto: usa "
+                    "consultar_faq_comercial con tema 'reglas_productos' o buscar_faq."}, None
+        if not estado.get("menu"):
+            estado["menu"] = BOTONES_POST_FAQ
+        return {"regla_producto": True}, texto
+
     # BORRADOR DEL PEDIDO: datos parciales validados, aunque falte algo para cotizar
     if nombre_funcion == "registrar_datos_pedido":
         validacion = validar_datos_parciales(args, textos_cliente, estado["pesos_referenciales"])
@@ -1287,6 +1314,7 @@ _TIPO_POR_RESULTADO = {
     "redirigido": "fuera_de_alcance",
     "bloqueado_guardrail": "guardrail",
     "pide_peso": "pide_dato",
+    "regla_producto": "faq",
 }
 
 # KPI de impacto: respuestas del bot que cuentan como "primera atención útil".

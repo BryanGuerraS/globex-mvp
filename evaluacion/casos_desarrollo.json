@@ -2900,7 +2900,8 @@
       "esperado": {
         "tipo_final": [
           "guardrail",
-          "libre"
+          "libre",
+          "faq"
         ],
         "cotiza": false,
         "deriva": false

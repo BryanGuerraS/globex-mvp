@@ -112,3 +112,34 @@ def test_banco_desarrollo_palabras_nuevas(texto, tipo):
                                    "Una casaca nueva de 80 dólares, no usada"])
 def test_sin_falsos_positivos_nuevos(texto):
     assert verificar(texto) is None
+
+
+# ---- Respuestas por código a "¿cumple la regla?" (16/11) ----
+from guardrails import respuesta_regla  # noqa: E402
+
+
+@pytest.mark.parametrize("texto, inicio", [
+    ("Serían exactamente cuatro perfumes nuevos para un mismo DNI. ¿Está dentro del máximo?",
+     "✅ Sí: traer 4 unidades de perfumes está dentro del máximo de 4 por DNI"),
+    ("El pedido tiene seis pares de zapatos nuevos. ¿Cumple el máximo de calzado?",
+     "⚠️ No: el máximo es de 5 pares de calzado por consignatario, así que 6 lo supera."),
+    ("En una misma cotización quiero tres botellas de shampoo. ¿Cumple?",
+     "⚠️ No: el máximo es de 2 unidades de shampoo y productos para el cabello por cotización"),
+    ("Mi pedido tiene cuatro cremas The Ordinary. ¿Por ser de esa marca puedo llevar las cuatro?",
+     "⚠️ No: el máximo es de 3 unidades de cremas por DNI"),
+    ("Las seis piezas son figuras de colección. ¿Permite más de cuatro figuras?",
+     "✅ Sí: las figuras de colección pueden pasar de 4 unidades"),
+    ("Quiero traer una bufanda nueva con su etiqueta. ¿Cumple la regla para ropa?",
+     "✅ Sí: la ropa, los juguetes y los repuestos de autos pueden ingresar"),
+    ("¿Hasta cuántos pares de zapatos puedo traer?", "📦 El máximo es de 5 pares de calzado por consignatario."),
+])
+def test_respuesta_regla_concreta(texto, inicio):
+    assert respuesta_regla(texto).startswith(inicio)
+
+
+def test_sin_regla_aplicable_devuelve_none():
+    assert respuesta_regla("¿Puedo traer una laptop?") is None
+
+
+def test_sin_cantidad_se_mantiene_el_detalle_aprobado():
+    assert "• Perfumes: 4" in verificar("¿Cuántos perfumes puedo traer?")["mensaje"]

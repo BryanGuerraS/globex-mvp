@@ -221,11 +221,14 @@ def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
                 pide_detalle = "mensaje_detalle" in datos and _PIDE_MAXIMOS.search(texto_normalizado)
                 if datos.get("solo_si_pregunta") and not pide_detalle:
                     break  # se cotiza: el máximo se revisa con la cantidad al calcular
+                # Con una cantidad ("¿4 perfumes están dentro?") se responde sí o no; sin cantidad, el detalle
+                concreta = (respuesta_regla(texto, revisar_alerta=False, solo_con_cantidad=True)
+                            if datos.get("solo_si_pregunta") else None)
                 return {
                     "restringido": True,
                     "tipo": tipo,
                     "entidad": datos["entidad"],
-                    "mensaje": datos["mensaje_detalle"] if pide_detalle else datos["mensaje"],
+                    "mensaje": concreta or (datos["mensaje_detalle"] if pide_detalle else datos["mensaje"]),
                 "solo_informa": bool(datos.get("solo_si_pregunta")),
                     "palabra_detectada": palabra,
                 }
@@ -268,3 +271,70 @@ def es_categoria_solo_nuevos(texto: str) -> bool:
 
 def dice_que_es_nuevo(texto: str) -> bool:
     return bool(_DICE_NUEVO.search(_normalizar(texto or "")))
+
+
+
+# ---------------------------------------------------------------------------------------------
+# Respuestas armadas por código a "¿esto cumple la regla?" (16/11, opción aprobada por el usuario):
+# el código compara la cantidad con el máximo de la categoría; el LLM no decide el sí o el no.
+
+_NUM_PALABRA = {"un": 1, "una": 1, "uno": 1, "dos": 2, "tres": 3, "cuatro": 4, "cinco": 5, "seis": 6,
+                "siete": 7, "ocho": 8, "nueve": 9, "diez": 10, "once": 11, "doce": 12, "quince": 15, "veinte": 20}
+_CANTIDAD = r"(\d{1,3}|" + "|".join(_NUM_PALABRA) + r")"
+
+TEXTO_REGLA_DENTRO = ("✅ Sí: traer {n} {unidad} de {nombre} está dentro del máximo de {maximo} por {ambito}. "
+                      "Si quieres, cuéntame el precio en USD y el peso en kg y lo cotizo 😊")
+TEXTO_REGLA_EXCEDE = "⚠️ No: el máximo es de {maximo} {unidad} de {nombre} por {ambito}, así que {n} lo supera."
+TEXTO_REGLA_MAXIMO = "📦 El máximo es de {maximo} {unidad} de {nombre} por {ambito}."
+TEXTO_REGLA_COLECCION = ("✅ Sí: las figuras de colección pueden pasar de 4 unidades. El máximo de 4 por "
+                         "consignatario es para los demás juguetes.")
+TEXTO_REGLA_NUEVO = ("✅ Sí: la ropa, los juguetes y los repuestos de autos pueden ingresar a Perú si son "
+                     "nuevos, así que tu producto cumple esa condición.")
+
+
+def limite_de(texto: str) -> Optional[Dict]:
+    """Máximo de la categoría del producto ({lim, excepcion}); None si la categoría no tiene máximo."""
+    t = _normalizar(texto or "")
+    for lim, patrones, excepciones in _PATRONES_LIMITE:
+        if any(e.search(t) for e in excepciones):
+            return {"lim": lim, "excepcion": True}
+        if any(p.search(t) for p in patrones):
+            return {"lim": lim, "excepcion": False}
+    return None
+
+
+def cantidad_del_producto(texto: str, lim: Dict) -> Optional[int]:
+    """Cantidad escrita junto al producto ("cuatro perfumes", "6 pares de zapatos"); None si no está."""
+    t = _normalizar(texto or "")
+    palabras = "|".join(re.escape(_normalizar(p)) for p in lim["palabras"] + lim.get("excepto", []))
+    m = re.search(rf"(?<![a-z0-9]){_CANTIDAD}\W+(?:\w+\W+){{0,3}}?(?:{palabras})", t)
+    if not m:
+        return None
+    valor = m.group(1)
+    return int(valor) if valor.isdigit() else _NUM_PALABRA[valor]
+
+
+def respuesta_regla(texto: str, producto: Optional[str] = None, revisar_alerta: bool = True,
+                    solo_con_cantidad: bool = False) -> Optional[str]:
+    """Respuesta fija a si un producto concreto cumple una regla, o None si no hay una regla aplicable.
+
+    `texto` es el mensaje del cliente: la cantidad y el estado se toman de ahí (anclados), no del LLM.
+    """
+    base = f"{producto or ''} {texto or ''}"
+    alerta = verificar_mercancia_restringida(producto or texto or "") if revisar_alerta else None
+    if alerta and alerta["tipo"] in ("prohibido", "no_admitido", "receta", "baterias", "solo_nuevos"):
+        return alerta["mensaje"]
+    info = limite_de(producto or "") or limite_de(texto or "")
+    if info:
+        lim = info["lim"]
+        if info["excepcion"]:
+            return TEXTO_REGLA_COLECCION
+        n = cantidad_del_producto(base, lim)
+        datos = {"n": n, "unidad": lim["unidad"], "nombre": lim["nombre"], "maximo": lim["maximo"],
+                 "ambito": _AMBITOS[lim["ambito"]]}
+        if n is None:
+            return None if solo_con_cantidad else TEXTO_REGLA_MAXIMO.format(**datos)
+        return (TEXTO_REGLA_DENTRO if n <= lim["maximo"] else TEXTO_REGLA_EXCEDE).format(**datos)
+    if es_categoria_solo_nuevos(base) and dice_que_es_nuevo(texto or ""):
+        return TEXTO_REGLA_NUEVO
+    return None
