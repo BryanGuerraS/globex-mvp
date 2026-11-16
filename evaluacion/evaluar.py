@@ -88,6 +88,10 @@ def evaluar_corrida(caso: Dict, corrida: Dict) -> List[Dict]:
     ultimo = procesados[-1] if procesados else {}
     herramientas = [h for t in procesados for h in t.get("herramientas", [])]
     nombres = [h["nombre"] for h in herramientas]
+    # registrar_datos_pedido consulta el catálogo de pesos por su cuenta (15/11): cuenta como consulta
+    if any(h["nombre"] == "registrar_datos_pedido" and isinstance(h.get("resultado"), dict)
+           and h["resultado"].get("pesos_de_catalogo") for h in herramientas):
+        nombres.append("consultar_peso_producto")
     textos_bot = "\n".join(r for t in corrida["turnos"] for r in t.get("respuestas", []))
     checks: List[Dict] = []
 

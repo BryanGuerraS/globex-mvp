@@ -53,7 +53,7 @@ def test_faq_y_guardrail_cuentan(turno):
                  [_respuesta(tool_calls=[_tool_call("t1", "consultar_faq_comercial", {"tema": "plazos"})]),
                   _respuesta(content="Demora de 5 a 7 días hábiles.")])
     assert chat["primera_util_tipo"] == "faq"
-    chat = turno("PE.k4", "quiero traer 3 perfumes por $150", [])
+    chat = turno("PE.k4", "quiero traer vitaminas de 40 dólares", [])
     assert chat["primera_util_tipo"] == "guardrail"
 
 

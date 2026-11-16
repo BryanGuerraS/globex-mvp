@@ -472,3 +472,60 @@ def validar_productos(
     if peso_total is None and any(p["peso_kg"] is None for p in salida):
         return "Falta el peso de algún producto."
     return salida, peso_total
+
+
+def validar_datos_parciales(
+    args: dict, textos_cliente: Iterable[str], pesos_referenciales: Iterable[float] = ()
+) -> Union[Tuple[list, Optional[float]], str]:
+    """Valida un pedido incompleto (para el borrador): cada dato que venga se ancla al texto del
+    cliente con las mismas reglas que al cotizar; los que falten quedan en None.
+
+    Devuelve (líneas, peso_total_kg o None) o el motivo del rechazo.
+    """
+    textos = list(textos_cliente)
+    pesos_ref = list(pesos_referenciales)
+    brutos = args.get("productos")
+    if not isinstance(brutos, list) or not 1 <= len(brutos) <= MAX_PRODUCTOS:
+        return f"Pasa entre 1 y {MAX_PRODUCTOS} productos en la lista 'productos'."
+    numeros = numeros_en_texto(textos)
+    peso_total = _a_numero(args.get("peso_total_kg"))
+    if args.get("peso_total_kg") is not None:
+        if peso_total is None or peso_total <= 0:
+            return "El peso total debe ser un número mayor a cero, en kg."
+        if not any(_cerca(peso_total, n * f) for n in numeros for f in _FACTORES_A_KG) and \
+                not any(_cerca(peso_total, p) for p in pesos_ref):
+            return f"El peso total {peso_total} kg no aparece en los mensajes del cliente."
+
+    salida = []
+    for i, b in enumerate(brutos, 1):
+        if not isinstance(b, dict):
+            return "Cada producto debe ser un objeto."
+        etiqueta = f"Producto {i}" + (f" ({b.get('producto')})" if b.get("producto") else "")
+        legado = {"valor_producto_usd": b.get("precio_unitario_usd"), "cantidad": b.get("cantidad"),
+                  "tax_tienda_usd": b.get("tax_tienda_usd"), "sin_tax": b.get("sin_tax")}
+        cantidad = validar_cantidad(legado, textos)
+        if isinstance(cantidad, str):
+            return f"{etiqueta}: {cantidad}"
+        precio = None
+        if b.get("precio_unitario_usd") is not None:
+            precio = _a_numero(b.get("precio_unitario_usd"))
+            if precio is None or precio <= 0:
+                return f"{etiqueta}: el precio debe ser un número mayor a cero."
+            if not any(_cerca(precio, n) for n in numeros):
+                return f"{etiqueta}: el precio {precio} USD no aparece en los mensajes del cliente. No lo supongas."
+        peso = None
+        if b.get("peso_kg") is not None:
+            peso = _a_numero(b.get("peso_kg"))
+            if peso is None or peso <= 0:
+                return f"{etiqueta}: el peso debe ser un número mayor a cero."
+            del_cliente = any(_cerca(peso, n * f * v) for n in numeros for f in _FACTORES_A_KG
+                              for v in {1, cantidad})
+            if not (del_cliente or any(_cerca(peso, p) for p in pesos_ref)):
+                return f"{etiqueta}: el peso {peso} kg no aparece en los mensajes del cliente ni en el catálogo."
+        tax = validar_tax_tienda(legado, textos) if precio is not None else None
+        if isinstance(tax, str):
+            return f"{etiqueta}: {tax}"
+        salida.append({"producto": (str(b.get("producto") or "").strip()[:40] or None),
+                       "tienda": (str(b.get("tienda") or "").strip()[:30] or None),
+                       "precio_unitario": precio, "cantidad": cantidad, "peso_kg": peso, "tax": tax})
+    return salida, peso_total

@@ -13,14 +13,15 @@ KB_GLOBEX = {
         "titulo": "Plantilla de Dirección de Casillero en Miami (F21)",
         "contenido": (
             "📍 *Dirección de nuestro almacén en Miami:*\n\n"
-            "• *Address Line 1:* 7270 NW 35th Terrace, Suite 101\n"
-            "• *Address Line 2:* [Tu Nombre Completo] + Código GX (ej. GX-XXXX)\n"
+            "• *Nombre (obligatorio):* GX / tu nombre y apellido\n"
+            "• *Address Line 1:* 7270 NW 35th Terrace\n"
+            "• *Address Line 2:* Suite 101\n"
             "• *City:* Miami\n"
             "• *State:* FL (Florida)\n"
             "• *Zip Code:* 33122\n"
             "• *Phone:* +1 (786) 628-8807\n"
             "• *Country:* United States\n\n"
-            "⚠️ *Importante:* Tu código GX personal te lo asignará tu asesor al registrar tu orden."
+            "⚠️ *Importante:* pon GX junto a tu nombre y apellido reales. No necesitas un código personal."
         ),
     },
     "plazos_entrega": {

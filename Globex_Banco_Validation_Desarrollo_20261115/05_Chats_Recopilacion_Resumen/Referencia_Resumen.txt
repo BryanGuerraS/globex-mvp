@@ -1,0 +1,1241 @@
+ID: VCHAT001
+UNIVERSO: CH01
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: estuche de tela nuevo.
+Datos: Cliente: Nombre = Marina Cáceres; P1: Producto = estuche de tela nuevo; P1: Tienda = Amazon; P1: Precio unitario informado = USD 17.80; precio final con TAX cero confirmado incluido; P1: Cantidad = 1; P1: Peso individual embalado = 0.38 kg; P1: TAX informado = USD 0.00.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: estuche de tela nuevo.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Marina Cáceres
+- D2: P1: Producto = estuche de tela nuevo
+- D3: P1: Tienda = Amazon
+- D4: P1: Precio unitario informado = USD 17.80; precio final con TAX cero confirmado incluido
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.38 kg
+- D7: P1: TAX informado = USD 0.00
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT002
+UNIVERSO: CH01
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: libro impreso nuevo.
+Datos: Cliente: Nombre = Rafael Estévez; P1: Producto = libro impreso nuevo; P1: Tienda = eBay; P1: Precio unitario informado = USD 62.45; precio antes de TAX, con impuesto confirmado adicional; P1: Cantidad = 1; P1: Peso individual embalado = 0.74 kg; P1: TAX informado = USD 4.37.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: libro impreso nuevo.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Rafael Estévez
+- D2: P1: Producto = libro impreso nuevo
+- D3: P1: Tienda = eBay
+- D4: P1: Precio unitario informado = USD 62.45; precio antes de TAX, con impuesto confirmado adicional
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.74 kg
+- D7: P1: TAX informado = USD 4.37
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT003
+UNIVERSO: CH01
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: gorro nuevo.
+Datos: Cliente: Nombre = Sofía Quispe; P1: Producto = gorro nuevo; P1: Tienda = eBay; P1: Precio unitario informado = USD 21.60; precio final con TAX cero confirmado incluido; P1: Cantidad = 1; P1: Peso individual embalado = 0.24 kg; P1: TAX informado = USD 0.00.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: gorro nuevo.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Sofía Quispe
+- D2: P1: Producto = gorro nuevo
+- D3: P1: Tienda = eBay
+- D4: P1: Precio unitario informado = USD 21.60; precio final con TAX cero confirmado incluido
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.24 kg
+- D7: P1: TAX informado = USD 0.00
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT004
+UNIVERSO: CH02
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: camisa nueva.
+Datos: Cliente: Nombre = Tomás Salcedo; P1: Producto = camisa nueva; P1: Tienda = Amazon; P1: Precio unitario informado = USD 54.70; precio final con TAX cero confirmado incluido; P1: Cantidad = 1; P1: Peso individual embalado = 0.92 kg; P1: TAX informado = USD 0.00.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: camisa nueva.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Tomás Salcedo
+- D2: P1: Producto = camisa nueva
+- D3: P1: Tienda = Amazon
+- D4: P1: Precio unitario informado = USD 54.70; precio final con TAX cero confirmado incluido
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.92 kg
+- D7: P1: TAX informado = USD 0.00
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- USD 59,10 dejó de ser el precio vigente.
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT005
+UNIVERSO: CH02
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: agenda nueva.
+Datos: Cliente: Nombre = Lucía Leiva; P1: Producto = agenda nueva; P1: Tienda = eBay; P1: Precio unitario informado = USD 32.40; precio final con TAX cero confirmado incluido; P1: Cantidad = 1; P1: Peso individual embalado = 0.48 kg; P1: TAX informado = USD 0.00.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: agenda nueva.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Lucía Leiva
+- D2: P1: Producto = agenda nueva
+- D3: P1: Tienda = eBay
+- D4: P1: Precio unitario informado = USD 32.40; precio final con TAX cero confirmado incluido
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.48 kg
+- D7: P1: TAX informado = USD 0.00
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- Lucía Mena no es la identidad vigente.
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT006
+UNIVERSO: CH02
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: mochila nueva.
+Datos: Cliente: Nombre = Diego Fuentes; P1: Producto = mochila nueva; P1: Tienda = Amazon; P1: Precio unitario informado = USD 96.30; precio final con TAX conocido ya incluido; P1: Cantidad = 1; P1: Peso individual embalado = 1.14 kg; P1: TAX informado = USD 6.30.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: mochila nueva.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Diego Fuentes
+- D2: P1: Producto = mochila nueva
+- D3: P1: Tienda = Amazon
+- D4: P1: Precio unitario informado = USD 96.30; precio final con TAX conocido ya incluido
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 1.14 kg
+- D7: P1: TAX informado = USD 6.30
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- 1,4 kg fue sustituido por 1,14 kg.
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT007
+UNIVERSO: CH03
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: cartuchera nueva.
+Datos: Cliente: Nombre = Valeria Ríos; P1: Producto = cartuchera nueva; P1: Tienda = Amazon; P1: Precio unitario informado = USD 44.94; precio final con TAX conocido ya incluido; P1: Cantidad = 1; P1: Peso individual embalado = 0.53 kg; P1: TAX informado = USD 2.94.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: cartuchera nueva.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Valeria Ríos
+- D2: P1: Producto = cartuchera nueva
+- D3: P1: Tienda = Amazon
+- D4: P1: Precio unitario informado = USD 44.94; precio final con TAX conocido ya incluido
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.53 kg
+- D7: P1: TAX informado = USD 2.94
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT008
+UNIVERSO: CH03
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: correa nueva.
+Datos: Cliente: Nombre = Iván Córdova; P1: Producto = correa nueva; P1: Tienda = eBay; P1: Precio unitario informado = USD 87.35; precio antes de TAX, impuesto real no informado; P1: Cantidad = 1; P1: Peso individual embalado = 0.66 kg.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas. TAX real del checkout no informado; cualquier 7 % es estimación, no importe confirmado.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: correa nueva.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Iván Córdova
+- D2: P1: Producto = correa nueva
+- D3: P1: Tienda = eBay
+- D4: P1: Precio unitario informado = USD 87.35; precio antes de TAX, impuesto real no informado
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.66 kg
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+- P2: TAX real del checkout no informado; cualquier 7 % es estimación, no importe confirmado.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT009
+UNIVERSO: CH03
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: mochila nueva.
+Datos: Cliente: Nombre = Daniela Robles; P1: Producto = mochila nueva; P1: Tienda = eBay; P1: Precio unitario informado = USD 119.83; precio final con TAX incluido sin desglose; P1: Cantidad = 1; P1: Peso individual embalado = 1.08 kg.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas. El importe separado de TAX no está informado; el precio final sí es conocido y no debe gravarse otra vez.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: mochila nueva.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Daniela Robles
+- D2: P1: Producto = mochila nueva
+- D3: P1: Tienda = eBay
+- D4: P1: Precio unitario informado = USD 119.83; precio final con TAX incluido sin desglose
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 1.08 kg
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+- P2: El importe separado de TAX no está informado; el precio final sí es conocido y no debe gravarse otra vez.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT010
+UNIVERSO: CH04
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: libro impreso nuevo.
+Datos: Cliente: Nombre = Andrés Luján; P1: Producto = libro impreso nuevo; P1: Tienda = Amazon; P1: Precio unitario informado = USD 28.90; precio final con TAX cero confirmado incluido; P1: Cantidad = 1; P1: TAX informado = USD 0.00.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas. Peso embalado del libro no informado y expresamente pendiente, sin estimación autorizada en este caso.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: libro impreso nuevo.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Andrés Luján
+- D2: P1: Producto = libro impreso nuevo
+- D3: P1: Tienda = Amazon
+- D4: P1: Precio unitario informado = USD 28.90; precio final con TAX cero confirmado incluido
+- D5: P1: Cantidad = 1
+- D6: P1: TAX informado = USD 0.00
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+- P2: Peso embalado del libro no informado y expresamente pendiente, sin estimación autorizada en este caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT011
+UNIVERSO: CH04
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: estuche de tela nuevo.
+Datos: Cliente: Nombre = Patricia Lozano; P1: Producto = estuche de tela nuevo; P1: Tienda = Amazon; P1: Cantidad = 1; P1: Peso individual embalado = 0.47 kg.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas. Precio del estuche no informado. TAX y condición del precio no informados.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: estuche de tela nuevo.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Patricia Lozano
+- D2: P1: Producto = estuche de tela nuevo
+- D3: P1: Tienda = Amazon
+- D4: P1: Cantidad = 1
+- D5: P1: Peso individual embalado = 0.47 kg
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+- P2: Precio del estuche no informado.
+- P3: TAX y condición del precio no informados.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT012
+UNIVERSO: CH05
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: libro impreso nuevo, bufanda nueva.
+Datos: Cliente: Nombre = Óscar Ramos; P1: Producto = libro impreso nuevo; P1: Tienda = eBay; P1: Precio unitario informado = USD 27.30; precio final con TAX cero confirmado incluido; P1: Cantidad = 1; P1: Peso individual embalado = 0.34 kg; P1: TAX informado = USD 0.00; P2: Producto = bufanda nueva; P2: Tienda = Amazon; P2: Precio unitario informado = USD 33.60; precio final con TAX cero confirmado incluido; P2: Cantidad = 1; P2: Peso individual embalado = 0.26 kg; P2: TAX informado = USD 0.00; Cotización: Peso conjunto embalado = 0.60 kg.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: libro impreso nuevo, bufanda nueva.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Óscar Ramos
+- D2: P1: Producto = libro impreso nuevo
+- D3: P1: Tienda = eBay
+- D4: P1: Precio unitario informado = USD 27.30; precio final con TAX cero confirmado incluido
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.34 kg
+- D7: P1: TAX informado = USD 0.00
+- D8: P2: Producto = bufanda nueva
+- D9: P2: Tienda = Amazon
+- D10: P2: Precio unitario informado = USD 33.60; precio final con TAX cero confirmado incluido
+- D11: P2: Cantidad = 1
+- D12: P2: Peso individual embalado = 0.26 kg
+- D13: P2: TAX informado = USD 0.00
+- D14: Cotización: Peso conjunto embalado = 0.60 kg
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT013
+UNIVERSO: CH05
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: agenda nueva.
+Datos: Cliente: Nombre = Gabriela Nieto; P1: Producto = agenda nueva; P1: Tienda = Amazon; P1: Precio unitario informado = USD 18.50; precio final con TAX cero confirmado incluido; P1: Cantidad = 1; P1: Peso individual embalado = 0.40 kg; P1: TAX informado = USD 0.00.
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: agenda nueva.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Gabriela Nieto
+- D2: P1: Producto = agenda nueva
+- D3: P1: Tienda = Amazon
+- D4: P1: Precio unitario informado = USD 18.50; precio final con TAX cero confirmado incluido
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.40 kg
+- D7: P1: TAX informado = USD 0.00
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- El gorro eBay de USD 24,20 y 0,32 kg fue descartado y no es un producto activo.
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT014
+UNIVERSO: CH06
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: cuaderno nuevo.
+Datos: Cliente: Nombre = Elisa Pardo; P1: Producto = cuaderno nuevo; P1: Tienda = Amazon; P1: Precio unitario informado = USD 15.48; precio antes de TAX, con impuesto confirmado adicional; P1: Cantidad = 1; P1: Peso individual embalado = 0.45 kg; P1: TAX informado = USD 1.08; El cliente todavía no ha comprado; está comparando antes de comprar..
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: cuaderno nuevo.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Elisa Pardo
+- D2: P1: Producto = cuaderno nuevo
+- D3: P1: Tienda = Amazon
+- D4: P1: Precio unitario informado = USD 15.48; precio antes de TAX, con impuesto confirmado adicional
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.45 kg
+- D7: P1: TAX informado = USD 1.08
+- D8: El cliente todavía no ha comprado; está comparando antes de comprar.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.
+
+================================================================
+
+ID: VCHAT015
+UNIVERSO: CH06
+TIPO DE CASO: RESUMEN_PARA_ASESOR
+CORTE: publicación prevista al atender el último mensaje del guion.
+
+RESUMEN ORIENTATIVO
+Motivo: el cliente solicita continuar con un asesor.
+Necesidad: Revisar y continuar la solicitud de cotización del pedido vigente: agenda nueva.
+Datos: Cliente: Nombre = Héctor Aguilar; P1: Producto = agenda nueva; P1: Tienda = eBay; P1: Precio unitario informado = USD 41.80; precio final con TAX cero confirmado incluido; P1: Cantidad = 1; P1: Peso individual embalado = 0.75 kg; P1: TAX informado = USD 0.00; Preferencia vigente: recojo en Lima.; No ha realizado todavía la compra..
+Pendientes: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+
+C1 — MOTIVO
+Indispensable:
+- M1: El cliente pide que un asesor continúe o revise su caso.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: La petición de atención humana es inequívoca; solo una referencia secundaria a la gestión resulta poco precisa, sin cambiar el motivo. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Atribuir la continuación a otra razón incompatible con el guion.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C2 — NECESIDAD
+Indispensable:
+- N1: Revisar y continuar la solicitud de cotización del pedido vigente: agenda nueva.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: El objetivo y el producto están claros; un pronombre secundario carece de referente inmediato, sin impedir entender la necesidad. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar el objetivo o presentar la compra como ya contratada.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C3 — DATOS RELEVANTES
+Indispensable:
+- D1: Cliente: Nombre = Héctor Aguilar
+- D2: P1: Producto = agenda nueva
+- D3: P1: Tienda = eBay
+- D4: P1: Precio unitario informado = USD 41.80; precio final con TAX cero confirmado incluido
+- D5: P1: Cantidad = 1
+- D6: P1: Peso individual embalado = 0.75 kg
+- D7: P1: TAX informado = USD 0.00
+- D8: Preferencia vigente: recojo en Lima.
+- D9: No ha realizado todavía la compra.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todos los datos indispensables son correctos y están asociados; solo una leyenda secundaria es poco precisa, sin alterar valores, unidades, condiciones ni vigencia. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Cambiar identidad, importe, condición de TAX, cantidad, peso o asociación entre productos; mantener sustituidos como vigentes; inventar compra, pago o recepción.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+C4 — PENDIENTES
+Indispensable:
+- P1: Revisión y continuación por un asesor, sin presentarlas como realizadas.
+Rúbrica 0-5:
+5: todos los requisitos de este criterio están comunicados correctamente, vigentes y asociados.
+4: Todas las tareas pendientes están claras; solo una referencia secundaria a la continuación es poco precisa, sin cambiar las tareas. No se considera defecto una redacción equivalente o la ausencia de información opcional.
+3: una insuficiencia indispensable u omisión con otra información específica útil y sin crítico.
+2: varias insuficiencias; conserva solo fragmentos específicos útiles.
+1: mención genérica del asunto sin satisfacer sus requisitos.
+0: ausencia, contenido ininteligible/ajeno o crítico aplicable a este criterio.
+Crítico específico: Declarar resuelta la revisión por el asesor o una información que el guion mantiene desconocida.
+Una omisión simple no es automáticamente un crítico. No bajar otros criterios sin evidencia propia.
+
+VIGENCIA Y DATOS NO CONFIRMADOS
+- No constan compra, contratación, pago acreditado ni recepción efectiva de mercancía.
+- Se aceptan redacciones, títulos, orden y conversiones equivalentes; no se exige el texto orientativo literal.
+- Los totales calculados no son requisitos. Si se añaden, deben corresponder a una proforma realmente emitida y estar marcados como referenciales.
+
+ACEPTACIÓN
+Resumen principal publicado, no vacío y cada C1-C4>=4. Promedio descriptivo=(C1+C2+C3+C4)/4; no compensa un criterio insuficiente.
+No inventar un defecto menor, críticos o penalizaciones -1; una omisión indispensable no permite un 4.
+Ejecutado sin resumen publicado: fallo de disponibilidad, cuatro ceros. Captura o publicación no verificable: pendiente, no éxito supuesto.
+KPI=100*resúmenes aceptables/casos principales resueltos, incluidos fallos de disponibilidad; meta 95 %.

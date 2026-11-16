@@ -82,3 +82,12 @@ def test_maximo_por_dni_se_revisa_por_producto(entorno):  # noqa: F811
         {"producto": "zapatillas", "precio_unitario_usd": 60, "cantidad": 2, "peso_kg": 1.5}]})])])
     # 10 polos no tienen máximo y 2 pares de zapatillas están bajo el máximo de 5: se cotiza
     assert main.obtener_chat("PE.ped2")["bot_activo"] == 1
+
+
+def test_tributos_desde_usd_200_inclusive():
+    """Confirmado por el usuario (15/11): se cobran tributos si producto + TAX es mayor o igual a USD 200."""
+    from pricing_engine import GlobexPricingEngine as M
+    justo = M.calcular_pedido([{"producto": "x", "precio_unitario": 200, "cantidad": 1, "peso_kg": 1, "tax": 0}])
+    assert justo["aplica_impuesto"] and justo["tributos_aprox"] == 48.0
+    debajo = M.calcular_pedido([{"producto": "x", "precio_unitario": 199.99, "cantidad": 1, "peso_kg": 1, "tax": 0}])
+    assert not debajo["aplica_impuesto"] and debajo["tributos_aprox"] == 0.0

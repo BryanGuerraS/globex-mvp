@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 import sqlite3
 from typing import Dict, List, Optional
@@ -150,6 +151,17 @@ def init_db():
                 asesor TEXT,
                 cotizacion_total REAL,
                 timestamp TIMESTAMP
+            )
+        """
+        )
+
+        # 3d. Borrador estructurado del pedido (lo que Globix entendió, aunque no haya cotización)
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS borrador_pedido (
+                chat_id TEXT PRIMARY KEY,
+                datos TEXT,
+                actualizado_at TIMESTAMP
             )
         """
         )
@@ -403,6 +415,24 @@ def obtener_chat(chat_id: str) -> Optional[Dict]:
         cursor.execute("SELECT * FROM chats WHERE chat_id = ?", (chat_id,))
         row = cursor.fetchone()
         return dict(row) if row else None
+
+
+def guardar_borrador(chat_id: str, datos: Dict):
+    """Guarda (reemplaza) el borrador del pedido del chat."""
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO borrador_pedido (chat_id, datos, actualizado_at) VALUES (?, ?, ?) "
+            "ON CONFLICT(chat_id) DO UPDATE SET datos = excluded.datos, actualizado_at = excluded.actualizado_at",
+            (chat_id, json.dumps(datos, ensure_ascii=False), ahora().strftime("%Y-%m-%d %H:%M:%S")),
+        )
+        conn.commit()
+
+
+def obtener_borrador(chat_id: str) -> Optional[Dict]:
+    init_db()
+    with get_connection() as conn:
+        fila = conn.execute("SELECT datos FROM borrador_pedido WHERE chat_id = ?", (chat_id,)).fetchone()
+    return json.loads(fila["datos"]) if fila and fila["datos"] else None
 
 
 def guardar_nombre_cliente(chat_id: str, nombre: str):

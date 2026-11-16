@@ -10,7 +10,7 @@ import json
 import re
 from typing import Dict, List, Optional
 
-from database import obtener_chat, obtener_mensajes_chat, obtener_metricas_chat
+from database import obtener_borrador, obtener_chat, obtener_mensajes_chat, obtener_metricas_chat
 from pricing_engine import GlobexPricingEngine
 
 _TOPE = f"USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}"
@@ -91,8 +91,12 @@ def _pendientes(motivo: Optional[str], detalle: str, chat: Dict, cotizacion: Opt
         pendientes.append("Pedir productos, cantidades y fechas del viaje")
     elif motivo == "consulta":
         pendientes.append("Revisar el caso concreto: Globix ya le dio la respuesta general")
-    elif cotizacion:
+    elif cotizacion and cotizacion.get("pendientes_datos"):
+        pendientes.append("Pedir " + ", ".join(cotizacion["pendientes_datos"]))
+    elif cotizacion and cotizacion.get("aceptada", True):
         pendientes.append("Validar la cotización y enviar el PDF formal")
+    elif cotizacion:
+        pendientes.append("Revisar los datos del pedido: Globix no pudo cotizarlo")
     else:
         pendientes.append("Entender la consulta y responder")
     if not chat.get("nombre_cliente"):
@@ -130,13 +134,30 @@ def _productos_de(cotizacion: Optional[Dict]) -> List[Dict]:
     return salida
 
 
+def _productos_del_borrador(borrador: Optional[Dict]) -> List[Dict]:
+    """Líneas del borrador del pedido en el formato del resumen."""
+    return [{"producto": (l.get("producto") or "").strip(), "tienda": (l.get("tienda") or "").strip(),
+             "precio": l.get("precio_unitario_usd"), "cantidad": int(l.get("cantidad") or 1),
+             "peso": l.get("peso_kg"), "tax_estado": (l.get("tax") or {}).get("estado")}
+            for l in (borrador or {}).get("lineas", [])]
+
+
 def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") -> str:
-    """Texto del resumen (formato WhatsApp: *negrita*), tal como lo ve el asesor en la consola."""
+    """Texto del resumen (formato WhatsApp: *negrita*), tal como lo ve el asesor en la consola.
+
+    Los datos del pedido salen del borrador estructurado del chat (existe aunque no se haya
+    cotizado); si no hay borrador, de la última llamada al motor.
+    """
     chat = obtener_chat(chat_id) or {}
     nombre = chat.get("nombre_cliente") or "Aún no dio su nombre"
-    cotizacion = _ultima_cotizacion(chat_id)
+    borrador = obtener_borrador(chat_id)
+    cotizacion = None if borrador else _ultima_cotizacion(chat_id)
     mensajes = _ultimos_mensajes_cliente(chat_id)
-    items = _productos_de(cotizacion)
+    items = _productos_del_borrador(borrador) if borrador else _productos_de(cotizacion)
+    if borrador:  # para el peso total y los pendientes, el borrador hace de "cotización"
+        cotizacion = {"peso_total_kg": borrador.get("peso_total_kg"),
+                      "pendientes_datos": borrador.get("pendientes", []),
+                      "aceptada": bool((borrador.get("ultima_cotizacion") or {}).get("aceptada"))} if items else None
     producto = ", ".join(i["producto"] for i in items if i["producto"])
     servicio = chat.get("servicio") or "—"
     lineas = [
@@ -146,7 +167,7 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
         f"*Servicio:* {servicio}",
     ]
 
-    if cotizacion or chat.get("cotizacion_total"):
+    if items or chat.get("cotizacion_total"):
         partes = []
         for item in items:  # productos, cantidades y tiendas del pedido
             texto = item["producto"] or "Producto"
@@ -157,12 +178,15 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
                 texto += f" {item['cantidad']} × {precio}" if item["cantidad"] > 1 else f" {precio}"
             if item["peso"] is not None:
                 texto += f", {item['peso']:g} kg"
+            if item.get("tax_estado") == "incluido_sin_desglose":
+                texto += " (TAX incluido)"
             partes.append(texto)
         if cotizacion and cotizacion.get("peso_total_kg") is not None:
             partes.append(f"peso total {float(cotizacion['peso_total_kg']):g} kg")
         if chat.get("cotizacion_total"):
             partes.append(f"total USD {chat['cotizacion_total']:,.2f}")
-        lineas.append(f"*Cotización:* {', '.join(partes)}")
+        rotulo = "*Cotización:*" if (cotizacion or {}).get("aceptada", True) else "*Pedido (sin cotizar):*"
+        lineas.append(f"{rotulo} {', '.join(partes)}")
 
     lineas.append("*Pendientes:* " + "; ".join(_pendientes(motivo, detalle, chat, cotizacion, mensajes)))
     if mensajes:

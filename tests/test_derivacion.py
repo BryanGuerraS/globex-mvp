@@ -54,9 +54,14 @@ def test_tope_y_seguimiento_tienen_su_motivo(turno):
 
 
 def test_mercancia_restringida(turno):
-    chat = turno("PE.d4", "quiero traer 3 perfumes por $150", [])
+    chat = turno("PE.d4", "quiero traer vitaminas de 40 dólares", [])
     assert chat["motivo_derivacion"] == "restringido"
-    assert "LÍMITE POR DNI" in chat["resumen_caso"]
+    assert "RECETA" in chat["resumen_caso"]
+
+
+def test_no_admitido_no_se_deriva(turno):
+    chat = turno("PE.d4b", "quiero traer un TV box de 60 dólares", [])
+    assert chat["motivo_derivacion"] is None and chat["bot_activo"] == 1
 
 
 def test_prohibida_no_se_deriva(turno):

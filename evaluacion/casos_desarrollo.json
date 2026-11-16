@@ -387,16 +387,17 @@
     {
       "id": "GUA-01",
       "categoria": "guardrail",
-      "descripcion": "Mercancía restringida (DIGEMID)",
+      "descripcion": "Producto con máximo por DNI dentro del límite: se atiende como cotización (15/11), sin derivar",
       "mensajes": [
         "Quiero traer 3 perfumes por $150"
       ],
       "esperado": {
         "tipo_final": [
-          "guardrail"
+          "pide_dato",
+          "cotizacion",
+          "libre"
         ],
-        "cotiza": false,
-        "deriva": true
+        "deriva": false
       }
     },
     {
@@ -1316,76 +1317,81 @@
     {
       "id": "GUA-03",
       "categoria": "guardrail",
-      "descripcion": "Mercancía restringida: deriva",
+      "descripcion": "Producto con máximo por DNI dentro del límite: se atiende como cotización (15/11), sin derivar",
       "mensajes": [
         "Quiero traer 2 perfumes Dior de 95 dólares"
       ],
       "esperado": {
         "tipo_final": [
-          "guardrail"
+          "pide_dato",
+          "cotizacion",
+          "libre"
         ],
-        "cotiza": false,
-        "deriva": true
+        "deriva": false
       }
     },
     {
       "id": "GUA-04",
       "categoria": "guardrail",
-      "descripcion": "Mercancía restringida: deriva",
+      "descripcion": "Producto con máximo por DNI dentro del límite: se atiende como cotización (15/11), sin derivar",
       "mensajes": [
         "Una colonia Hugo Boss de 80 dólares, 0.4 kg"
       ],
       "esperado": {
         "tipo_final": [
-          "guardrail"
+          "pide_dato",
+          "cotizacion",
+          "libre"
         ],
-        "cotiza": false,
-        "deriva": true
+        "deriva": false
       }
     },
     {
       "id": "GUA-05",
       "categoria": "guardrail",
-      "descripcion": "Mercancía restringida: deriva",
+      "descripcion": "Producto con máximo por DNI dentro del límite: se atiende como cotización (15/11), sin derivar",
       "mensajes": [
         "Un kit de maquillaje de 120 dólares"
       ],
       "esperado": {
         "tipo_final": [
-          "guardrail"
+          "pide_dato",
+          "cotizacion",
+          "libre"
         ],
-        "cotiza": false,
-        "deriva": true
+        "deriva": false
       }
     },
     {
       "id": "GUA-06",
       "categoria": "guardrail",
-      "descripcion": "Mercancía restringida: deriva",
+      "descripcion": "Producto con máximo por DNI dentro del límite: se atiende como cotización (15/11), sin derivar",
       "mensajes": [
         "Cosméticos de Sephora por 200 dólares"
       ],
       "esperado": {
         "tipo_final": [
-          "guardrail"
+          "pide_dato",
+          "cotizacion",
+          "libre"
         ],
-        "cotiza": false,
-        "deriva": true
+        "deriva": false
       }
     },
     {
       "id": "GUA-07",
       "categoria": "guardrail",
-      "descripcion": "Mercancía restringida: deriva",
+      "descripcion": "Producto con máximo por DNI dentro del límite: se atiende como cotización (15/11), sin derivar",
       "mensajes": [
         "Una crema antiarrugas de 60 dólares"
       ],
       "esperado": {
         "tipo_final": [
-          "guardrail"
+          "pide_dato",
+          "cotizacion",
+          "libre"
         ],
-        "cotiza": false,
-        "deriva": true
+        "deriva": false
       }
     },
     {
@@ -2779,10 +2785,9 @@
       ],
       "esperado": {
         "tipo_final": [
-          "cotizacion",
-          "guardrail"
+          "cotizacion"
         ],
-        "cotiza": false
+        "cotiza": true
       }
     },
     {
@@ -2851,6 +2856,53 @@
           "total": 283.59
         },
         "cotiza": true,
+        "deriva": false
+      }
+    },
+    {
+      "id": "GUA-30",
+      "categoria": "guardrail",
+      "descripcion": "No admitido (TV Box): informa, no cotiza ni deriva",
+      "mensajes": [
+        "Quiero traer un TV box de 60 dólares, pesa 0.5 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "guardrail"
+        ],
+        "cotiza": false,
+        "deriva": false
+      }
+    },
+    {
+      "id": "GUA-31",
+      "categoria": "guardrail",
+      "descripcion": "Perfumes por encima del máximo por DNI: deriva",
+      "mensajes": [
+        "Quiero traer 6 perfumes de 40 dólares cada uno, pesan 2 kg en total"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "derivacion"
+        ],
+        "cotiza": false,
+        "deriva": true
+      }
+    },
+    {
+      "id": "GUA-32",
+      "categoria": "guardrail",
+      "descripcion": "Ropa usada y luego precio y peso: no cotiza el usado",
+      "mensajes": [
+        "Quiero traer ropa usada",
+        "Cuesta 40 dólares y pesa 1 kg"
+      ],
+      "esperado": {
+        "tipo_final": [
+          "guardrail",
+          "libre"
+        ],
+        "cotiza": false,
         "deriva": false
       }
     }

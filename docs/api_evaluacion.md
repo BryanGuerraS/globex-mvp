@@ -55,9 +55,11 @@ Varios turnos en la misma sesión (funcionalidad "Recopilación progresiva de da
   ],
   "error_ejecucion": null, "tipo_respuesta": "cotizacion",
   "datos_recopilados": {
-    "productos": [{"producto": "zapatillas Nike", "tienda": "", "precio": 140.0, "cantidad": 1, "peso": 1.5,
-                   "tax_tienda_usd": null, "sin_tax": null}],
-    "peso_total_kg": null, "cotizacion_aceptada": true, "nombre_cliente": null
+    "productos": [{"id": "P1", "producto": "zapatillas Nike", "tienda": "", "precio": 140.0, "cantidad": 1,
+                   "peso": 1.5, "tax_tienda_usd": null, "sin_tax": null, "tax_estado": "desconocido",
+                   "tipo_precio": "base", "origen_peso": "cliente"}],
+    "peso_total_kg": null, "pendientes": [], "cotizacion_aceptada": true, "error_cotizacion": null,
+    "nombre_cliente": null
   },
   "resumen_caso": {
     "publicado": false,
@@ -81,19 +83,40 @@ Varios turnos en la misma sesión (funcionalidad "Recopilación progresiva de da
 | --- | --- |
 | `respuesta_bot` | Lo que Globix respondió al **último** mensaje (la cotización va en texto; en WhatsApp es imagen). Es la entrada del juez |
 | `turnos` | Cada mensaje con su respuesta y su tipo (`pide_dato`, `cotizacion`, `faq`, `derivacion`, `bot_pausado`…) |
-| `datos_recopilados` | El último pedido que entendió Globix: producto, tienda, precio unitario, cantidad, peso y TAX de cada producto (`sin_tax: true` = precio con TAX incluido; `tax_tienda_usd` = TAX que dijo el cliente; ambos null = 7 % de referencia), peso total si lo dio y nombre del cliente. `cotizacion_aceptada: false` si el motor rechazó los datos |
+| `datos_recopilados` | El **borrador del pedido** que Globix guarda en cada chat, **aunque todavía no haya cotizado** (ver abajo). Es el mismo dato que usa el resumen del asesor |
 | `resumen_caso` | El resumen que ve el asesor. `publicado: true` si el caso se derivó (está en la consola); si no, es una vista previa. `campos_faltantes`: cuáles de los cuatro campos del E3 faltan (`motivo`, `necesidad`, `datos`, `pendientes`); `[]` = completo |
 | `registros_acciones` | Herramientas usadas y su resultado, si el bot quedó pausado (derivación), el motivo y el resumen publicado. Insumo de "transferencia efectiva" del juez |
 | `registros_tiempo` | Una fila por turno. No incluye los 5 s de agrupación de mensajes de WhatsApp |
 | `cotizacion.total_proforma` | TOTAL de la última proforma, para el indicador de cotizaciones correctas (al centavo) |
 | `error_ejecucion` | Si no hubo respuesta, el motivo (SIN_RESPUESTA para el juez) |
 
+### `datos_recopilados` (borrador del pedido)
+
+Globix lo actualiza cuando el cliente da datos de un producto aunque falte alguno (antes de pedir lo que
+falta) y cada vez que intenta cotizar. Solo guarda datos que aparecen en los mensajes del cliente o en el
+catálogo de pesos: nada supuesto.
+
+| Campo | Significado |
+| --- | --- |
+| `productos[].id` | Línea del pedido (`P1`, `P2`…), en el orden en que el cliente los dio |
+| `producto`, `tienda`, `cantidad` | Lo que dijo el cliente (`cantidad` = 1 si no la dijo) |
+| `precio` | Precio unitario en USD; `null` si aún no lo dio |
+| `peso` | Peso de esa línea en kg; `null` si no lo dio o si dio un peso total del pedido |
+| `origen_peso` | `cliente`, `catalogo` (peso referencial de Globix), `peso_total` o `null` |
+| `tax_estado` | `confirmado` (dio el monto), `cero_confirmado` (dijo TAX 0), `incluido_sin_desglose` (el precio ya lo incluye o la tienda no lo cobra) o `desconocido` (se estima el 7 %) |
+| `tipo_precio` | `base` (se suma el TAX) o `final` (ya lo incluye) |
+| `tax_tienda_usd`, `sin_tax` | Los mismos datos en el formato anterior (compatibilidad) |
+| `peso_total_kg` | Peso único del pedido, si el cliente lo dio así |
+| `pendientes` | Lo que falta para cotizar, por línea (`"Laptop Lenovo: peso en kg"`); `[]` si está completo |
+| `cotizacion_aceptada` | `true` si el último intento de cotizar pasó la validación; `false` si no se intentó o se rechazó |
+| `error_cotizacion` | Motivo del rechazo del último intento (dato no anclado al texto, mercancía restringida…) |
+
 ## Cómo medir cada funcionalidad con esta API
 
 | Funcionalidad | Qué enviar | Qué mirar |
 | --- | --- | --- |
 | 1. Atención inicial y FAQ | Banco FAQ (109 activos), `pregunta` | `respuesta_bot` al juez → % CORRECTAS |
-| 2. Recopilación de datos y resumen | Casos de varios turnos, `mensajes` | `turnos[].tipo_respuesta` (pidió solo lo que faltaba, recotizó al corregir), `datos_recopilados` contra lo que dijo el cliente, `resumen_caso.campos_faltantes == []` (K12) |
+| 2. Recopilación de datos y resumen | Casos de varios turnos, `mensajes` | `turnos[].tipo_respuesta` (pidió solo lo que faltaba, recotizó al corregir), `datos_recopilados` contra lo que dijo el cliente (también antes de cotizar: `pendientes`), `resumen_caso.campos_faltantes == []` (K12) |
 | 3. Cotización referencial | Banco de 40 cotizaciones, `pregunta` | `cotizacion.total_proforma` contra el total del banco, al centavo |
 | 4. Mercancía restringida | Casos de guardrail, `pregunta` | `tipo_respuesta` (`guardrail`) y `registros_acciones.bot_pausado` |
 | 5. Derivación | Casos que deben ir al asesor | `registros_acciones.bot_pausado` y `motivo_derivacion`; el juez evalúa la orientación |

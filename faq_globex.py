@@ -40,10 +40,17 @@ SIN_ASESOR = "No se requiere"
 EXCLUIDAS = {f"G{n:03d}" for n in range(61, 83)} | {"G084"}
 
 # Respuestas que siempre terminan en el asesor, decida lo que decida el LLM (pedido del usuario, 14/11)
-DERIVA_SIEMPRE = {"G126", "G127"}  # reempaque y operaciones físicas con las cajas (regla A17)
+# Se derivan siempre (guía de criterios §6): reempaque y operaciones físicas con las cajas (regla A17),
+# reclamos e incidencias (G037) y compra asistida, cuando Globex compraría por el cliente (G058)
+DERIVA_SIEMPRE = {"G126", "G127", "G037", "G058"}
+# Pagos: no son motivo de derivación (guía §6, "pagos concretos" fuera de los 8 motivos). La respuesta
+# aprobada ya dice que el asesor da la cuenta; se ignora derivar=true del LLM. El cliente igual puede
+# pedir un asesor (derivar_a_asesor).
+NUNCA_DERIVA = {"G029", "G032", "G116", "G117", "G119", "G120", "G121"}
 
 # Palabras con que los clientes preguntan por cada FAQ del menú (para que la búsqueda las encuentre)
 PALABRAS_KB = {
+    "direccion_miami": "dirección de Miami casillero dónde envío address line suite zip GX nombre",
     "plazos_entrega": "cuánto demora cuántos días tarda en llegar plazo de entrega",
     "entrega_lima": "recojo en Lima oficina delivery domicilio dónde recojo horario",
     "cobertura_provincias": "envían a provincias Arequipa Trujillo Cusco Piura Chiclayo Olva Shalom agencia",
@@ -104,7 +111,7 @@ def entradas() -> Dict[str, Dict]:
     # las 132 no tienen (por ejemplo, que a provincias solo se envía por Shalom y no por Olva)
     from knowledge_base import KB_GLOBEX
     for tema, faq in KB_GLOBEX.items():
-        if tema not in PALABRAS_KB:  # direccion_miami queda fuera hasta aprobar su texto alineado con G001-G005
+        if tema not in PALABRAS_KB:
             continue
         datos[f"KB-{tema}"] = {"id": f"KB-{tema}", "tema": faq["titulo"],
                                "pregunta": f"{faq['titulo']} {PALABRAS_KB[tema]}",

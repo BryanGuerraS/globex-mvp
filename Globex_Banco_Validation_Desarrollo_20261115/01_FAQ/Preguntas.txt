@@ -1,0 +1,297 @@
+ID: VFAQ001
+UNIVERSO: U01
+Antes de pagar anoté 7270 NW 35TH TERRACE, oficina 110. ¿Puedes dejarme la calle y la oficina correctas del almacén para corregirlo?
+
+================================================================
+
+ID: VFAQ002
+UNIVERSO: U01
+El formulario muestra Dirección principal y Apartamento/Suite. Necesito los valores de Globex separados, sin poner mi nombre en la suite.
+
+================================================================
+
+ID: VFAQ003
+UNIVERSO: U01
+Para el destino del almacén, mi carrito tiene City Miami, State FL y ZIP 33172. ¿Qué valores debo conservar y cuál debo corregir?
+
+================================================================
+
+ID: VFAQ004
+UNIVERSO: U01
+La compra requiere un teléfono estadounidense para la entrega en el almacén de Miami. ¿Cuál es el número comercial que debo escribir?
+
+================================================================
+
+ID: VFAQ005
+UNIVERSO: U01
+Mi tarjeta tiene mi domicilio de Perú. Para usar el almacén, ¿debo cambiar también la dirección de facturación a Miami o solo la dirección de entrega?
+
+================================================================
+
+ID: VFAQ006
+UNIVERSO: U01
+Voy a copiar la dirección postal del almacén en una nota. Escríbela en una sola línea con la suite, ciudad, estado, ZIP y país.
+
+================================================================
+
+ID: VFAQ007
+UNIVERSO: U02
+Me llamo Paula Bernal y en destinatario escribí solamente Globex GX. ¿Cómo debo corregir el nombre del destinatario?
+
+================================================================
+
+ID: VFAQ008
+UNIVERSO: U02
+Escribí GX Elena en nombre y GX Vidal en apellido. ¿Debo dejar las dos marcas GX para que reconozcan el paquete?
+
+================================================================
+
+ID: VFAQ009
+UNIVERSO: U02
+Puedo poner GX junto a mi nombre, pero no tengo un número de casillero personalizado. ¿Necesito inventar un GX seguido de números para comprar?
+
+================================================================
+
+ID: VFAQ010
+UNIVERSO: U02
+Ya puse GX y mi nombre en el checkout, aunque todavía no despacho la compra. ¿Con eso el paquete ya figura recibido por Globex?
+
+================================================================
+
+ID: VFAQ011
+UNIVERSO: U03
+Una tienda estadounidense entrega en Miami pero no envía a Perú. ¿Puedo comprar yo allí y usar después el courier de Globex?
+
+================================================================
+
+ID: VFAQ012
+UNIVERSO: U03
+Una tienda independiente de Estados Unidos, que no es Amazon ni eBay, puede entregar mi compra en Miami. ¿Sirve para usar su courier?
+
+================================================================
+
+ID: VFAQ013
+UNIVERSO: U03
+La marca es de Estados Unidos, pero el vendedor despacha el paquete directamente desde China a Perú. ¿Ese recorrido lo hacen ustedes?
+
+================================================================
+
+ID: VFAQ014
+UNIVERSO: U03
+Tengo una compra que saldrá de Madrid hacia Perú, sin pasar por Estados Unidos. ¿Puedo contratar ese trayecto con Globex?
+
+================================================================
+
+ID: VFAQ015
+UNIVERSO: U03
+El proveedor enviaría desde Shenzhen directamente a Lima. No habrá recepción en Miami. ¿Está dentro de su servicio?
+
+================================================================
+
+ID: VFAQ016
+UNIVERSO: U03
+Quiero mandar desde Lima una caja para un familiar que vive en Florida. ¿El courier que ofrecen también cubre ese sentido?
+
+================================================================
+
+ID: VFAQ017
+UNIVERSO: U03
+Encontré una mochila en una página de USA. Si uso Globex, ¿les compro a ustedes la mochila y ustedes fijan su precio?
+
+================================================================
+
+ID: VFAQ018
+UNIVERSO: U03
+Dos artículos de mi misma cotización llegarán a Miami en fechas diferentes. ¿Se prepara el envío conjunto cuando ya estén los dos?
+
+================================================================
+
+ID: VFAQ019
+UNIVERSO: U03
+Solo estoy comparando tiendas de USA y aún no tengo una orden. ¿Puedo saber cómo usar Miami antes de pagar algo?
+
+================================================================
+
+ID: VFAQ020
+UNIVERSO: U05
+Tengo el correo de confirmación de una compra y necesito informar el TAX real, no una estimación. ¿En qué parte lo busco?
+
+================================================================
+
+ID: VFAQ021
+UNIVERSO: U05
+El resumen de pago dice total final USD 94,70 con TAX incluido, pero no separa el impuesto. Para informar el precio, ¿le agrego otro 7 %?
+
+================================================================
+
+ID: VFAQ022
+UNIVERSO: U05
+El importe del anuncio cambió al poner la dirección de Miami. Antes de pagar, ¿debo usar el impuesto del anuncio o revisar el resumen actualizado?
+
+================================================================
+
+ID: VFAQ023
+UNIVERSO: U06
+En mi cuenta aparecen Order ID y Tracking number con valores distintos. ¿Cuál identifica el envío y cuál la compra?
+
+================================================================
+
+ID: VFAQ024
+UNIVERSO: U06
+Una sola cotización quedó dividida en tres paquetes. La tienda asignó tres códigos de seguimiento. ¿Debo informar los tres a Globex?
+
+================================================================
+
+ID: VFAQ025
+UNIVERSO: U06
+Aún no veo el seguimiento de la compra en el chat de Globex. ¿Quién suele dar ese código y dónde lo busco?
+
+================================================================
+
+ID: VFAQ026
+UNIVERSO: U06
+Ya tengo comprobante de compra y mi documento de identidad. Para presentar la documentación de embarque, ¿cuáles envío y basta con adjuntarlos a este WhatsApp?
+
+================================================================
+
+ID: VFAQ027
+UNIVERSO: U06
+En términos generales, si alguien manda los documentos de embarque por correo, ¿ya puede dar por aprobado su expediente?
+
+================================================================
+
+ID: VFAQ028
+UNIVERSO: U07
+Vivo en Huancayo y el ejemplo del flyer dice Yurimaguas. ¿Debo usar esa sede del ejemplo o indicar la agencia Shalom de mi destino?
+
+================================================================
+
+ID: VFAQ029
+UNIVERSO: U07
+Quiero preparar el envío provincial por Shalom. ¿Qué datos del destinatario y del punto de recojo necesitarán?
+
+================================================================
+
+ID: VFAQ030
+UNIVERSO: U07
+Mi ciudad tiene Olva y Marvisur. ¿Puedo elegir cualquiera de esas empresas en lugar de Shalom para el envío que prepara Globex?
+
+================================================================
+
+ID: VFAQ031
+UNIVERSO: U07
+Si elijo despacho por Shalom a provincia, ¿la modalidad descrita ya incluye llevar la caja hasta la puerta de mi casa?
+
+================================================================
+
+ID: VFAQ032
+UNIVERSO: U07
+Para una caja de 11,5 kg, ¿cuánto cobra Globex por prepararla y llevarla a la agencia Shalom y qué incluye ese cargo?
+
+================================================================
+
+ID: VFAQ033
+UNIVERSO: U07
+Si ya pagué a Globex la preparación hasta la agencia, ¿el transporte de Shalom se paga también al recoger o ya está incluido?
+
+================================================================
+
+ID: VFAQ034
+UNIVERSO: U07
+Solo quiero saber el cargo de Globex hasta la agencia Shalom para 3,4 kg; no el flete internacional ni el pasaje de Shalom. ¿Cuánto corresponde?
+
+================================================================
+
+ID: VFAQ035
+UNIVERSO: U07
+Mi caja pesa 16 kg. ¿Qué importe del tarifario de Globex aplica para prepararla y trasladarla a Shalom, antes del transporte provincial?
+
+================================================================
+
+ID: VFAQ036
+UNIVERSO: U07
+Para una compra que se recogerá en agencia provincial, ¿Globex hace el tramo Miami-Perú y Shalom el tramo nacional?
+
+================================================================
+
+ID: VFAQ037
+UNIVERSO: U08
+Compré un domingo, pero la tienda entregará en Miami varios días después. ¿Desde cuál momento empieza la referencia de cinco días y son hábiles?
+
+================================================================
+
+ID: VFAQ038
+UNIVERSO: U08
+En general, cuando el transportista muestra Delivered en Miami, ¿eso equivale por sí solo al registro de recepción del almacén?
+
+================================================================
+
+ID: VFAQ039
+UNIVERSO: U08
+Si elijo recoger en Lima en vez de envío provincial, ¿en qué dirección está el punto de recojo?
+
+================================================================
+
+ID: VFAQ040
+UNIVERSO: U08
+Antes de cotizar quiero saber si existe entrega a domicilio en Lima y si cuesta lo mismo en todos los distritos.
+
+================================================================
+
+ID: VFAQ041
+UNIVERSO: U08
+Si compro con entrega al almacén, ¿la tienda organiza ese envío local o debo contratar que Globex vaya a retirar la compra a su local?
+
+================================================================
+
+ID: VFAQ042
+UNIVERSO: U09
+Para el servicio de Globex, ¿se puede pagar por transferencia entre bancos o solo mediante el pago que hice en la tienda?
+
+================================================================
+
+ID: VFAQ043
+UNIVERSO: U09
+En una compra enviada a provincia, ¿debo diferenciar lo que pago a la tienda, a Globex y a Shalom?
+
+================================================================
+
+ID: VFAQ044
+UNIVERSO: U09
+El vendedor de eBay emitió una factura por el artículo. ¿Es el mismo comprobante que acredita el pago del servicio courier?
+
+================================================================
+
+ID: VFAQ045
+UNIVERSO: U09
+Como regla general, ¿una imagen de una transferencia basta para afirmar que el servicio de Globex ya figura pagado y acreditado?
+
+================================================================
+
+ID: VFAQ046
+UNIVERSO: U11
+Estoy comparando el servicio aéreo USA-Perú: ¿cuál es la tarifa estándar por kilogramo, sin sumar todavía el producto ni otros conceptos?
+
+================================================================
+
+ID: VFAQ047
+UNIVERSO: U11
+Mi misma cotización reúne tres productos y su suma con TAX es USD 143. ¿El desaduanaje se multiplica por tres o tiene un solo cargo?
+
+================================================================
+
+ID: VFAQ048
+UNIVERSO: U11
+El peso con caja es 0,83 kg. Para calcular únicamente el flete, ¿se aplica ese peso o el mínimo y cuál es el mínimo?
+
+================================================================
+
+ID: VFAQ049
+UNIVERSO: U11
+Mi peso es 1,37 kg. ¿El flete se calcula sobre 1,37 o se lleva obligatoriamente a 2 kg?
+
+================================================================
+
+ID: VFAQ050
+UNIVERSO: U11
+La ficha de la tienda calcula 0,9 kg, pero el almacén medirá el paquete embalado. ¿Qué peso determina el cobro final?

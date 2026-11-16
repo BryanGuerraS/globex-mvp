@@ -1,0 +1,509 @@
+ID: VCHAT001
+UNIVERSO: CH01
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Marina Cáceres | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | estuche de tela nuevo | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | Amazon | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 17.80; precio final con TAX cero confirmado incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.38 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 0.00 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT002
+UNIVERSO: CH01
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Rafael Estévez | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | libro impreso nuevo | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | eBay | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 62.45; precio antes de TAX, con impuesto confirmado adicional | precio conserva el importe antes de TAX; sin_tax no puede afirmar que ya está incluido; con TAX adicional explícito, false o null son compatibles. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.74 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 4.37 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT003
+UNIVERSO: CH01
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Sofía Quispe | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | gorro nuevo | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | eBay | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 21.60; precio final con TAX cero confirmado incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.24 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 0.00 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT004
+UNIVERSO: CH02
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Tomás Salcedo | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | camisa nueva | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | Amazon | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 54.70; precio final con TAX cero confirmado incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.92 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 0.00 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- USD 59,10 dejó de ser el precio vigente.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT005
+UNIVERSO: CH02
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Lucía Leiva | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | agenda nueva | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | eBay | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 32.40; precio final con TAX cero confirmado incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.48 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 0.00 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Lucía Mena no es la identidad vigente.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT006
+UNIVERSO: CH02
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Diego Fuentes | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | mochila nueva | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | Amazon | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 96.30; precio final con TAX conocido ya incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 1.14 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 6.30 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- 1,4 kg fue sustituido por 1,14 kg.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT007
+UNIVERSO: CH03
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Valeria Ríos | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | cartuchera nueva | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | Amazon | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 44.94; precio final con TAX conocido ya incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.53 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 2.94 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT008
+UNIVERSO: CH03
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Iván Córdova | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | correa nueva | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | eBay | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 87.35; precio antes de TAX, impuesto real no informado | precio conserva el importe antes de TAX; sin_tax no puede afirmar que ya está incluido; con TAX adicional explícito, false o null son compatibles. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.66 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 6. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- TAX real del checkout no informado; cualquier 7 % es estimación, no importe confirmado.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT009
+UNIVERSO: CH03
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Daniela Robles | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | mochila nueva | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | eBay | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 119.83; precio final con TAX incluido sin desglose | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 1.08 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 6. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- El importe separado de TAX no está informado; el precio final sí es conocido y no debe gravarse otra vez.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT010
+UNIVERSO: CH04
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Andrés Luján | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | libro impreso nuevo | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | Amazon | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 28.90; precio final con TAX cero confirmado incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 TAX informado | P1 | USD 0.00 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 6. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Peso embalado del libro no informado y expresamente pendiente, sin estimación autorizada en este caso.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT011
+UNIVERSO: CH04
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Patricia Lozano | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | estuche de tela nuevo | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | Amazon | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D005 Peso individual embalado | P1 | 0.47 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 5. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Precio del estuche no informado.
+- TAX y condición del precio no informados.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT012
+UNIVERSO: CH05
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Óscar Ramos | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | libro impreso nuevo | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | eBay | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 27.30; precio final con TAX cero confirmado incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.34 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 0.00 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+| D008 Producto | P2 | bufanda nueva | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D009 Tienda | P2 | Amazon | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D010 Precio unitario informado | P2 | USD 33.60; precio final con TAX cero confirmado incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D011 Cantidad | P2 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D012 Peso individual embalado | P2 | 0.26 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D013 TAX informado | P2 | USD 0.00 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+| D014 Peso conjunto embalado | Cotización | 0.60 kg | peso_total_kg conserva el peso total explícito, sin confundirlo con pesos individuales o facturables. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 14. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT013
+UNIVERSO: CH05
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Gabriela Nieto | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | agenda nueva | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | Amazon | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 18.50; precio final con TAX cero confirmado incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.40 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 0.00 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- El gorro eBay de USD 24,20 y 0,32 kg fue descartado y no es un producto activo.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT014
+UNIVERSO: CH06
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Elisa Pardo | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | cuaderno nuevo | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | Amazon | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 15.48; precio antes de TAX, con impuesto confirmado adicional | precio conserva el importe antes de TAX; sin_tax no puede afirmar que ya está incluido; con TAX adicional explícito, false o null son compatibles. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.45 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 1.08 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.
+
+
+================================================================
+
+ID: VCHAT015
+UNIVERSO: CH06
+CORTE: después del último mensaje del guion; no se exige información posterior.
+DATOS RECOPILADOS ESPERADOS
+| Dato | Ámbito | Valor esperado | Criterio para obtener 1 punto |
+| --- | --- | --- | --- |
+| D001 Nombre | Cliente | Héctor Aguilar | nombre_cliente conserva la identidad vigente; diferencias de tildes o mayúsculas sin cambio de identidad son equivalentes. |
+| D002 Producto | P1 | agenda nueva | productos[].producto identifica este producto activo; se admite omitir nuevo, sin atribuir usado ni reactivar descartados. |
+| D003 Tienda | P1 | eBay | productos[].tienda conserva la tienda asociada a este producto; Amazon USA/eBay USA son equivalentes. |
+| D004 Precio unitario informado | P1 | USD 41.80; precio final con TAX cero confirmado incluido | precio conserva el importe final y sin_tax=true; para TAX cero también se admite sin_tax=false/null con tax_tienda_usd=0 explícito. |
+| D005 Cantidad | P1 | 1 | productos[].cantidad conserva la cantidad vigente de esta entidad. |
+| D006 Peso individual embalado | P1 | 0.75 kg | productos[].peso conserva el peso individual; se admiten gramos y kg con conversión exacta, sin sustituirlo por el mínimo facturable. |
+| D007 TAX informado | P1 | USD 0.00 | productos[].tax_tienda_usd conserva el importe confirmado, incluido cero; null no equivale a un importe conocido ni se rescata desde el resumen. |
+
+RÚBRICA
+1: satisface toda la fila en datos_recopilados, con valor, entidad, condición y vigencia correctos.
+0: la fila falta, es incorrecta, conserva un valor sustituido o solo se cumple parcialmente.
+No rescatar una omisión desde el resumen, texto del bot ni proforma. No subdividir filas ni agregar requisitos. No se puntúa el total cotizado.
+N esperado: 7. C: suma de puntos de estas filas. E: atributos adicionales de negocio sin respaldo, no penalizados ya como error de una fila.
+Porcentaje del caso=100*C/(N+E). Los adicionales no suman puntos. El KPI es la media de porcentajes por chat; no la fracción de sumas globales.
+Con captura insuficiente no se inventa cero. Con ejecución confirmada y datos vacíos, las filas conocidas omitidas sí valen cero.
+
+PENDIENTES: NO SON FILAS PUNTUABLES
+- Ningún dato de entrada adicional pendiente en este guion.
+DATOS SUSTITUIDOS O DESCARTADOS
+- Ningún dato sustituido adicional.
+ADICIONALES ADMITIDOS
+Datos del mismo guion omitidos de la tabla no suman puntos ni E. Una estimación identificada expresamente como tal no equivale a información confirmada del lead.
+Los importes, TAX y pesos desconocidos no se rellenan como confirmados. Un producto descartado como vigente sí es adicional sin respaldo.
+La recepción de mensajes, la publicación del resumen y los campos técnicos no prueban compra, pago o contratación.

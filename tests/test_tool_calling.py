@@ -303,14 +303,14 @@ def test_mas_de_5_pares_de_calzado_deriva(entorno):
         [_respuesta(tool_calls=[_tool_call("t1", "calcular_cotizacion",
                                            {"valor_producto_usd": 50, "peso_kg": 4, "cantidad": 6})])],
     )
-    assert "máximo por DNI es de 5 pares" in enviado and "COTIZACIÓN" not in enviado
+    assert "máximo por consignatario es de 5 pares" in enviado and "COTIZACIÓN" not in enviado
     chat = _estado_chat("chat_calzado")
     assert chat["estado"] == "Listo para Asesor" and chat["bot_activo"] == 0
 
 
 def test_ropa_usada_informa_sin_derivar(entorno):
     llm, enviado = entorno("chat_usada", "quiero traer ropa usada de 100 dólares, 2 kg", [])
-    assert "solo pueden ingresar a Perú si son *nuevos*" in enviado
+    assert "solo pueden ingresar a Perú si son *nuevos*, así que no puedo cotizar productos usados" in enviado and "lo cotizo" not in enviado
     assert _estado_chat("chat_usada")["bot_activo"] == 1
 
 

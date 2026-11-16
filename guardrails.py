@@ -38,6 +38,21 @@ RESTRICCIONES_ADUANA = {
             "aérea y de Globex). Si quieres traer otro producto, con gusto lo cotizo."
         ),
     },
+    "no_admitido": {
+        "palabras": [
+            "tv box",
+            "tvbox",
+            "articulo medico",
+            "articulos medicos",
+            "equipo medico",
+            "equipos medicos",
+        ],
+        "entidad": "NO ADMITIDO",
+        "mensaje": (
+            "⛔ Globex *no admite* TV Box ni artículos médicos, así que no puedo cotizarlos. "
+            "Si quieres traer otro producto, con gusto te ayudo 😊"
+        ),
+    },
     "receta": {
         "palabras": [
             "vitamina",
@@ -66,36 +81,17 @@ RESTRICCIONES_ADUANA = {
             "cosméticos",
             "crema",
             "cremas",
-            "the ordinary",
         ],
         "entidad": "LÍMITE POR DNI",
-        "mensaje": (
-            "⚠️ Los perfumes, el maquillaje y las cremas tienen un *máximo por DNI*. "
-            "Un asesor revisará las cantidades de tu caso y te escribirá por este chat antes de cotizar."
-        ),
-        # Solo si el cliente pregunta por los máximos (cuántos, límite...)
+        # Desde el 15/11 (decisión del usuario) se cotizan dentro del máximo: el guardrail solo
+        # responde si el cliente pregunta por los máximos; el máximo se revisa al cotizar.
+        "solo_si_pregunta": True,
         "mensaje_detalle": (
             "⚠️ Estos productos tienen un *máximo por DNI*:\n"
             "• Perfumes: 4\n"
             "• Maquillaje: 4\n"
             "• Cremas: 3\n"
-            "• The Ordinary: 4\n"
-            "Por guía no se pueden juntar más de 4 productos restringidos en total. "
-            "Un asesor revisará tu caso y te escribirá por este chat antes de cotizar."
-        ),
-    },
-    "restringido": {
-        "palabras": [
-            "tv box",
-            "articulo medico",
-            "articulos medicos",
-            "equipo medico",
-            "equipos medicos",
-        ],
-        "entidad": "RESTRINGIDO",
-        "mensaje": (
-            "⚠️ Ese producto tiene restricciones para importarse. "
-            "Un asesor revisará tu caso y te escribirá por este chat antes de cotizar."
+            "Si tu pedido está dentro del máximo, cuéntame el precio en USD y el peso en kg y lo cotizo 😊"
         ),
     },
     "baterias": {
@@ -116,7 +112,8 @@ RESTRICCIONES_ADUANA = {
 # El cliente pregunta por los máximos: se le da el detalle por producto
 _PIDE_MAXIMOS = re.compile(r"(?<![a-z])(?:cuant[oa]s|maxim[oa]s?|limites?|cantidad(?:es)?|cupo)(?![a-z])")
 
-# Productos que solo entran nuevos: se informa y el bot sigue atendiendo (no se deriva)
+# Productos que solo entran nuevos: se informa, no se cotiza el usado y el bot sigue atendiendo
+# (no se deriva). Texto aprobado por el usuario el 15/11 (ya no ofrece cotizar).
 _PRODUCTO_SOLO_NUEVO = r"(?:ropa|prendas?|polos?|repuestos?|autopartes?|juguetes?)"
 _USADO = r"(?:usad[oa]s?|de segunda(?: mano)?|seminuev[oa]s?)"
 _SOLO_NUEVOS = re.compile(
@@ -126,19 +123,34 @@ _SOLO_NUEVOS = re.compile(
 SOLO_NUEVOS = {
     "entidad": "SOLO NUEVOS",
     "mensaje": (
-        "⚠️ La ropa, los juguetes y los repuestos de autos solo pueden ingresar a Perú si son *nuevos*. "
-        "Si tu producto es nuevo, cuéntame su precio en USD y su peso en kg y lo cotizo."
+        "⚠️ La ropa, los juguetes y los repuestos de autos solo pueden ingresar a Perú si son *nuevos*, "
+        "así que no puedo cotizar productos usados. Si quieres traer otro producto, con gusto te ayudo 😊"
     ),
 }
 
-# Máximo por DNI de productos que sí se cotizan (lista de Diego): solo se deriva si se pasa
+# Máximos por categoría como datos (guía §3.4): unidad y ámbito de cada uno. Se revisan con la
+# cantidad de cada producto al cotizar; solo se deriva si se pasa (15/11: también perfumes,
+# maquillaje y cremas). El mensaje dice el ámbito: "por DNI", "por consignatario" o "por cotización".
 LIMITES_POR_DNI = [
-    {"nombre": "calzado", "unidad": "pares", "maximo": 5,
+    {"nombre": "calzado", "unidad": "pares", "maximo": 5, "ambito": "consignatario",
      "palabras": ["zapatilla", "zapato", "calzado", "sandalia", "bota"]},
-    {"nombre": "juguetes nuevos", "unidad": "unidades", "maximo": 4, "palabras": ["juguete"]},
+    {"nombre": "juguetes nuevos", "unidad": "unidades", "maximo": 4, "ambito": "consignatario",
+     "palabras": ["juguete"],
+     # Las figuras de colección pueden superar las 4 unidades (no se extiende a otros juguetes)
+     "excepto": ["figura de coleccion", "figuras de coleccion", "figura coleccionable",
+                 "figuras coleccionables"]},
     {"nombre": "shampoo y productos para el cabello", "unidad": "unidades", "maximo": 2,
-     "palabras": ["shampoo", "champu", "acondicionador"]},
+     "ambito": "cotizacion", "palabras": ["shampoo", "champu", "acondicionador"]},
+    {"nombre": "perfumes", "unidad": "unidades", "maximo": 4, "ambito": "dni",
+     "palabras": ["perfume", "colonia"]},
+    {"nombre": "maquillaje", "unidad": "unidades", "maximo": 4, "ambito": "dni",
+     "palabras": ["maquillaje", "cosmetico"]},
+    # La marca (The Ordinary) no sube el máximo de la categoría (guía §3.4)
+    {"nombre": "cremas", "unidad": "unidades", "maximo": 3, "ambito": "dni", "palabras": ["crema"]},
 ]
+
+
+_AMBITOS = {"dni": "DNI", "consignatario": "consignatario", "cotizacion": "cotización"}
 
 
 def _normalizar(texto: str) -> str:
@@ -157,7 +169,8 @@ _PATRONES = {
     tipo: [(palabra, _patron(palabra)) for palabra in datos["palabras"]]
     for tipo, datos in RESTRICCIONES_ADUANA.items()
 }
-_PATRONES_LIMITE = [(lim, [_patron(p) for p in lim["palabras"]]) for lim in LIMITES_POR_DNI]
+_PATRONES_LIMITE = [(lim, [_patron(p) for p in lim["palabras"]], [_patron(p) for p in lim.get("excepto", [])])
+                    for lim in LIMITES_POR_DNI]
 
 
 def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
@@ -169,11 +182,14 @@ def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
             # Búsqueda de la palabra completa (no como parte de otra palabra)
             if patron.search(texto_normalizado):
                 pide_detalle = "mensaje_detalle" in datos and _PIDE_MAXIMOS.search(texto_normalizado)
+                if datos.get("solo_si_pregunta") and not pide_detalle:
+                    break  # se cotiza: el máximo se revisa con la cantidad al calcular
                 return {
                     "restringido": True,
                     "tipo": tipo,
                     "entidad": datos["entidad"],
                     "mensaje": datos["mensaje_detalle"] if pide_detalle else datos["mensaje"],
+                "solo_informa": bool(datos.get("solo_si_pregunta")),
                     "palabra_detectada": palabra,
                 }
 
@@ -187,14 +203,30 @@ def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
 def limite_por_dni_excedido(textos: Iterable[str], cantidad: int) -> Optional[Dict[str, str]]:
     """Si el cliente pide más unidades que el máximo por DNI de su producto, el motivo y el mensaje."""
     texto = _normalizar(" ".join(textos))
-    for lim, patrones in _PATRONES_LIMITE:
+    for lim, patrones, excepciones in _PATRONES_LIMITE:
+        if any(e.search(texto) for e in excepciones):
+            continue
         if cantidad > lim["maximo"] and any(p.search(texto) for p in patrones):
             return {
                 "entidad": "LÍMITE POR DNI",
-                "detalle": f"{cantidad} {lim['unidad']} de {lim['nombre']} (máximo {lim['maximo']})",
+                "detalle": f"{cantidad} {lim['unidad']} de {lim['nombre']} (máximo {lim['maximo']} por {_AMBITOS[lim['ambito']]})",
+                "ambito": lim["ambito"],
                 "mensaje": (
-                    f"⚠️ El máximo por DNI es de {lim['maximo']} {lim['unidad']} de {lim['nombre']}. "
+                    f"⚠️ El máximo por {_AMBITOS[lim['ambito']]} es de {lim['maximo']} {lim['unidad']} de {lim['nombre']}. "
                     "Un asesor revisará tu pedido y te escribirá por este chat para ver cómo traerlo."
                 ),
             }
     return None
+
+
+_CATEGORIA_SOLO_NUEVO = re.compile(rf"(?<![a-z0-9]){_PRODUCTO_SOLO_NUEVO}(?![a-z0-9])")
+_DICE_NUEVO = re.compile(r"(?<![a-z])nuev[oa]s?(?![a-z])")
+
+
+def es_categoria_solo_nuevos(texto: str) -> bool:
+    """El producto es ropa, juguete o repuesto (categorías que solo entran nuevas)."""
+    return bool(_CATEGORIA_SOLO_NUEVO.search(_normalizar(texto or "")))
+
+
+def dice_que_es_nuevo(texto: str) -> bool:
+    return bool(_DICE_NUEVO.search(_normalizar(texto or "")))

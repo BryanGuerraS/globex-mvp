@@ -1,0 +1,39 @@
+U01 — TAX cero confirmado
+Casos: 4
+IDs: VCOT001, VCOT002, VCOT003, VCOT004
+
+U02 — Precio final con TAX desglosado
+Casos: 4
+IDs: VCOT005, VCOT006, VCOT007, VCOT008
+
+U03 — TAX adicional conocido
+Casos: 4
+IDs: VCOT009, VCOT010, VCOT011, VCOT012
+
+U04 — TAX desconocido
+Casos: 5
+IDs: VCOT013, VCOT014, VCOT015, VCOT016, VCOT017
+
+U05 — Precio final con TAX sin desglose
+Casos: 4
+IDs: VCOT018, VCOT019, VCOT020, VCOT021
+
+U06 — Peso inferior a un kilogramo
+Casos: 4
+IDs: VCOT022, VCOT023, VCOT024, VCOT025
+
+U07 — Peso fraccionado superior a un kilogramo
+Casos: 5
+IDs: VCOT026, VCOT027, VCOT028, VCOT029, VCOT030
+
+U08 — Compra con TAX superior a USD 200
+Casos: 6
+IDs: VCOT031, VCOT032, VCOT033, VCOT034, VCOT035, VCOT036
+
+ALCANCE
+Un producto, una unidad, Amazon/eBay, USD, courier Estados Unidos-Perú, entrega gratuita a Miami y recojo Lima.
+TAX desconocido: 7 % referencial sobre producto; confirmado prevalece; precio final no se grava otra vez.
+Flete USD 9/kg con mínimo 1 kg y fracciones conservadas. Desaduanaje USD 9 una vez por cotización.
+En los casos con compra+TAX por encima de USD 200: tributos referenciales 24 % sobre compra+TAX.
+Redondeo por línea a centavos con mitad hacia arriba. No se incluye la igualdad exacta a USD 200.
+No incluye pedidos mixtos, restricciones, otros orígenes, shipping interno cobrado ni beneficios tax free.

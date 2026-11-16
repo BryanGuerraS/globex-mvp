@@ -1,4 +1,5 @@
 """Base de conocimiento ampliada (132 respuestas aprobadas): lectura, búsqueda y respuesta."""
+import pytest
 
 import json
 
@@ -77,3 +78,39 @@ def test_reempaque_siempre_deriva_aunque_el_llm_no_lo_pida(entorno):  # noqa: F8
     chat = main.obtener_chat("PE.faq5")
     assert chat["bot_activo"] == 0 and chat["motivo_derivacion"] == "consulta"
     assert faq_globex.entradas()["G126"]["respuesta"] in _texto(enviado)
+
+
+@pytest.mark.parametrize("faq_id, pregunta", [
+    ("G037", "Mi paquete llegó dañado, ¿qué hago?"),
+    ("G058", "La tienda solo acepta tarjetas de EE. UU., ¿pueden comprar por mí?"),
+])
+def test_reclamos_y_compra_asistida_siempre_derivan(entorno, faq_id, pregunta):  # noqa: F811
+    chat_id = f"PE.{faq_id}"
+    _, enviado = entorno(chat_id, pregunta, [
+        _respuesta(tool_calls=[_tool_call("b1", "buscar_faq", {"preguntas": [pregunta]})]),
+        _respuesta(tool_calls=[_tool_call("r1", "enviar_faq", {"ids": [faq_id], "derivar": False})]),
+    ])
+    chat = main.obtener_chat(chat_id)
+    assert chat["bot_activo"] == 0 and chat["motivo_derivacion"] == "consulta"
+
+
+def test_enviar_faq_escrita_como_texto_se_ejecuta(entorno):  # noqa: F811
+    """El modelo a veces escribe '{"ids":[...]}' en el texto en vez de llamar a enviar_faq."""
+    _, enviado = entorno("PE.faqtexto", "¿Cuánto demora el envío?", [
+        _respuesta(tool_calls=[_tool_call("b1", "buscar_faq", {"preguntas": ["¿Cuánto demora el envío?"]})]),
+        _respuesta(content='{"ids":["KB-plazos_entrega"],"derivar":false}⏱️ Plazos...'),
+    ])
+    texto = _texto(enviado)
+    assert '"ids"' not in texto and "5 días hábiles" in texto
+
+
+def test_pagos_no_derivan_aunque_el_llm_lo_pida(entorno):  # noqa: F811
+    """Guía §6: explicar cómo pagar no es motivo de derivación."""
+    pregunta = "¿Cómo pago el servicio? ¿Aceptan Yape?"
+    _, enviado = entorno("PE.pago", pregunta, [
+        _respuesta(tool_calls=[_tool_call("b1", "buscar_faq", {"preguntas": ["qué cuenta bancaria o Yape uso para pagar a Globex"]})]),
+        _respuesta(tool_calls=[_tool_call("r1", "enviar_faq", {"ids": ["G116"], "derivar": True})]),
+    ])
+    chat = main.obtener_chat("PE.pago")
+    assert chat["bot_activo"] == 1 and chat["motivo_derivacion"] is None
+    assert "transferencia bancaria" in _texto(enviado)
