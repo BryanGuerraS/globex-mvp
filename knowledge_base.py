@@ -64,6 +64,32 @@ KB_GLOBEX = {
             "4. Te notificamos a su llegada, liquidas el flete y te lo entregamos en tu casa o agencia."
         ),
     },
+    # Reglas de productos y tarifa: propuestas por Claude el 16/11 tras el banco de desarrollo de 137
+    # (preguntas sin respuesta aprobada); el usuario pidió aplicarlas el 16/11.
+    "reglas_productos": {
+        "titulo": "Reglas para productos: solo nuevos, máximos, receta y no admitidos (lista de Diego)",
+        "contenido": (
+            "📦 *Reglas para algunos productos:*\n"
+            "• *Solo nuevos:* ropa, juguetes y repuestos de autos. Si están nuevos, cumplen; usados o de segunda "
+            "mano no se pueden traer.\n"
+            "• *Máximos:* perfumes 4 y maquillaje 4 por DNI; cremas 3 por DNI (la marca no cambia el máximo); "
+            "calzado 5 pares y juguetes 4 por consignatario (las figuras de colección pueden pasar de 4); shampoo "
+            "y productos para el cabello 2 por cotización.\n"
+            "• *Con receta médica visada:* medicinas, vitaminas, proteínas y suplementos; un asesor la valida "
+            "antes de cotizar.\n"
+            "• *No admitidos:* armas, municiones, TV Box, artículos médicos, chupones, biberones y pegamento de "
+            "pestañas."
+        ),
+    },
+    "tarifas": {
+        "titulo": "Tarifa del courier: USD 9 por kg, mínimo 1 kg, desaduanaje USD 9",
+        "contenido": (
+            "✈️ *Tarifa del courier:* USD 9 por kg, con un mínimo de 1 kg facturable; sobre 1 kg se cobra el "
+            "peso exacto, sin redondear al kilo. El desaduanaje es USD 9 por cotización. Se cobra el peso que "
+            "mide el almacén de Miami, con embalaje. Si me das el producto, su precio y su peso, te doy el "
+            "total 😊"
+        ),
+    },
     "metodos_pago": {
         "titulo": "Formas de Pago y Liquidación (F10 / F11)",
         "contenido": (
@@ -88,6 +114,10 @@ TEMAS_FAQ = {
     "lima": "entrega_lima",
     "como_funciona": "como_funciona",
     "pagos": "metodos_pago",
+    "reglas_productos": "reglas_productos",
+    "productos": "reglas_productos",
+    "tarifas": "tarifas",
+    "tarifa": "tarifas",
 }
 
 

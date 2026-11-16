@@ -82,7 +82,7 @@ Varios turnos en la misma sesión (funcionalidad "Recopilación progresiva de da
 | Campo | Para qué sirve |
 | --- | --- |
 | `respuesta_bot` | Lo que Globix respondió al **último** mensaje (la cotización va en texto; en WhatsApp es imagen). Es la entrada del juez |
-| `turnos` | Cada mensaje con su respuesta y su tipo (`pide_dato`, `cotizacion`, `faq`, `derivacion`, `bot_pausado`…) |
+| `turnos` | Cada mensaje con su respuesta y su tipo (`pide_dato`, `cotizacion`, `faq`, `guardrail`, `derivacion`, `bot_pausado`, `nombre`…). `nombre` = el cliente respondió con su nombre después de que Globix derivó y se lo pidió |
 | `datos_recopilados` | El **borrador del pedido** que Globix guarda en cada chat, **aunque todavía no haya cotizado** (ver abajo). Es el mismo dato que usa el resumen del asesor |
 | `resumen_caso` | El resumen que ve el asesor. `publicado: true` si el caso se derivó (está en la consola); si no, es una vista previa. `campos_faltantes`: cuáles de los cuatro campos del E3 faltan (`motivo`, `necesidad`, `datos`, `pendientes`); `[]` = completo |
 | `registros_acciones` | Herramientas usadas y su resultado, si el bot quedó pausado (derivación), el motivo y el resumen publicado. Insumo de "transferencia efectiva" del juez |
@@ -100,6 +100,7 @@ catálogo de pesos: nada supuesto.
 | --- | --- |
 | `productos[].id` | Línea del pedido (`P1`, `P2`…), en el orden en que el cliente los dio |
 | `producto`, `tienda`, `cantidad` | Lo que dijo el cliente (`cantidad` = 1 si no la dijo) |
+| `origen_precio` | `cliente` (lo dijo tal cual), `derivado` (total que dijo el cliente − su TAX) o `null` |
 | `precio` | Precio unitario en USD; `null` si aún no lo dio |
 | `peso` | Peso de esa línea en kg; `null` si no lo dio o si dio un peso total del pedido |
 | `origen_peso` | `cliente`, `catalogo` (peso referencial de Globix), `peso_total` o `null` |
@@ -159,5 +160,6 @@ def correr_banco(casos, banco_id, corrida_id, salida="resultados.jsonl"):
   los asesores y de los KPI. Se pierden en cada despliegue: guarda tus resultados en tu lado.
 - El costo que muestra `/api/eval/resumen` usa los precios de Groq; con Cerebras es aproximadamente el doble.
 - Los 23 ID retirados (G061–G082 y G084) no tienen respuesta aprobada en Globix: no hace falta enviarlos.
+- `datos_recopilados.nombre_cliente` se llena cuando el cliente dice su nombre en cualquier mensaje ("me llamo Ana") o lo da después de que Globix se lo pide al derivar.
 - Una vez que Globix deriva, no responde más en esa sesión (como en WhatsApp): los turnos siguientes salen
   con `tipo_respuesta: "bot_pausado"`.

@@ -254,6 +254,10 @@ def validar_tax_tienda(args: dict, textos_cliente: Iterable[str]) -> Union[Optio
             if _MENCIONA_TAX.search(texto) and any(n == 0 for n in numeros_en_texto(textos)):
                 return 0.0
             args = {**args, "sin_tax": True}
+        elif args.get("sin_tax") is True and _SIN_TAX.search(texto):
+            # "El precio final es USD 194,30 y ya incluye USD 10,80 de TAX": el precio ya trae el TAX
+            # (el monto queda en el borrador como TAX incluido y desglosado; no se suma otra vez)
+            return 0.0
         elif not (_MENCIONA_TAX.search(texto) and any(_cerca(tax, n) for n in numeros_en_texto(textos))):
             return (
                 f"El TAX {tax} USD no aparece en los mensajes del cliente. "

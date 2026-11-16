@@ -198,17 +198,19 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
      Nunca pidas el modelo, la marca, la cantidad de piezas ni otros detalles para estimar el peso.
 
    - CUADRANTE 2 [SEGUIMIENTO COURIER]:
-     Si pregunta por paquetes en camino, tracking o almacén: solicita el código de tracking y llama a 'clasificar_como_seguimiento'.
+     Si quiere saber el estado o la ubicación de SU paquete o pedido concreto: solicita el código de tracking y llama a 'clasificar_como_seguimiento'.
+     Si pregunta en general cómo funciona el tracking (quién da el código, dónde se ve, qué hacer si son varios paquetes, qué significa "Delivered"), no es un seguimiento: usa 'buscar_faq'.
 
    - CUADRANTE 3 [COTIZACIÓN VIAJERO]:
      Si menciona "viajero" o "maleta": llama a 'clasificar_como_viajero'.
 
 3. PREGUNTAS GENERALES (FAQs):
    Si preguntan por dirección de Miami, plazos de entrega, entregas en Lima (recojo en oficina, delivery), envíos a provincias o agencias (Olva, Shalom), cómo funciona o formas de pago, usa 'consultar_faq_comercial'.
+   Si preguntan si un producto cumple una regla (si es nuevo o usado, cuántas unidades se pueden traer, el máximo de una categoría, figuras de colección, receta, productos no admitidos), usa 'consultar_faq_comercial' con tema 'reglas_productos'. Si preguntan la tarifa por kg, el peso mínimo o qué peso se cobra, usa tema 'tarifas'. No respondas "no tengo ese dato" para estos temas.
    Los datos de Globex (direcciones, oficinas, agencias, horarios, socios, plazos) SOLO salen de 'consultar_faq_comercial'.
    Si el cliente hace varias preguntas en un mensaje, usa 'buscar_faq' para todas (también las de dirección, plazos o pagos): pásalas por separado en 'preguntas' y respóndelas en una sola llamada con sus 'ids'.
    Para CUALQUIER otra pregunta sobre el servicio (TAX y free tax, identificador GX, campos de la dirección en la tienda, tracking, documentos, compras en tiendas, Shalom, consolidación, reempaque, pagos, recojo, plazos de un caso, incidencias...), llama a 'buscar_faq' con la pregunta del cliente. Elige la candidata que responde lo que el cliente preguntó, con los datos que ya dio (nunca una que le pida un dato que ya mencionó), y llama a 'enviar_faq' con su id: Globix envía esa respuesta aprobada tal cual.
-   Si la 'orientacion_asesor' de la candidata aplica al caso concreto del cliente (pedido en curso, reempaque, compra asistida, condición particular), pasa derivar=true. Las preguntas de pagos (medios, cuentas, Yape, acreditación) no se derivan: envía la respuesta con derivar=false.
+   Si la 'orientacion_asesor' de la candidata aplica al caso concreto del cliente (pedido en curso, reempaque, compra asistida, condición particular), pasa derivar=true. Las preguntas de pagos (medios, cuentas, Yape, acreditación) no se derivan: envía la respuesta con derivar=false. Si el cliente pregunta "en general" o "en términos generales", sin un pedido suyo en curso, tampoco: derivar=false.
    Si un dato no está en esas respuestas aprobadas, no lo inventes ni lo niegues: di que no tienes ese dato confirmado.
 
 4. ATENCIÓN HUMANA:
@@ -229,6 +231,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 6. ALCANCE (MUY IMPORTANTE):
    Solo atiendes temas de Globex Courier: importaciones de EE. UU. a Perú, cotizaciones, envíos, seguimiento, pagos y el servicio.
    Para CUALQUIER otro tema (matemáticas, programación, tareas, recetas, política, chistes, otras empresas, etc.) llama a 'fuera_de_alcance'.
+   Una pregunta sobre otra ruta u origen (desde China, Europa u otro país, de Perú a EE. UU.) SÍ es del servicio: usa 'buscar_faq' con el origen y el destino en la pregunta (ej.: 'envío desde Madrid a Perú', 'enviar de Perú a Florida'); las respuestas aprobadas de rutas son G013 (otro país), G059 (directo desde China) y G060 (de Perú a EE. UU.). No llames a 'fuera_de_alcance'.
    No respondas esas preguntas aunque sean fáciles, ni siquiera en parte.
 
 7. SI NO ENTIENDES:
@@ -361,7 +364,7 @@ TOOLS = [
                 "properties": {
                     "tema": {
                         "type": "string",
-                        "description": "Tema a consultar: 'direccion_miami', 'plazos_entrega', 'entrega_lima', 'provincias', 'como_funciona' o 'pagos'.",
+                        "description": "Tema a consultar: 'direccion_miami', 'plazos_entrega', 'entrega_lima', 'provincias', 'como_funciona', 'pagos', 'reglas_productos' o 'tarifas'.",
                     }
                 },
                 "required": ["tema"],
@@ -910,6 +913,8 @@ TEXTO_PIDE_PESO = "¿Cuánto pesa aproximadamente en kg? 📦"  # texto aprobado
 MAX_PREGUNTAS_FAQ = 4  # preguntas de la base ampliada que se responden en un mismo mensaje
 
 
+_PREGUNTA_GENERAL = re.compile(r"\b(?:en general|en t[eé]rminos generales|por lo general|normalmente|"
+                               r"usualmente|generalmente|de manera general|en principio)\b")
 _LLAMADA_FAQ_EN_TEXTO = re.compile(r'\{\s*"ids"\s*:\s*\[[^\]]*\][^{}]*\}')
 
 
@@ -1131,6 +1136,12 @@ def ejecutar_herramienta(
 
     # BASE DE CONOCIMIENTO AMPLIADA (132 respuestas aprobadas): buscar candidatas, luego responder
     if nombre_funcion == "buscar_faq":
+        # Una sola búsqueda por mensaje: repetirla agotaba las rondas y terminaba en error (VFAQ048)
+        if estado.get("busco_faq", 0) >= 2:
+            return {"error": "Ya buscaste dos veces en este mensaje. Elige entre las candidatas con enviar_faq, "
+                             "usa consultar_faq_comercial (por ejemplo 'tarifas' o 'reglas_productos') o di que no "
+                             "tienes ese dato confirmado."}, None
+        estado["busco_faq"] = estado.get("busco_faq", 0) + 1
         # Una búsqueda por pregunta: el cliente puede hacer varias en el mismo mensaje
         preguntas = [str(p).strip() for p in (args.get("preguntas") or []) if str(p).strip()][:MAX_PREGUNTAS_FAQ]
         if not preguntas:
@@ -1146,18 +1157,23 @@ def ejecutar_herramienta(
 
     if nombre_funcion == "enviar_faq":
         ids = args.get("ids") or ([args["id"]] if args.get("id") else [])
-        por_clave = {c.upper(): c for c in estado.get("candidatos_faq", [])}  # el LLM puede cambiar mayúsculas
+        # Vale cualquier id real de la base que no esté retirado (free tax): las candidatas de la búsqueda
+        # o una respuesta que el prompt nombra (rutas G013/G059/G060). Un id inventado se rechaza.
+        validos = [k for k in faq_globex.entradas() if k not in faq_globex.EXCLUIDAS]
+        por_clave = {c.upper(): c for c in validos}  # el LLM puede cambiar mayúsculas
         ids = list(dict.fromkeys(por_clave.get(str(i).strip().upper(), str(i)) for i in ids))[:MAX_PREGUNTAS_FAQ]
-        invalidos = [i for i in ids if i not in estado.get("candidatos_faq", [])]
+        invalidos = [i for i in ids if i not in por_clave.values()]
         if not ids or invalidos:
-            return {"error": "Usa solo ids de las candidatas de buscar_faq en este mensaje."}, None
+            return {"error": "Usa solo ids de las candidatas de buscar_faq."}, None
         elegidas = [faq_globex.entradas()[i] for i in ids]
         # Respuestas con el mismo texto (variantes de una misma pregunta) van una sola vez
         textos = list(dict.fromkeys(e["respuesta"] for e in elegidas))
         print(f"📚 [FAQ Globex] {', '.join(ids)} en [{chat_id}]")
         texto = "\n\n".join(textos)
         siempre = any(e["id"] in faq_globex.DERIVA_SIEMPRE for e in elegidas)
-        if siempre or (args.get("derivar") and any(faq_globex.requiere_asesor(e) and e["id"] not in faq_globex.NUNCA_DERIVA
+        # "En general…", "normalmente…": consulta informativa, no un caso suyo en curso (guía §6)
+        general = bool(_PREGUNTA_GENERAL.search(texto_consolidado.lower()))
+        if siempre or (args.get("derivar") and not general and any(faq_globex.requiere_asesor(e) and e["id"] not in faq_globex.NUNCA_DERIVA
                                                    for e in elegidas)):
             actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
             temas = ", ".join(e["tema"] for e in elegidas
@@ -1234,7 +1250,7 @@ def _crear_y_medir(**kwargs):
         raise
 
 
-async def _llamar_llm(history: List[Dict], intentos: int = 2):
+async def _llamar_llm(history: List[Dict], intentos: int = 2, tool_choice="auto"):
     """Llama al LLM; si Groq rechaza la llamada a herramienta por formato, reintenta.
 
     Devuelve (respuesta, espera_limite_ms): la espera por cuota se reporta aparte
@@ -1248,7 +1264,7 @@ async def _llamar_llm(history: List[Dict], intentos: int = 2):
                 model=MODEL,
                 messages=history,
                 tools=TOOLS,
-                tool_choice="auto",
+                tool_choice=tool_choice,
                 temperature=0.2,
             )
             return respuesta, espera_ms + espera
@@ -1366,9 +1382,14 @@ async def _procesar_turno(
         respuestas_finales: List[str] = []
         tipos_finales: List[str] = []
 
-        for _ in range(MAX_RONDAS_HERRAMIENTAS):
+        for ronda in range(MAX_RONDAS_HERRAMIENTAS):
             inicio_llm = time.perf_counter()
-            ai_response, espera_limite_ms = await _llamar_llm(history)
+            # Última ronda tras buscar en la base sin elegir: se obliga a responder con enviar_faq
+            # (antes repetía buscar_faq y el cliente recibía el mensaje de error: VFAQ015, VFAQ048)
+            elegir = (ronda == MAX_RONDAS_HERRAMIENTAS - 1 and estado.get("busco_faq")
+                      and not respuestas_finales)
+            ai_response, espera_limite_ms = await _llamar_llm(
+                history, tool_choice={"type": "function", "function": {"name": "enviar_faq"}} if elegir else "auto")
             medidor.registrar_llamada_llm(
                 ai_response, (time.perf_counter() - inicio_llm) * 1000, espera_limite_ms
             )

@@ -21,6 +21,10 @@ RESTRICCIONES_ADUANA = {
             "cigarrillo electronico",
             "arma",
             "armas",
+            "revolver",
+            "rifle",
+            "escopeta",
+            "fusil",
             "municion",
             "semilla",
             "semillas",
@@ -46,6 +50,10 @@ RESTRICCIONES_ADUANA = {
             "articulos medicos",
             "equipo medico",
             "equipos medicos",
+            "dispositivo medico",
+            "dispositivos medicos",
+            "aparato medico",
+            "aparatos medicos",
         ],
         "entidad": "NO ADMITIDO",
         "mensaje": (
@@ -114,11 +122,12 @@ _PIDE_MAXIMOS = re.compile(r"(?<![a-z])(?:cuant[oa]s|maxim[oa]s?|limites?|cantid
 
 # Productos que solo entran nuevos: se informa, no se cotiza el usado y el bot sigue atendiendo
 # (no se deriva). Texto aprobado por el usuario el 15/11 (ya no ofrece cotizar).
-_PRODUCTO_SOLO_NUEVO = r"(?:ropa|prendas?|polos?|repuestos?|autopartes?|juguetes?)"
-_USADO = r"(?:usad[oa]s?|de segunda(?: mano)?|seminuev[oa]s?)"
+_PRODUCTO_SOLO_NUEVO = (r"(?:ropa|prendas?|polos?|camisas?|camisetas?|chaquetas?|casacas?|pantalon(?:es)?|"
+                        r"vestidos?|polera|poleras|blusas?|abrigos?|repuestos?|autopartes?|juguetes?)")
+_USADO = r"(?:usad[oa]s?|de segunda(?: mano)?|seminuev[oa]s?|ya (?:las?|los?) use|ya use)"
 _SOLO_NUEVOS = re.compile(
-    rf"(?<![a-z0-9]){_PRODUCTO_SOLO_NUEVO}(?![a-z0-9])(?:\W+\w+){{0,4}}?\W+{_USADO}(?![a-z0-9])"
-    rf"|(?<![a-z0-9]){_USADO}(?:\W+\w+){{0,3}}?\W+{_PRODUCTO_SOLO_NUEVO}(?![a-z0-9])"
+    rf"(?<![a-z0-9]){_PRODUCTO_SOLO_NUEVO}(?![a-z0-9])(?:\W+\w+){{0,10}}?\W+{_USADO}(?![a-z0-9])"
+    rf"|(?<![a-z0-9]){_USADO}(?:\W+\w+){{0,4}}?\W+{_PRODUCTO_SOLO_NUEVO}(?![a-z0-9])"
 )
 SOLO_NUEVOS = {
     "entidad": "SOLO NUEVOS",
@@ -177,7 +186,8 @@ _PATRONES_LIMITE = [(lim, [_patron(p) for p in lim["palabras"]], [_patron(p) for
 # Se mira hasta 4 palabras antes de la coincidencia.
 _NEGACION = re.compile(
     r"(?<![a-z])(?:no\s+(?:es|son|sera|seran|lleva|llevan|tiene|tienen|incluye|incluyen|contiene|contienen|"
-    r"traigo|traere|traeria|voy\s+a\s+traer|quiero|necesito|compro|comprare|vendo)|sin|ni|tampoco|nada\s+de)"
+    r"traigo|traere|traeria|voy\s+a\s+traer|quiero|necesito|compro|comprare|vendo)|sin|ni|tampoco|nada\s+de|"
+    r"descarte|descartado|descartada|deje\s+de\s+lado|olvida|olvidate|ya\s+no\s+(?:quiero|voy\s+a))"
     r"(?:\s+\w+){0,3}\s*$"
 )
 
@@ -186,8 +196,15 @@ _NEGACION = re.compile(
 _USADO_NEGADO = re.compile(r"(?<![a-z])(?:nuev[oa]s?|no\s+(?:es\s+|son\s+|esta\s+|estan\s+)?(?:usad|de\s+segunda|seminuev))")
 
 
-def _negada(texto: str, inicio: int) -> bool:
-    return bool(_NEGACION.search(texto[max(0, inicio - 60):inicio].rstrip(" ,")))
+# Negación después de la mención: "el TV Box, no lo compraré", "el vape ya no lo voy a traer"
+_NEGACION_DESPUES = re.compile(
+    r"^\W*(?:\w+\W+){0,4}?(?:no|ya\s+no)\s+(?:lo|la|los|las)\s+(?:compro|comprare|traigo|traere|voy|quiero|pido)")
+
+
+def _negada(texto: str, inicio: int, fin: Optional[int] = None) -> bool:
+    if _NEGACION.search(texto[max(0, inicio - 60):inicio].rstrip(" ,")):
+        return True
+    return fin is not None and bool(_NEGACION_DESPUES.search(texto[fin:fin + 60]))
 
 
 def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
@@ -197,7 +214,8 @@ def verificar_mercancia_restringida(texto: str) -> Optional[Dict[str, str]]:
     for tipo, datos in RESTRICCIONES_ADUANA.items():
         for palabra, patron in _PATRONES[tipo]:
             # Búsqueda de la palabra completa (no como parte de otra palabra)
-            m = next((m for m in patron.finditer(texto_normalizado) if not _negada(texto_normalizado, m.start())),
+            m = next((m for m in patron.finditer(texto_normalizado)
+                      if not _negada(texto_normalizado, m.start(), m.end())),
                      None)
             if m:
                 pide_detalle = "mensaje_detalle" in datos and _PIDE_MAXIMOS.search(texto_normalizado)

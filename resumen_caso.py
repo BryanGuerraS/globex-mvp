@@ -194,6 +194,8 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
             # Estado del TAX: declarado por el cliente o estimado (guía §7.2)
             if item.get("tax_estado") == "incluido_sin_desglose":
                 texto += " (TAX incluido)"
+            elif item.get("tax_estado") == "incluido_desglosado" and item.get("tax_monto") is not None:
+                texto += f" (incluye TAX USD {item['tax_monto']:,.2f})"
             elif item.get("tax_estado") == "cero_confirmado":
                 texto += " (TAX 0 confirmado)"
             elif item.get("tax_estado") == "confirmado" and item.get("tax_monto") is not None:

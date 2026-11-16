@@ -127,3 +127,20 @@ def test_precio_y_tax_aparte_no_se_restan():
     textos = ["Una tablet de 400 dólares, el tax fue 28 dólares, pesa 1 kg"]
     assert isinstance(validar_productos({"productos": [
         {"producto": "tablet", "precio_unitario_usd": 372, "tax_tienda_usd": 28, "peso_kg": 1}]}, textos), str)
+
+
+def test_precio_final_que_ya_incluye_un_tax_dicho_no_lo_suma_otra_vez():
+    """Banco de desarrollo VCOT007: 'precio final USD 194,30 y ya incluye USD 10,80 de TAX' -> total 212.30."""
+    from pricing_engine import GlobexPricingEngine
+    textos = ["El precio final es USD 194,30 y ya incluye USD 10,80 de TAX confirmado. El peso con embalaje es 1 kg."]
+    bruto = {"producto": "correa", "precio_unitario_usd": 194.30, "peso_kg": 1, "tax_tienda_usd": 10.80, "sin_tax": True}
+    productos, _ = validar_productos({"productos": [bruto]}, textos)
+    assert GlobexPricingEngine.calcular_pedido(productos)["costo_total"] == 212.30
+    linea = borrador.construir(productos, [bruto], None, textos=textos)["lineas"][0]
+    assert linea["tax"] == {"estado": "incluido_desglosado", "monto_usd": 10.80} and linea["tipo_precio"] == "final"
+
+
+@pytest.mark.parametrize("texto", ["Descarté el TV Box y no lo compraré. ¿Una camisa nueva cumple?",
+                                   "El vape ya no lo voy a traer, solo una laptop"])
+def test_producto_descartado_no_activa_el_guardrail(texto):
+    assert verificar(texto) is None

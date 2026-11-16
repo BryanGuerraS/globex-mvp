@@ -19,6 +19,7 @@ from validaciones import precio_derivado
 TAX_CONFIRMADO = "confirmado"            # el cliente dijo el monto
 TAX_CERO = "cero_confirmado"             # el cliente dijo que el TAX es 0
 TAX_INCLUIDO = "incluido_sin_desglose"   # el precio ya lo incluye o la tienda no lo cobra
+TAX_INCLUIDO_DESGLOSADO = "incluido_desglosado"  # el precio final incluye un TAX cuyo monto dijo el cliente
 TAX_DESCONOCIDO = "desconocido"          # se estima el 7 % de referencia
 
 
@@ -27,7 +28,8 @@ def estado_tax(bruto: Dict, tax_validado: Optional[float]) -> str:
     if tax_validado is None:
         return TAX_DESCONOCIDO
     if bruto.get("sin_tax") is True:
-        return TAX_INCLUIDO
+        tax_bruto = bruto.get("tax_tienda_usd")
+        return TAX_INCLUIDO_DESGLOSADO if tax_bruto not in (None, "") and float(tax_bruto) > 0 else TAX_INCLUIDO
     if tax_validado == 0:
         tax_bruto = bruto.get("tax_tienda_usd")
         return TAX_CERO if tax_bruto is not None and float(tax_bruto) == 0 else TAX_INCLUIDO
@@ -50,12 +52,15 @@ def _linea(i: int, item: Dict, bruto: Dict, pesos_catalogo=(), peso_total: Optio
         "cantidad": item.get("cantidad") or 1,
         "precio_unitario_usd": item.get("precio_unitario"),
         # base = precio sin TAX (se suma el TAX); final = el cliente dijo que ya lo incluye
-        "tipo_precio": "final" if estado == TAX_INCLUIDO else "base",
+        "tipo_precio": "final" if estado in (TAX_INCLUIDO, TAX_INCLUIDO_DESGLOSADO) else "base",
         # "derivado": base = total que dijo el cliente − su TAX (guía §5.3); "cliente": lo dijo tal cual
         "origen_precio": (None if item.get("precio_unitario") is None else
                           "derivado" if precio_derivado(item.get("precio_unitario"), tax, item.get("cantidad") or 1,
                                                         list(textos)) else "cliente"),
-        "tax": {"estado": estado, "monto_usd": tax if estado == TAX_CONFIRMADO else (0.0 if tax == 0 else None)},
+        "tax": {"estado": estado,
+                "monto_usd": (tax if estado == TAX_CONFIRMADO else
+                              float(bruto["tax_tienda_usd"]) if estado == TAX_INCLUIDO_DESGLOSADO else
+                              (0.0 if tax == 0 else None))},
         "peso_kg": peso,
         "origen_peso": origen,
     }
@@ -138,7 +143,7 @@ def productos_para_api(borrador: Optional[Dict]) -> List[Dict]:
             "id": linea["id"], "producto": linea["producto"] or "", "tienda": linea["tienda"] or "",
             "precio": linea["precio_unitario_usd"], "cantidad": linea["cantidad"], "peso": linea["peso_kg"],
             "tax_tienda_usd": linea["tax"]["monto_usd"] if estado in (TAX_CONFIRMADO, TAX_CERO) else None,
-            "sin_tax": True if estado == TAX_INCLUIDO else None,
+            "sin_tax": True if estado in (TAX_INCLUIDO, TAX_INCLUIDO_DESGLOSADO) else None,
             "tax_estado": estado, "tipo_precio": linea["tipo_precio"], "origen_peso": linea["origen_peso"],
             "origen_precio": linea.get("origen_precio"),
         })
@@ -158,6 +163,7 @@ def texto_usado(chat_id: str) -> str:
 
 
 _TEXTO_TAX = {TAX_CONFIRMADO: "TAX dicho por el cliente", TAX_CERO: "TAX 0 confirmado",
+              TAX_INCLUIDO_DESGLOSADO: "precio final con el TAX dicho por el cliente incluido",
               TAX_INCLUIDO: "precio con TAX incluido", TAX_DESCONOCIDO: "TAX no dicho (7 % de referencia)"}
 
 

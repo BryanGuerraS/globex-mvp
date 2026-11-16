@@ -96,3 +96,19 @@ def test_figuras_de_coleccion_pueden_pasar_de_cuatro():
 def test_sin_maximo_conjunto_de_cuatro_restringidos():
     detalle = verificar("¿Cuántos perfumes puedo traer como máximo?")["mensaje"]
     assert "Perfumes: 4" in detalle and "guía" not in detalle and "en total" not in detalle
+
+
+@pytest.mark.parametrize("texto, tipo", [
+    ("Encontré un revólver real en una tienda de USA", "prohibido"),
+    ("El artículo está descrito como dispositivo médico y tengo receta", "no_admitido"),
+    ("Son dos chaquetas que ya usé, pero están impecables", "solo_nuevos"),
+    ("El repuesto de mi auto fue retirado de otro vehículo y es usado", "solo_nuevos"),
+])
+def test_banco_desarrollo_palabras_nuevas(texto, tipo):
+    assert verificar(texto)["tipo"] == tipo
+
+
+@pytest.mark.parametrize("texto", ["Quiero una pistola de agua", "Quiero traer una camisa nueva",
+                                   "Una casaca nueva de 80 dólares, no usada"])
+def test_sin_falsos_positivos_nuevos(texto):
+    assert verificar(texto) is None

@@ -46,7 +46,9 @@ DERIVA_SIEMPRE = {"G126", "G127", "G037", "G058"}
 # Pagos: no son motivo de derivación (guía §6, "pagos concretos" fuera de los 8 motivos). La respuesta
 # aprobada ya dice que el asesor da la cuenta; se ignora derivar=true del LLM. El cliente igual puede
 # pedir un asesor (derivar_a_asesor).
-NUNCA_DERIVA = {"G029", "G032", "G116", "G117", "G119", "G120", "G121"}
+NUNCA_DERIVA = {"G029", "G032", "G116", "G117", "G119", "G120", "G121",
+                # Rutas no ofrecidas (guía §6: no se deriva solo por preguntar por otra ruta)
+                "G013", "G059", "G060"}
 
 # Palabras con que los clientes preguntan por cada FAQ del menú (para que la búsqueda las encuentre)
 PALABRAS_KB = {
@@ -56,6 +58,10 @@ PALABRAS_KB = {
     "cobertura_provincias": "envían a provincias Arequipa Trujillo Cusco Piura Chiclayo Olva Shalom agencia",
     "como_funciona": "cómo funciona el servicio cómo compro pasos courier",
     "metodos_pago": "cómo pago formas de pago Yape Plin tarjeta transferencia",
+    "reglas_productos": "ropa nueva usada cumple condición estado máximo cuántos perfumes cremas maquillaje "
+                        "calzado zapatos juguetes figuras de colección shampoo receta no admitidos se puede traer",
+    "tarifas": "tarifa por kilo cuánto cobran por kg precio por kilogramo peso mínimo facturable desaduanaje "
+               "peso que se cobra",
 }  # inicio de "Orientación al asesor" cuando no hace falta
 
 
@@ -155,10 +161,24 @@ def _indice():
     return vectores, idf
 
 
+# Ciudades de origen frecuentes -> país, para que la búsqueda encuentre las respuestas de rutas
+_PAIS_DE_CIUDAD = {
+    "china": ("shenzhen", "guangzhou", "shanghai", "shangai", "yiwu", "pekin", "beijing", "hong kong", "aliexpress",
+              "alibaba", "temu", "shein"),
+    "españa": ("madrid", "barcelona", "valencia", "sevilla"),
+}
+
+
+def _con_pais(pregunta: str) -> str:
+    bajo = pregunta.lower()
+    extra = [pais for pais, ciudades in _PAIS_DE_CIUDAD.items() if any(c in bajo for c in ciudades)]
+    return pregunta + (" " + " ".join(extra) if extra else "")
+
+
 def buscar(pregunta: str, k: int = 4) -> List[Dict]:
     """Las k entradas más parecidas a la pregunta (similitud coseno de trigramas TF-IDF)."""
     vectores, idf = _indice()
-    c = Counter(_trigramas(pregunta))
+    c = Counter(_trigramas(_con_pais(pregunta)))
     q = {t: f * idf[t] for t, f in c.items() if t in idf}
     norma = math.sqrt(sum(x * x for x in q.values())) or 1.0
     puntajes = []

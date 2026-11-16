@@ -42,10 +42,11 @@ def test_responde_dos_preguntas_con_las_respuestas_aprobadas(entorno):  # noqa: 
     assert main.obtener_chat("PE.faq1")["bot_activo"] == 1
 
 
-def test_rechaza_un_id_que_no_salio_en_la_busqueda(entorno):  # noqa: F811
-    llm, _ = entorno("PE.faq2", "¿qué es el tracking?", [
+@pytest.mark.parametrize("id_malo", ["G999", "G062"])  # inventado y retirado (free tax)
+def test_rechaza_un_id_inventado_o_retirado(entorno, id_malo):  # noqa: F811
+    llm, _ = entorno(f"PE.faq2{id_malo}", "¿qué es el tracking?", [
         _respuesta(tool_calls=[_tool_call("b1", "buscar_faq", {"preguntas": ["qué es el tracking"]})]),
-        _respuesta(tool_calls=[_tool_call("r1", "enviar_faq", {"ids": ["G001"]})]),
+        _respuesta(tool_calls=[_tool_call("r1", "enviar_faq", {"ids": [id_malo]})]),
         _respuesta(content="Disculpa, déjame revisarlo. 📦"),
     ])
     assert "error" in llm.llamadas[2][-1]["content"]
@@ -114,3 +115,32 @@ def test_pagos_no_derivan_aunque_el_llm_lo_pida(entorno):  # noqa: F811
     chat = main.obtener_chat("PE.pago")
     assert chat["bot_activo"] == 1 and chat["motivo_derivacion"] is None
     assert "transferencia bancaria" in _texto(enviado)
+
+
+def test_una_sola_busqueda_por_mensaje(entorno):  # noqa: F811
+    """Repetir buscar_faq agotaba las 3 rondas y el cliente recibía el mensaje de error."""
+    _, enviado = entorno("PE.busca2", "¿Qué peso se cobra y cuál es el mínimo?", [
+        _respuesta(tool_calls=[_tool_call("b1", "buscar_faq", {"preguntas": ["peso mínimo"]})]),
+        _respuesta(tool_calls=[_tool_call("b2", "buscar_faq", {"preguntas": ["peso mínimo flete"]})]),
+        _respuesta(tool_calls=[_tool_call("k1", "consultar_faq_comercial", {"tema": "tarifas"})]),
+    ])
+    assert "USD 9 por kg" in _texto(enviado)
+
+
+def test_pregunta_general_no_deriva_aunque_el_llm_lo_pida(entorno):  # noqa: F811
+    pregunta = "En general, cuando el transportista muestra Delivered en Miami, ¿eso equivale a la recepción?"
+    entorno("PE.general", pregunta, [
+        _respuesta(tool_calls=[_tool_call("b1", "buscar_faq", {"preguntas": [pregunta]})]),
+        _respuesta(tool_calls=[_tool_call("r1", "enviar_faq", {"ids": ["G108"], "derivar": True})]),
+    ])
+    chat = main.obtener_chat("PE.general")
+    assert chat["bot_activo"] == 1 and chat["motivo_derivacion"] is None
+
+
+def test_ultima_ronda_obliga_a_elegir_la_faq(entorno):  # noqa: F811
+    llm, enviado = entorno("PE.ronda", "¿Envían directo desde Shenzhen a Lima?", [
+        _respuesta(tool_calls=[_tool_call("b1", "buscar_faq", {"preguntas": ["envío directo desde China a Perú"]})]),
+        _respuesta(tool_calls=[_tool_call("b2", "buscar_faq", {"preguntas": ["envío desde Shenzhen a Lima"]})]),
+        _respuesta(tool_calls=[_tool_call("r1", "enviar_faq", {"ids": ["G059"]})]),
+    ])
+    assert "almacén de Miami" in _texto(enviado)
