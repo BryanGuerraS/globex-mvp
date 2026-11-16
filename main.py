@@ -199,7 +199,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
      Nunca pidas el modelo, la marca, la cantidad de piezas ni otros detalles para estimar el peso.
 
    - CUADRANTE 2 [SEGUIMIENTO COURIER]:
-     Si quiere saber el estado o la ubicación de SU paquete o pedido concreto: solicita el código de tracking y llama a 'clasificar_como_seguimiento'.
+     Si quiere saber el estado o la ubicación de SU paquete o pedido concreto (o que comprueben si Globex lo recibió): llama de inmediato a 'clasificar_como_seguimiento', con el código de tracking si lo dio y sin él si no; no le pidas el código antes (el asesor se lo pide).
      Si pregunta en general cómo funciona el tracking (quién da el código, dónde se ve, qué hacer si son varios paquetes, qué significa "Delivered"), no es un seguimiento: usa 'buscar_faq'.
 
    - CUADRANTE 3 [COTIZACIÓN VIAJERO]:
