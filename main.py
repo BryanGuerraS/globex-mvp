@@ -200,7 +200,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
 
    - CUADRANTE 2 [SEGUIMIENTO COURIER]:
      Si quiere saber el estado o la ubicación de SU paquete o pedido concreto (o que comprueben si Globex lo recibió): llama de inmediato a 'clasificar_como_seguimiento', con el código de tracking si lo dio y sin él si no; no le pidas el código antes (el asesor se lo pide).
-     Si pregunta en general cómo funciona el tracking (quién da el código, dónde se ve, si debe informar varios trackings o qué hacer si su compra viene en varios paquetes, qué significa "Delivered"), no es un seguimiento: usa 'buscar_faq'. Solo es seguimiento si pide saber DÓNDE está su paquete o si Globex ya lo recibió.
+     Si pregunta en general cómo funciona el tracking (quién da el código, dónde se ve, si debe informar varios trackings o qué hacer si su compra viene en varios paquetes, qué significa "Delivered"), no es un seguimiento: usa 'buscar_faq'. Solo es seguimiento si su compra YA fue despachada y pide saber dónde está o si Globex ya la recibió; si todavía no compra o no despacha, es una pregunta general.
 
    - CUADRANTE 3 [COTIZACIÓN VIAJERO]:
      Si menciona "viajero" o "maleta": llama a 'clasificar_como_viajero'.
@@ -929,6 +929,22 @@ TEXTO_PIDE_PESO = "¿Cuánto pesa aproximadamente en kg? 📦"  # texto aprobado
 MAX_PREGUNTAS_FAQ = 4  # preguntas de la base ampliada que se responden en un mismo mensaje
 
 
+MARGEN_FAQ_ESPECIFICA = 0.1  # puntaje de similitud que una respuesta específica debe superar a la general
+
+
+def _especificas_mejores(texto: str, info_faq: Dict) -> List[Dict]:
+    """Respuestas específicas de la base que se parecen a la pregunta claramente más que la FAQ general."""
+    resultados = faq_globex.buscar(texto, k=25)
+    general = next((e["puntaje"] for e in resultados if e.get("respuesta") == info_faq.get("contenido")), 0.0)
+    especificas = [e for e in resultados if not e["id"].startswith("KB-") and e["id"] not in faq_globex.EXCLUIDAS]
+    # El margen decide SI se ofrece elegir; si se ofrece, van las 4 específicas mejor ubicadas
+    if not especificas or especificas[0]["puntaje"] < general + MARGEN_FAQ_ESPECIFICA:
+        return []
+    mejores = especificas[:4]
+    return [{"id": e["id"], "tema": e["tema"], "pregunta_ejemplo": e.get("pregunta", ""),
+             "respuesta": e["respuesta"], "orientacion_asesor": e.get("orientacion_asesor", "")} for e in mejores]
+
+
 _PIDE_PERSONA = re.compile(r"\b(?:asesor|asesora|persona|humano|alguien del equipo|ejecutivo)\b")
 _PREGUNTA_GENERAL = re.compile(r"\b(?:en general|en t[eé]rminos generales|por lo general|normalmente|"
                                r"usualmente|generalmente|de manera general|en principio)\b")
@@ -1156,6 +1172,22 @@ def ejecutar_herramienta(
             or buscar_faq_comercial(texto_consolidado)
             or buscar_faq_comercial(str(args.get("tema", "")))
         )
+        # Si una respuesta específica de la base se parece claramente más a la pregunta que la FAQ general,
+        # el LLM elige entre ambas con enviar_faq (antes respondía la general aunque no contestara lo
+        # preguntado: VFAQ022, 041, 043). Las preguntas generales se siguen respondiendo directo.
+        especificas = _especificas_mejores(texto_consolidado, info_faq) if info_faq and estado.get("busco_faq", 0) < 2 else []
+        if especificas:
+            general = next((e for e in faq_globex.entradas().values()
+                            if e.get("respuesta") == info_faq["contenido"]), None)
+            candidatos = ([{"id": general["id"], "tema": general["tema"], "respuesta": general["respuesta"],
+                            "orientacion_asesor": general.get("orientacion_asesor", "")}] if general else []) + especificas
+            estado.setdefault("candidatos_faq", []).extend(c["id"] for c in candidatos)
+            estado["busco_faq"] = estado.get("busco_faq", 0) + 1
+            estado["elegir_faq"] = True  # la siguiente llamada debe ser enviar_faq: nada de texto libre
+            return {"candidatos": candidatos,
+                    "instruccion": "Elige con enviar_faq la candidata que responde exactamente lo que preguntó el "
+                                   "cliente; si hizo varias preguntas, pasa varios ids. Usa la general (KB-...) si "
+                                   "la pregunta es general o si es la única que trae un dato que pidió."}, None
         respuesta = (
             info_faq["contenido"]
             if info_faq
@@ -1432,7 +1464,7 @@ async def _procesar_turno(
             inicio_llm = time.perf_counter()
             # Última ronda tras buscar en la base sin elegir: se obliga a responder con enviar_faq
             # (antes repetía buscar_faq y el cliente recibía el mensaje de error: VFAQ015, VFAQ048)
-            elegir = (ronda == MAX_RONDAS_HERRAMIENTAS - 1 and estado.get("busco_faq")
+            elegir = ((estado.pop("elegir_faq", False) or ronda == MAX_RONDAS_HERRAMIENTAS - 1 and estado.get("busco_faq"))
                       and not respuestas_finales)
             ai_response, espera_limite_ms = await _llamar_llm(
                 history, tool_choice={"type": "function", "function": {"name": "enviar_faq"}} if elegir else "auto")

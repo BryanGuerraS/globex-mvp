@@ -134,6 +134,13 @@ RESPUESTAS_ACTUALIZADAS = {
     "G093": ("Informa todos los trackings (dos, tres o los que sean) y a qué productos o paquetes corresponden. Si son "
              "parte de una misma cotización, en Miami se espera a que lleguen todos y luego se consolidan en una sola "
              "guía para el envío a Perú. Los trackings originales se conservan; no se sustituyen por uno inventado."),
+    # VFAQ025 y VFAQ036: decir dónde se encuentra el tracking y qué tramo hace cada uno
+    "G089": ("Es el número de seguimiento que te da la tienda o el transportista. Lo encuentras en la información de "
+             "envío de tu orden (en tu cuenta de la tienda o en su correo de despacho). Sirve para seguir el envío; no "
+             "es una confirmación automática de recepción de Globex."),
+    "G038": ("Sí. Globex trae tu compra desde el almacén de Miami a Perú y prepara su despacho a una agencia Shalom; "
+             "Shalom hace el tramo nacional hasta la agencia de tu destino, donde la recoges. Se debe confirmar la "
+             "agencia exacta."),
 }
 
 # Palabras de búsqueda extra: la pregunta del banco no siempre usa las mismas palabras que el cliente
@@ -141,6 +148,9 @@ PALABRAS_EXTRA = {
     "G002": "dirección principal apartamento suite campos separados formulario traducido address line 1 line 2",
     "G056": "comparando tiendas aún no compro sin orden antes de pagar información cómo usar Miami",
     "G093": "tres trackings varios códigos de seguimiento paquetes divididos misma cotización",
+    "G013": "otro país España Madrid Europa sin pasar por Estados Unidos trayecto desde otro país hacia Perú",
+    "G059": "China Shenzhen Guangzhou despacho directo desde China sin recepción en Miami proveedor chino",
+    "G115": "diferenciar pagos tienda Globex Shalom qué pago a quién pagos separados distintos conceptos provincia",
 }
 
 

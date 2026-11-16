@@ -164,3 +164,22 @@ def test_rutas_niegan_claro_y_sin_asesor(faq_id, frase):
     texto = faq_globex.entradas()[faq_id]["respuesta"]
     assert frase in texto and "Estados Unidos a Perú" in texto or "Estados Unidos hacia Perú" in texto
     assert "asesor" not in texto
+
+
+def test_faq_general_deja_elegir_una_especifica_mejor(entorno):  # noqa: F811
+    """VFAQ043: '¿debo diferenciar lo que pago a la tienda, a Globex y a Shalom?' con tema 'pagos'."""
+    pregunta = "En una compra enviada a provincia, ¿debo diferenciar lo que pago a la tienda, a Globex y a Shalom?"
+    llm, enviado = entorno("PE.kbsel", pregunta, [
+        _respuesta(tool_calls=[_tool_call("k1", "consultar_faq_comercial", {"tema": "pagos"})]),
+        _respuesta(tool_calls=[_tool_call("r1", "enviar_faq", {"ids": ["G115"]})]),
+    ])
+    assert "Son pagos distintos" in _texto(enviado)
+    resultado = json.loads(llm.llamadas[1][-1]["content"])
+    assert "G115" in [c["id"] for c in resultado["candidatos"]]
+
+
+def test_faq_general_responde_directo_si_no_hay_una_mejor(entorno):  # noqa: F811
+    _, enviado = entorno("PE.kbdir", "¿Cuánto demora el envío?", [
+        _respuesta(tool_calls=[_tool_call("k1", "consultar_faq_comercial", {"tema": "plazos"})]),
+    ])
+    assert "5 días hábiles" in _texto(enviado)

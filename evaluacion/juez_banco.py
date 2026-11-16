@@ -126,6 +126,11 @@ class Juez:
             r = self.http.post(URL, headers={"Authorization": f"Bearer {self.keys[i]}"}, json={
                 "model": MODELO_JUEZ, "temperature": 0, "max_tokens": 20000, "reasoning_effort": esfuerzo,
                 "messages": [{"role": "system", "content": sistema}, {"role": "user", "content": usuario}]})
+            if r.status_code in (401, 402, 403):  # key sin créditos o revocada: se aparta
+                self.pausa[i] = float("inf")
+                if all(p == float("inf") for p in self.pausa):
+                    raise RuntimeError("ninguna key gratuita de Cerebras tiene créditos")
+                continue
             if r.status_code == 429:
                 self.pausa[i] = time.monotonic() + float(r.headers.get("retry-after") or 60)
                 continue

@@ -182,3 +182,26 @@ def test_tres_keys_pasa_a_la_tercera():
     p, r1, r2 = Falso("p", falla=True), Falso("r1", falla=True), Falso("r2")
     c = ClienteGroqConRespaldo([("principal", p), ("respaldo 1", r1), ("respaldo 2", r2)])
     assert c.create(model="m") == "respuesta de r2" and c.ultimo_usado == "respaldo 2"
+
+
+def _error_status(codigo):
+    from openai import APIStatusError
+    req = httpx.Request("POST", "https://api.cerebras.ai/v1/chat/completions")
+    return APIStatusError("Payment required", response=httpx.Response(codigo, request=req), body=None)
+
+
+@pytest.mark.parametrize("codigo", [401, 402, 403])
+def test_key_sin_creditos_o_revocada_pasa_a_la_siguiente(codigo):
+    """16/11: una key gratuita de Cerebras se quedó sin créditos (402) y cortaba la llamada."""
+    reloj = Reloj()
+    p, r = Falso("principal", falla=True, error=_error_status(codigo)), Falso("respaldo")
+    c = ClienteGroqConRespaldo([("principal", p), ("respaldo", r)], reloj=reloj)
+    assert c.create(model="m") == "respuesta de respaldo"
+    assert c.create(model="m") == "respuesta de respaldo" and p.llamadas == 1  # apartada por horas
+
+
+def test_otro_error_http_se_propaga():
+    p = Falso("principal", falla=True, error=_error_status(400))
+    c = ClienteGroqConRespaldo([("principal", p), ("respaldo", Falso("respaldo"))])
+    with pytest.raises(Exception):
+        c.create(model="m")

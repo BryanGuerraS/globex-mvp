@@ -23,11 +23,12 @@ import threading
 import time
 from typing import Callable, List, Optional, Tuple
 
-from openai import APIConnectionError, APITimeoutError, InternalServerError, OpenAI, RateLimitError
+from openai import APIConnectionError, APIStatusError, APITimeoutError, InternalServerError, OpenAI, RateLimitError
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1"  # misma API compatible con OpenAI
 PAUSA_POR_DEFECTO_S = 60  # si Groq no dice cuánto esperar
+PAUSA_KEY_INVALIDA_S = 6 * 3600  # key sin créditos o revocada: no se reintenta en horas
 ESPERA_MAXIMA_S = 60  # tope de espera por cuota en una llamada; después se propaga el 429
 REINTENTOS_TRANSITORIOS = 2  # errores de red o 5xx, en la misma key
 _TRANSITORIOS = (APIConnectionError, APITimeoutError, InternalServerError)
@@ -118,6 +119,14 @@ class ClienteGroqConRespaldo:
                 self._pausado_hasta[nombre] = self._reloj() + espera
                 error = e
                 print(f"🔀 [LLM] Límite {tipo} en la key {nombre} (libre en {espera:.0f} s)")
+            except APIStatusError as e:
+                # Key sin créditos (402), revocada o sin permiso (401/403): se aparta varias horas y se usa la
+                # siguiente; antes cortaba la llamada aunque hubiera otras keys (16/11, key gratuita agotada)
+                if e.status_code not in (401, 402, 403):
+                    raise
+                self._pausado_hasta[nombre] = self._reloj() + PAUSA_KEY_INVALIDA_S
+                error = e
+                print(f"🔀 [LLM] La key {nombre} no se puede usar ({e.status_code}); paso a la siguiente")
         return None, error
 
     def create(self, **kwargs):
