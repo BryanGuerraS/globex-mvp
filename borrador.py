@@ -29,6 +29,9 @@ def estado_tax(bruto: Dict, tax_validado: Optional[float]) -> str:
     if tax_validado is None:
         return TAX_DESCONOCIDO
     if bruto.get("sin_tax") is True:
+        # La validación decidió sumar el TAX (el precio era base): es un TAX confirmado, no incluido (CHAT013)
+        if tax_validado > 0:
+            return TAX_CONFIRMADO
         tax_bruto = bruto.get("tax_tienda_usd")
         return TAX_INCLUIDO_DESGLOSADO if tax_bruto not in (None, "") and float(tax_bruto) > 0 else TAX_INCLUIDO
     if tax_validado == 0:

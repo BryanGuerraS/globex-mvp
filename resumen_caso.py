@@ -69,6 +69,19 @@ def _necesidad(motivo: Optional[str], producto: str, servicio: str, detalle: str
     return "Atención personalizada (ver los últimos mensajes)"
 
 
+# Datos que el cliente dijo que aún no tiene (guía §7: pendientes reales para el asesor)
+_TIENDA_PENDIENTE = re.compile(
+    r"(?:no|a[uú]n no|todav[ií]a no)\s+(?:he\s+)?(?:elegid[oa]|eleg[ií]|decid[ií]do|decid[ií]|decido|elijo|s[eé]\s+(?:en\s+)?(?:qu[eé]|cu[aá]l))\b[^.;]{0,25}\btienda"
+    r"|\btienda\s+(?:por|a|sin)\s+(?:definir|elegir|decidir)|\bsin\s+tienda\b", re.IGNORECASE)
+_CANTIDAD_PENDIENTE = re.compile(
+    r"no\s+s[eé]\s+cu[aá]nt[oa]s\b(?!\s+(?:kilos?|kg|gramos?|d[oó]lares|usd|pesa|cuesta))|cantidad\s+(?:pendiente|por\s+definir|a\s+definir|sin\s+definir)"
+    r"|(?:deja|dejar|dejo)\s+(?:la\s+)?cantidad|sin\s+definir\s+(?:la\s+)?cantidad", re.IGNORECASE)
+
+
+def _pendiente_dicho(patron, mensajes: List[str]) -> bool:
+    return any(patron.search(m or "") for m in mensajes)
+
+
 def _pendientes(motivo: Optional[str], detalle: str, chat: Dict, cotizacion: Optional[Dict],
                 mensajes: List[str]) -> List[str]:
     """Lo que el asesor tiene que conseguir o hacer para continuar (máximo 3)."""
@@ -104,6 +117,13 @@ def _pendientes(motivo: Optional[str], detalle: str, chat: Dict, cotizacion: Opt
         pendientes.append("Entender la consulta y responder")
     if motivo == "asesor":
         pendientes.insert(0, "Continuar la atención que pidió el cliente")
+    items = (cotizacion or {}).get("items", [])
+    extra = []
+    if items and _pendiente_dicho(_CANTIDAD_PENDIENTE, mensajes):
+        extra.append("Confirmar la cantidad (el cliente aún no la definió)")
+    if items and not any(i.get("tienda") for i in items) and _pendiente_dicho(_TIENDA_PENDIENTE, mensajes):
+        extra.append("Confirmar la tienda de EE. UU. (el cliente aún no la eligió)")
+    pendientes[1:1] = extra  # antes de las tareas generales, para que no se pierdan en el máximo
     sin_tax = [i["producto"] or "el producto" for i in (cotizacion or {}).get("items", [])
                if i.get("tax_estado") == "desconocido" and i.get("precio") is not None]
     if sin_tax:
@@ -114,7 +134,7 @@ def _pendientes(motivo: Optional[str], detalle: str, chat: Dict, cotizacion: Opt
         pendientes.append(f"El precio de {', '.join(incluido)} ya incluye el TAX (sin desglose): no sumar otro 7 %")
     if not chat.get("nombre_cliente"):
         pendientes.append("Nombre del cliente (Globix ya se lo pidió)")
-    return pendientes[:4]
+    return pendientes[:5]
 
 
 def campos_faltantes(resumen: Optional[str]) -> List[str]:
@@ -189,6 +209,8 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
         f"*Servicio:* {servicio}",
     ]
 
+    cantidad_pendiente = _pendiente_dicho(_CANTIDAD_PENDIENTE, mensajes)
+    con_embalaje = len(items) == 1 and any("con embalaje" in (m or "").lower() for m in mensajes)
     if items or chat.get("cotizacion_total"):
         partes = []
         for item in items:  # productos, cantidades y tiendas del pedido
@@ -200,11 +222,14 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
                             and item.get("tax_monto") is not None)
                 if derivado:  # el cliente dio el precio final con el TAX incluido: se muestra ese precio
                     final = item["precio"] + item["tax_monto"] / max(item["cantidad"], 1)
-                    texto += f" {item['cantidad']} × USD {final:,.2f} (precio final, incluye TAX USD {item['tax_monto']:,.2f})"
+                    unidades = "cantidad por definir ×" if cantidad_pendiente else f"{item['cantidad']} ×"
+                    texto += f" {unidades} USD {final:,.2f} (precio final, incluye TAX USD {item['tax_monto']:,.2f})"
+                elif cantidad_pendiente:  # no se asume una unidad que el cliente no confirmó (CHAT020)
+                    texto += f" cantidad por definir × USD {item['precio']:,.2f} c/u"
                 else:
                     texto += f" {item['cantidad']} × USD {item['precio']:,.2f}"
             if item["peso"] is not None:
-                texto += f", {item['peso']:g} kg"
+                texto += f", {item['peso']:g} kg" + (" con embalaje" if con_embalaje else "")
                 if item.get("origen_peso") == "catalogo":
                     texto += " (estimado de catálogo)"
             # Estado del TAX: declarado por el cliente o estimado (guía §7.2)
@@ -224,7 +249,8 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
         # Una corrección posterior aún no cotizada no se mezcla con la cotización emitida (guía §7.1)
         cambio = bool(intento.get("lineas")) and _sin_ids(intento["lineas"]) != _sin_ids(borrador.get("lineas", []))
         if chat.get("cotizacion_total") and not cambio:
-            partes.append(f"total USD {chat['cotizacion_total']:,.2f}")
+            partes.append(f"total USD {chat['cotizacion_total']:,.2f}"
+                          + (" (referencial por 1 unidad)" if cantidad_pendiente else ""))
         if cambio:
             rotulo = "*Pedido vigente (sin recotizar):*"
         else:
@@ -236,5 +262,5 @@ def construir_resumen(chat_id: str, motivo: Optional[str], detalle: str = "") ->
     lineas.append("*Pendientes:* " + "; ".join(_pendientes(motivo, detalle, chat, cotizacion, mensajes)))
     if mensajes:
         lineas.append("*Mensajes del cliente:*")
-        lineas += [f"• {m[:200]}" for m in mensajes]
+        lineas += [f"• {m[:400]}" for m in mensajes]
     return "\n".join(lineas)

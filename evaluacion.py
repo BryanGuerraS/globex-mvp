@@ -11,6 +11,8 @@ Qué hace (opción B, decisión del equipo 16/11):
 4. Califica FAQ, productos y chats con el juez del equipo (prompts del banco) a través de Render
    (POST /api/eval/juzgar, con la key de pago del servidor): aquí no hace falta ninguna key de LLM.
 5. Genera el informe en PDF (y un JSON con los indicadores) en evaluacion/reportes/banco_final/<corrida>/.
+   Con --repeticiones N corre el banco N veces y agrega un informe con el promedio y el rango
+   (mínimo–máximo) de cada indicador en <corrida>-xN/; cumple si el promedio alcanza la meta.
 
 Solo necesita la clave de evaluación: variable EVAL_API_KEY (o en un archivo .env).
 """
@@ -92,32 +94,13 @@ def correr_casos(servidor: Servidor, banco: dict, corrida: str, salida: Path) ->
     return [hechos[c["id"]] for c in casos]
 
 
-def main():
-    p = argparse.ArgumentParser(description="Evalúa Globix con el banco final y genera el informe en PDF.")
-    p.add_argument("banco", help="carpeta Globex_Bancos_V2 (con 00_Indice_Bancos.txt y MANIFIESTO_SHA256.txt)")
-    p.add_argument("--url", default=os.environ.get("GLOBIX_URL", URL))
-    p.add_argument("--corrida", help="nombre de la corrida; repetirlo continúa una corrida cortada")
-    a = p.parse_args()
-    load_dotenv(RAIZ / ".env")
-    key = os.environ.get("EVAL_API_KEY")
-    if not key:
-        sys.exit("Falta EVAL_API_KEY (variable de entorno o archivo .env).")
-    carpeta = Path(a.banco)
+def evaluar_corrida(servidor: Servidor, banco: dict, sha: str, carpeta: Path, corrida: str) -> Path:
+    """Una corrida completa del banco (casos, revisión, juez, resultado.json y PDF); reanudable."""
     inicio = time.monotonic()
-
-    print("1. Verificando el banco contra su manifiesto…")
-    try:
-        banco, sha = banco_final.verificar_carpeta(carpeta)
-    except banco_final.BancoInvalido as e:
-        sys.exit(f"Banco no válido: {e}")
-    print(f"   {len(banco['casos'])} casos · manifiesto {sha[:16]}… verificado")
-
-    corrida = a.corrida or datetime.now().strftime("BF-%m%d-%H%M")
     destino = RAIZ / "evaluacion" / "reportes" / "banco_final" / corrida
     destino.mkdir(parents=True, exist_ok=True)
-    servidor = Servidor(a.url, key)
 
-    print(f"2. Ejecutando los casos en Globix ({a.url})…")
+    print(f"2. Ejecutando los casos en Globix ({servidor.url}) · corrida {corrida}…")
     filas = correr_casos(servidor, banco, corrida, destino / "casos.jsonl")
 
     print("3. Revisando derivación, totales y pedidos bloqueados…")
@@ -150,11 +133,76 @@ def main():
         {"meta": meta, "kpis": kpis, "tiempos": banco_final.tiempos(filas)}, ensure_ascii=False, indent=2),
         encoding="utf-8")
     pdf = generar_pdf(destino, destino / f"Informe_final_{corrida}.pdf")
+    _imprimir(kpis)
+    print(f"Informe de la corrida: {pdf}")
+    return destino
+
+
+def _imprimir(kpis: list):
     for k in kpis:
         estado = "cumple" if k["cumple"] else "no cumple"
         valor = "—" if k["porcentaje"] is None else f"{k['porcentaje']:.1f} %"
-        print(f"   {k['indicador']}: {valor} (meta {k['meta']} %) → {estado}")
+        rango = f" (mín. {k['minimo']:.1f} – máx. {k['maximo']:.1f})" if k.get("minimo") is not None else ""
+        print(f"   {k['indicador']}: {valor}{rango} (meta {k['meta']} %) → {estado}")
+
+
+def combinar_corridas(destinos: list, nombre: str) -> Path:
+    """Informe con el promedio y el rango de varias corridas del mismo banco."""
+    resultados = [json.loads((d / "resultado.json").read_text(encoding="utf-8")) for d in destinos]
+    filas = []
+    for d in destinos:
+        filas += [json.loads(l) for l in (d / "casos.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
+    metas = [r["meta"] for r in resultados]
+    meta = {**metas[0], "generado": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "commit": ", ".join(sorted({m["commit"] for m in metas if m.get("commit")})) or None,
+            "ejecutados": sum(m["ejecutados"] for m in metas), "total": sum(m["total"] for m in metas),
+            "casos_banco": metas[0]["total"], "errores": sum(m["errores"] for m in metas),
+            "duracion_min": round(sum(m["duracion_min"] for m in metas), 1),
+            "errores_del_juez": [e for m in metas for e in (m.get("errores_del_juez") or [])],
+            "corridas": [d.name for d in destinos]}
+    kpis = banco_final.combinar_kpis([r["kpis"] for r in resultados])
+    destino = RAIZ / "evaluacion" / "reportes" / "banco_final" / nombre
+    destino.mkdir(parents=True, exist_ok=True)
+    (destino / "resultado.json").write_text(json.dumps(
+        {"meta": meta, "kpis": kpis, "tiempos": banco_final.tiempos(filas)}, ensure_ascii=False, indent=2),
+        encoding="utf-8")
+    pdf = generar_pdf(destino, destino / f"Informe_final_{nombre}.pdf")
+    print(f"Resultado de las {len(destinos)} corridas (promedio):")
+    _imprimir(kpis)
     print(f"Informe: {pdf}")
+    return destino
+
+
+def main():
+    p = argparse.ArgumentParser(description="Evalúa Globix con el banco final y genera el informe en PDF.")
+    p.add_argument("banco", help="carpeta Globex_Bancos_V2 (con 00_Indice_Bancos.txt y MANIFIESTO_SHA256.txt)")
+    p.add_argument("--url", default=os.environ.get("GLOBIX_URL", URL))
+    p.add_argument("--corrida", help="nombre de la corrida; repetirlo continúa una corrida cortada")
+    p.add_argument("--repeticiones", type=int, default=1,
+                   help="corridas completas del banco (la 1.ª se llama <corrida>, las demás <corrida>-R2, -R3…); "
+                        "con más de una se genera además el informe con el promedio y el rango")
+    a = p.parse_args()
+    load_dotenv(RAIZ / ".env")
+    key = os.environ.get("EVAL_API_KEY")
+    if not key:
+        sys.exit("Falta EVAL_API_KEY (variable de entorno o archivo .env).")
+    if a.repeticiones < 1:
+        sys.exit("--repeticiones debe ser 1 o más.")
+    carpeta = Path(a.banco)
+
+    print("1. Verificando el banco contra su manifiesto…")
+    try:
+        banco, sha = banco_final.verificar_carpeta(carpeta)
+    except banco_final.BancoInvalido as e:
+        sys.exit(f"Banco no válido: {e}")
+    print(f"   {len(banco['casos'])} casos · manifiesto {sha[:16]}… verificado")
+
+    corrida = a.corrida or datetime.now().strftime("BF-%m%d-%H%M")
+    servidor = Servidor(a.url, key)
+    nombres = [corrida] + [f"{corrida}-R{i}" for i in range(2, a.repeticiones + 1)]
+    destinos = [evaluar_corrida(servidor, banco, sha, carpeta, n) for n in nombres]
+    if len(destinos) > 1:
+        combinar_corridas(destinos, f"{corrida}-x{len(destinos)}")
 
 
 if __name__ == "__main__":

@@ -329,3 +329,40 @@ def test_compra_asistida_explicita(texto, deriva):
 def test_cantidades_por_marca_se_suman(texto, inicio):
     from guardrails import respuesta_regla
     assert respuesta_regla(texto).startswith(inicio)
+
+
+def _derivar_con(cliente, con_llm, caso, productos, mensajes):
+    con_llm([
+        _respuesta(tool_calls=[_tool_call("c1", "calcular_cotizacion", {"productos": productos})]),
+        _respuesta(content="Listo 😊"),
+        _respuesta(tool_calls=[_tool_call("d1", "derivar_a_asesor", {"motivo": "Revisar y continuar"})]),
+    ])
+    r = cliente.post("/api/eval/caso", headers=KEY, json={"corrida_id": "RES", "id": caso, "mensajes": mensajes})
+    return r.json()["resumen_caso"]["texto"]
+
+
+def test_resumen_precio_final_aunque_el_llm_marque_sin_tax(api):  # noqa: F811
+    """Precio final 64 con TAX 4 incluido: si el LLM pasa base 60 + TAX 4 con sin_tax, se muestra el final."""
+    cliente, con_llm = api
+    texto = _derivar_con(cliente, con_llm, "RES-1", [
+        {"producto": "mochila", "tienda": "Amazon", "precio_unitario_usd": 60, "peso_kg": 0.9,
+         "tax_tienda_usd": 4, "sin_tax": True}],
+        ["Soy Ana Ruiz. Cotiza una mochila de Amazon, el precio FINAL es USD 64 y ya incluye USD 4 de TAX. "
+         "Pesa 0,90 kg con embalaje.", "Que un asesor revise y continúe, por favor."])
+    assert "1 × USD 64.00 (precio final, incluye TAX USD 4.00)" in texto and "USD 60.00" not in texto
+    assert "0.9 kg con embalaje" in texto
+
+
+def test_resumen_tienda_y_cantidad_pendientes(api):  # noqa: F811
+    cliente, con_llm = api
+    texto = _derivar_con(cliente, con_llm, "RES-2", [
+        {"producto": "billetera", "tienda": "eBay", "precio_unitario_usd": 30, "peso_kg": 0.25, "sin_tax": True}],
+        ["Soy Luis Paz. Billeteras de eBay a USD 30 finales cada una con TAX de USD 0 incluido, 0,25 kg. "
+         "Todavía no sé cuántas voy a comprar, deja la cantidad pendiente.", "Que un asesor continúe, por favor."])
+    assert "cantidad por definir × USD 30.00 c/u" in texto and "1 ×" not in texto
+    assert "Confirmar la cantidad (el cliente aún no la definió)" in texto
+    texto = _derivar_con(cliente, con_llm, "RES-3", [
+        {"producto": "mochila", "precio_unitario_usd": 60, "peso_kg": 0.8, "sin_tax": True}],
+        ["Soy Eva Sol. Una mochila de USD 60 finales con TAX de USD 0, pesa 0,8 kg. Aún no he elegido la tienda.",
+         "Que un asesor continúe, por favor."])
+    assert "Confirmar la tienda de EE. UU. (el cliente aún no la eligió)" in texto

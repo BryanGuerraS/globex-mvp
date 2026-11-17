@@ -92,6 +92,7 @@ def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, c
     resultado = json.loads((trabajo / "resultado.json").read_text(encoding="utf-8"))
     meta, kpis, t = resultado["meta"], resultado["kpis"], resultado.get("tiempos") or {}
     cumplen = sum(1 for k in kpis if k["cumple"])
+    n_corridas = len(meta.get("corridas") or []) or 1
 
     doc = SimpleDocTemplate(str(salida), pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm,
                             topMargin=16 * mm, bottomMargin=16 * mm, title="Informe final del banco de preguntas",
@@ -104,12 +105,29 @@ def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, c
           Spacer(1, 8)]
     ficha = [
         ["Casos", f"{meta['ejecutados']}/{meta['total']} ejecutados · {meta['errores']} errores de ejecución"],
+    ] if n_corridas == 1 else [
+        ["Corridas", f"{n_corridas} corridas completas del banco ({meta['casos_banco']} casos cada una)"],
+        ["Casos", f"{meta['ejecutados']}/{meta['total']} ejecutados · {meta['errores']} errores de ejecución"],
+    ]
+    ficha += [
         ["Juez", meta['modelo_juez']],
         ["Duración", f"{meta['duracion_min']} min"],
     ]
     h.append(_tabla([[_celda(a, negrita=True), _celda(b)] for a, b in ficha], [38 * mm, 130 * mm],
                     cabecera=False, zebra=False))
 
+    if n_corridas > 1:
+        h += [_p(f"Resultados: {cumplen} de {len(kpis)} indicadores cumplen su meta en el promedio de "
+                 f"{n_corridas} corridas", "h2")]
+        filas = [["Indicador", "Por corrida", "Promedio", "Mín–máx", "Meta", "Estado"]]
+        for k in kpis:
+            corridas = " · ".join("—" if v is None else f"{v:.1f}" for v in k["por_corrida"])
+            rango = "—" if k.get("minimo") is None else f"{k['minimo']:.1f}–{k['maximo']:.1f} %"
+            prom = "—" if k.get("porcentaje") is None else f"{k['porcentaje']:.1f} %"
+            filas.append([_celda(k["indicador"], negrita=True), _celda(corridas), _celda(prom), _celda(rango),
+                          _celda(f"{k['meta']} %"), _cumple(k)])
+        h.append(_tabla(filas, [54 * mm, 36 * mm, 20 * mm, 24 * mm, 14 * mm, 20 * mm]))
+        return _ejecucion(doc, h, meta, t, salida)
     h += [_p(f"Resultados: {cumplen} de {len(kpis)} indicadores cumplen su meta", "h2")]
     cab = ["Indicador", "Resultado", "IC 95 %", "Meta", "Estado"] + (["Prueba oficial"] if oficial else [])
     filas = [cab]
@@ -130,6 +148,10 @@ def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, c
     if oficial:
         h.append(_p("La columna de la prueba oficial se colorea según si cumplía.", "chico"))
 
+    return _ejecucion(doc, h, meta, t, salida)
+
+
+def _ejecucion(doc, h, meta, t, salida):
     h += [_p("Ejecución", "h2")]
     filas = [["Dato", "Valor"],
              ["Casos ejecutados", f"{meta['ejecutados']} de {meta['total']}"],

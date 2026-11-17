@@ -39,7 +39,7 @@ KPIS_MINIMOS: List[Dict] = [
      "nombre": "K4 · Sin derivación innecesaria", "meta": 0.90, "sentido": "min", "unidad": "%",
      "fuente": "Contrapeso: ≤ 10 % de derivaciones innecesarias"},
     {"clave": "K12_resumen_completo", "categoria": "Decisión del LLM", "nombre": "K12 · Resumen del caso completo",
-     "meta": 0.90, "sentido": "min", "unidad": "%",
+     "meta": 0.85, "sentido": "min", "unidad": "%",
      "fuente": "E3 bloque 5: motivo, necesidad, datos disponibles y pendientes en cada derivación"},
     {"clave": "K13_cotizacion_correcta", "categoria": "Decisión del LLM", "nombre": "K13 · Cotizaciones referenciales correctas",
      "meta": 0.95, "sentido": "min", "unidad": "%",

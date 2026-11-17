@@ -204,10 +204,13 @@ globex-mvp/
 ├── metricas.py          # Costo, latencia y herramientas por turno
 ├── resumen_caso.py      # Resumen del caso para el asesor al derivar
 ├── proforma_imagen.py   # Proforma en imagen para WhatsApp
+├── evaluacion.py        # Evaluación con el banco final en un comando (informe en PDF)
+├── banco_final.py       # Verificación del banco e indicadores del contrato con sus metas
 ├── tests/               # Pruebas automatizadas (pytest)
 ├── docs/                # Plan de evaluación y KPIs de calidad del modelo
 ├── evaluacion/          # Script de evaluación con el LLM real y casos de prueba
 ├── requirements.txt
+├── requirements-evaluacion.txt  # Solo lo necesario para correr evaluacion.py
 ├── Procfile             # Comando de arranque en Render
 └── .env.example         # Plantilla de variables de entorno (sin secretos)
 ```
@@ -277,6 +280,58 @@ Para que Meta alcance un backend local hace falta exponerlo con un túnel HTTPS 
 
 El plan para medir la calidad del modelo está en [`docs/plan_evaluacion.md`](docs/plan_evaluacion.md). Propone 11 KPIs basados en τ-bench, BFCL, RAGAS y OWASP, entre ellos exactitud de herramienta y de argumentos, cotización indebida, exactitud de derivación y consistencia pass^3. El KPI de tiempo (≤ 60 min) queda como métrica de negocio.
 
+### Evaluación con el banco final (un comando)
+
+`evaluacion.py` ejecuta el banco final de preguntas del equipo contra Globix desplegado en Render y genera el informe en PDF. No hace falta instalar el backend ni tener keys de LLM: el chatbot y el juez corren en el servidor.
+
+**Qué se necesita**
+
+- Python 3.10 o superior.
+- La carpeta del banco `Globex_Bancos_V2` (la entrega el equipo; no está en el repositorio), con `00_Indice_Bancos.txt` y `MANIFIESTO_SHA256.txt`.
+- La clave de evaluación `EVAL_API_KEY` (la entrega el equipo).
+
+**Pasos**
+
+```bash
+git clone https://github.com/BryanGuerraS/globex-mvp.git
+```
+
+```bash
+cd globex-mvp
+```
+
+```bash
+pip install -r requirements-evaluacion.txt
+```
+
+Crear un archivo `.env` en la raíz del repositorio con la línea `EVAL_API_KEY=<clave entregada por el equipo>` (o definir la variable de entorno). Luego:
+
+```bash
+python evaluacion.py "<ruta>/Globex_Bancos_V2" --repeticiones 3
+```
+
+**Qué hace**
+
+1. Verifica cada archivo del banco contra su manifiesto SHA-256 (si alguno cambió, se detiene).
+2. Envía cada caso (228) a Globix en Render por `POST /api/eval/caso`: mismo flujo que WhatsApp, en una conversación nueva y sin enviar mensajes reales.
+3. Revisa con los registros del sistema la derivación, el total cotizado y las cotizaciones a pedidos bloqueados.
+4. Califica FAQ, productos con condiciones especiales y chats con el juez del equipo (prompts del banco), que corre en el servidor.
+5. Genera el PDF y un JSON con los 6 indicadores, sus intervalos de confianza y sus metas.
+
+**Opciones**
+
+| Opción | Qué hace |
+| --- | --- |
+| `--repeticiones N` | Corre el banco N veces y agrega un informe con el resultado de cada corrida, el promedio y el rango (mínimo–máximo); un indicador cumple si su promedio alcanza la meta. Sin la opción, corre una vez |
+| `--corrida NOMBRE` | Nombre de la corrida. Si la ejecución se corta, repetir el mismo comando con el mismo nombre continúa donde quedó, sin repetir casos |
+| `--url URL` | Otro servidor de Globix (por defecto, el de Render) |
+
+**Resultados:** en `evaluacion/reportes/banco_final/<corrida>/` (`Informe_final_<corrida>.pdf`, `resultado.json`, `casos.jsonl` con cada respuesta y `juez.jsonl` con cada veredicto). Con `--repeticiones 3`, las corridas son `<corrida>`, `<corrida>-R2` y `<corrida>-R3`, y el informe combinado queda en `<corrida>-x3/`.
+
+**Duración:** unos 18 minutos por corrida. El primer caso puede tardar hasta un minuto si el servidor gratuito de Render estaba dormido; el script reintenta solo.
+
+**Metas:** las del índice del banco, salvo las ajustadas por el equipo: los tres indicadores de calidad (preguntas frecuentes, productos con condiciones especiales y resumen para el asesor) ≥ 85 %, derivación correcta ≥ 80 % y productos sin la condición de cero avances indebidos (que se siguen informando en `resultado.json`).
+
 ### Verificación del motor: 54 casos
 
 [`evaluacion/casos_motor.json`](evaluacion/casos_motor.json) tiene 54 casos sintéticos en 9 categorías de 6 casos: flete y peso mínimo, exoneración (producto + TAX menor a USD 200), tributos de 24 % sobre producto + TAX, TAX de tienda, tope de USD 2 000 sobre producto + TAX, entradas inválidas, anclaje de los argumentos del LLM al mensaje del cliente anclaje del TAX y cantidad (precio × unidades). Los valores esperados salen de un oráculo independiente en `Decimal` ([`evaluacion/generar_casos_motor.py`](evaluacion/generar_casos_motor.py), redondeo comercial a 2 decimales), no del propio motor, y se comparan al centavo con el motor, el texto de WhatsApp y `validar_argumentos_cotizacion`.
@@ -299,7 +354,7 @@ python evaluacion/resumen_kpis.py
 | :-- | :-- | :-- | :-- |
 | Motor | Exactitud del motor (54 casos) · pruebas en verde | 100 % | Evals de regresión (Anthropic) |
 | Decisión del LLM | K1 herramienta · K2 argumentos | ≥ 90 % · ≥ 95 % | BFCL, guías de proveedores |
-| Decisión del LLM | K4 deriva cuando corresponde · sin derivación innecesaria | ≥ 90 % · ≥ 90 % | Plan de evaluación |
+| Decisión del LLM | K4 deriva cuando corresponde · sin derivación innecesaria | ≥ 80 % · ≥ 90 % | Plan de evaluación |
 | Seguridad y alcance | K3 sin cotización indebida · K5 guardrail · K11 alcance | 100 % · 100 % · ≥ 95 % | Guardarraíl del proyecto, SUNAT/DIGEMID, OWASP LLM01 |
 | Resultado | Éxito de tarea pass^1 · consistencia pass^3 | ≥ 85 % · ≥ 80 % | τ-bench, guías de proveedores |
 | Experiencia y costo | Espera del cliente p50 · p95 · costo por 1 000 conversaciones | ≤ 10 s · ≤ 15 s · ≤ USD 5 | Nielsen (10 s), equipo |

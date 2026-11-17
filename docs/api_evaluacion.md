@@ -196,8 +196,8 @@ banco (`Globex_Bancos_V2`) comprimida en zip, el servidor verifica cada archivo 
 `MANIFIESTO_SHA256.txt`, ejecuta todos los casos con el mismo flujo de `/api/eval/caso`, califica FAQ,
 productos y chats con el juez del equipo (prompts de `01_System_Prompts`, modelo `qwen-3.8-27b` en
 Cerebras con la key de **pago**) y arma el informe con los 6 indicadores, sus intervalos y las metas del
-contrato: las del índice del banco salvo derivación correcta ≥ 80 %, resumen para el asesor ≥ 90 % y
-productos con condiciones especiales sin la condición de cero avances indebidos (`banco_final.METAS_EQUIPO`). El banco no se guarda en el repositorio: llega en la llamada.
+contrato: las del índice del banco salvo FAQ, productos con condiciones especiales y resumen para el asesor
+≥ 85 %, derivación correcta ≥ 80 % y productos sin la condición de cero avances indebidos (`banco_final.METAS_EQUIPO`). El banco no se guarda en el repositorio: llega en la llamada.
 
 | Llamada | Qué hace |
 | --- | --- |
