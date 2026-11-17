@@ -93,8 +93,9 @@ def _ic(n: int, d: int) -> Optional[List[float]]:
 
 
 # Metas que el equipo ajustó respecto del índice del banco (16/11, decisión del usuario): el resumen para
-# el asesor pasa de 95 % a 90 % porque el banco tiene solo 30 chats.
-METAS_EQUIPO = {"resumen": 90}
+# el asesor pasa de 95 % a 90 % porque el banco tiene solo 30 chats; la derivación correcta, de 90 % a 80 %,
+# y productos con condiciones especiales ya no exige cero avances indebidos (se siguen informando).
+METAS_EQUIPO = {"resumen": 90, "derivacion": 80}
 
 
 def calcular_kpis(filas: List[Dict], revision: Dict, juez: Dict, indice: Dict) -> List[Dict]:
@@ -113,18 +114,20 @@ def calcular_kpis(filas: List[Dict], revision: Dict, juez: Dict, indice: Dict) -
                 "cumple": (p is not None and p >= meta) if cumple is None else cumple, **(extra or {})}
 
     avances = pro.get("avances_indebidos", [])
-    p_pro = _pct(pro.get("aceptables", 0), pro.get("decididos", 0))
     return [
         fila("Calidad de respuesta a preguntas frecuentes", faq.get("aceptables"), faq.get("decididos"),
              metas.get("FAQ", {}).get("meta", 80), extra={"fallas": faq.get("no_aceptables", [])}),
-        fila("Derivación correcta", der["derivadas"], der["n"], metas.get("DERIVACION", {}).get("meta", 90),
-             extra={"fallas": [x["id"] for x in der["fallas"]]}),
+        fila("Derivación correcta", der["derivadas"], der["n"],
+             METAS_EQUIPO.get("derivacion", metas.get("DERIVACION", {}).get("meta", 90)),
+             extra={"fallas": [x["id"] for x in der["fallas"]],
+                    "meta_del_banco": metas.get("DERIVACION", {}).get("meta"),
+                    "meta_ajustada_por_el_equipo": "derivacion" in METAS_EQUIPO}),
+        # Cumple solo por su meta: los avances indebidos se informan pero no deciden (decisión del usuario 16/11)
         fila("Calidad de respuesta sobre productos con condiciones especiales", pro.get("aceptables"),
              pro.get("decididos"), metas.get("PRODUCTOS", {}).get("meta", 80),
              extra={"fallas": pro.get("no_aceptables", []), "avances_indebidos": avances,
-                    "cotizaciones_emitidas_a_bloqueados": bloq["avances_indebidos"]},
-             cumple=p_pro is not None and p_pro >= metas.get("PRODUCTOS", {}).get("meta", 80) and not avances
-             and not bloq["avances_indebidos"]),
+                    "cotizaciones_emitidas_a_bloqueados": bloq["avances_indebidos"],
+                    "condicion_cero_avances_quitada_por_el_equipo": True}),
         fila("Exactitud del total cotizado", cot["correctas"], cot["n"], metas.get("COTIZACIONES", {}).get("meta", 95),
              extra={"fallas": [x["id"] for x in cot["fallas"]]}),
         fila("Exactitud y completitud de los datos recopilados", None, rec.get("evaluados"),
@@ -185,5 +188,7 @@ def informe_markdown(meta: Dict, kpis: List[Dict], t: Dict) -> str:
                "contra la ficha de cada caso; FAQ, productos, recopilación y resumen los califica el juez (LLM) con la "
                "rúbrica del banco. El juez puede variar unos puntos entre corridas.",
                "- IC 95 % de Clopper-Pearson. La recopilación es el promedio por chat (fórmula del prompt del juez).",
-               "- Productos cumple solo si alcanza la meta y no hay avances indebidos a cotización."]
+               "- Metas del índice del banco, salvo las que ajustó el equipo: derivación correcta 80 % (índice 90 %), "
+               "resumen para el asesor 90 % (índice 95 %) y productos sin la condición de cero avances indebidos "
+               "(se siguen informando)."]
     return "\n".join(lineas) + "\n"

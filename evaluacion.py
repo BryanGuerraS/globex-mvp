@@ -128,6 +128,11 @@ def main():
                              ("FAQ", "PRODUCTOS", "CHATS_COMPARTIDOS"), hilos=4)
 
     print("5. Generando el informe…")
+    # Duración acumulada: al reanudar con --corrida se suma a la de las ejecuciones anteriores
+    archivo_duracion = destino / "duracion_s.txt"
+    previa = float(archivo_duracion.read_text(encoding="utf-8")) if archivo_duracion.exists() else 0.0
+    duracion_s = previa + (time.monotonic() - inicio)
+    archivo_duracion.write_text(f"{duracion_s:.1f}", encoding="utf-8")
     indice = json.loads((carpeta / "00_Indice_Bancos.txt").read_text(encoding="utf-8"))
     kpis = banco_final.calcular_kpis(filas, revision, juez, indice)
     commits = {(f.get("control_versiones") or {}).get("commit_chatbot") for f in filas} - {None}
@@ -138,7 +143,7 @@ def main():
         "version_banco": banco.get("version_paquete"), "sha_manifiesto": sha,
         "modelo_juez": juez_banco.MODELO_JUEZ, "total": len(banco["casos"]), "ejecutados": len(filas),
         "errores": sum(1 for f in filas if f.get("error_ejecucion")),
-        "duracion_min": round((time.monotonic() - inicio) / 60, 1),
+        "duracion_min": round(duracion_s / 60, 1),
         "errores_del_juez": juez.get("errores_del_juez", []),
     }
     (destino / "resultado.json").write_text(json.dumps(

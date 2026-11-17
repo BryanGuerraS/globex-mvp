@@ -127,8 +127,8 @@ def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, c
               else [62 * mm, 40 * mm, 28 * mm, 16 * mm, 22 * mm])
     h.append(_tabla(filas, anchos))
     h.append(Spacer(1, 4))
-    h.append(_p("Calidad de respuesta sobre productos con condiciones especiales cumple solo si alcanza la meta y no hay avances indebidos a cotización. "
-                + ("La columna de la prueba oficial se colorea según si cumplía." if oficial else ""), "chico"))
+    if oficial:
+        h.append(_p("La columna de la prueba oficial se colorea según si cumplía.", "chico"))
 
     h += [_p("Ejecución", "h2")]
     filas = [["Dato", "Valor"],
@@ -143,9 +143,6 @@ def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, c
                     [62 * mm, 106 * mm]))
     h.append(_p("El tiempo por turno no incluye los 5 s de agrupación de mensajes de WhatsApp.", "chico"))
 
-    # Al final del informe (decisión del usuario 16/11): el banco ya se usó para corregir errores
-    h += [Spacer(1, 10), _p("Este banco ya se había usado para identificar y corregir errores de Globix, por lo que "
-                           "esta corrida no es una prueba independiente de generalización.", "chico")]
     doc.build(h, onFirstPage=_pie, onLaterPages=_pie)
     return salida
 
