@@ -18,6 +18,7 @@ os.environ["META_ACCESS_TOKEN"] = "token_de_prueba"
 os.environ["META_PHONE_NUMBER_ID"] = "000"
 
 # main.py y pdf_generator.py crean globex.db y cotizaciones_pdf/ en el cwd.
+os.environ.pop("GLOBEX_DB", None)
 _TMP = tempfile.mkdtemp(prefix="globex_tests_")
 os.chdir(_TMP)
 

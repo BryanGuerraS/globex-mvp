@@ -62,8 +62,8 @@ class GlobexPricingEngine:
         valor_producto: precio de una unidad; cantidad: unidades (el precio es valor × cantidad).
         peso_kg: peso total del envío.
 
-        tax_tienda: TAX de la tienda en USD si se conoce (0 si no aplica: Amazon/eBay con
-        almacén Globex o precio con TAX incluido); None = 7 % de referencia.
+        tax_tienda: TAX de la tienda en USD si se conoce (0 si el precio ya lo incluye o la
+        tienda no lo cobra); None = 7 % de referencia.
         """
         unitario, peso = _dec(valor_producto), _dec(peso_kg)
         if unitario < 0 or peso <= 0:

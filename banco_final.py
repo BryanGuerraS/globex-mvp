@@ -145,6 +145,73 @@ def combinar_kpis(corridas: List[List[Dict]]) -> List[Dict]:
     return combinados
 
 
+# Indicador cuyo resultado por caso se usa para cada banco en el análisis por segmento
+_INDICADOR_DEL_BANCO = {
+    "FAQ": "Calidad de respuesta a preguntas frecuentes",
+    "DERIVACION": "Derivación correcta",
+    "PRODUCTOS": "Calidad de respuesta sobre productos con condiciones especiales",
+    "COTIZACIONES": "Exactitud del total cotizado",
+    "CHATS_COMPARTIDOS": "Calidad del resumen para el asesor",
+}
+
+
+def _segmento(caso: Dict, bloqueados: set) -> str:
+    """Segmento del caso dentro de su banco."""
+    banco = caso["banco"]
+    if banco == "COTIZACIONES":
+        return f"Universo {caso['id'].split('-')[0]}"
+    if banco == "CHATS_COMPARTIDOS":
+        return f"Universo {caso.get('universo') or '—'}"
+    if banco == "PRODUCTOS":
+        return "Pedido no cotizable" if caso["id"] in bloqueados else "Pedido con condiciones"
+    return "Todos"
+
+
+def segmentos(kpis: List[Dict], banco: Dict) -> List[Dict]:
+    """Aciertos por segmento de cada banco (universo de cotización o de chat, tipo de pedido de productos),
+    a partir de las fallas de cada indicador."""
+    por_nombre = {k["indicador"]: k for k in kpis}
+    bloqueados = set(banco.get("ids_bloqueados_productos") or [])
+    grupos: Dict = {}
+    for caso in banco["casos"]:
+        k = por_nombre.get(_INDICADOR_DEL_BANCO.get(caso["banco"], ""))
+        if not k:
+            continue
+        clave = (caso["banco"], _segmento(caso, bloqueados))
+        g = grupos.setdefault(clave, {"banco": clave[0], "segmento": clave[1], "indicador": k["indicador"],
+                                      "casos": 0, "aciertos": 0, "fallas": []})
+        g["casos"] += 1
+        if caso["id"] in set(k.get("fallas") or []):
+            g["fallas"].append(caso["id"])
+        else:
+            g["aciertos"] += 1
+    salida = []
+    for g in sorted(grupos.values(), key=lambda x: (x["banco"], x["segmento"])):
+        g["porcentaje"] = _pct(g["aciertos"], g["casos"])
+        g["ic95"] = _ic(g["aciertos"], g["casos"])
+        salida.append(g)
+    return salida
+
+
+def combinar_segmentos(corridas: List[List[Dict]]) -> List[Dict]:
+    """Segmentos de varias corridas sumados (aciertos y casos de todas las corridas)."""
+    grupos: Dict = {}
+    for corrida in corridas:
+        for s in corrida:
+            g = grupos.setdefault((s["banco"], s["segmento"]), {
+                "banco": s["banco"], "segmento": s["segmento"], "indicador": s["indicador"],
+                "casos": 0, "aciertos": 0, "fallas": []})
+            g["casos"] += s["casos"]
+            g["aciertos"] += s["aciertos"]
+            g["fallas"] += s["fallas"]
+    salida = []
+    for g in sorted(grupos.values(), key=lambda x: (x["banco"], x["segmento"])):
+        g["porcentaje"] = _pct(g["aciertos"], g["casos"])
+        g["ic95"] = _ic(g["aciertos"], g["casos"])
+        salida.append(g)
+    return salida
+
+
 def tiempos(filas: List[Dict]) -> Dict:
     proc = [t["latencia_procesamiento_ms"] for f in filas for t in f.get("registros_tiempo", [])
             if t.get("latencia_procesamiento_ms") is not None]

@@ -152,3 +152,21 @@ def test_combinar_kpis_promedio_y_rango():
     k = banco_final.combinar_kpis([a, b, c])[0]
     assert (k["porcentaje"], k["minimo"], k["maximo"]) == (81.0, 70.0, 90.0)
     assert k["cumple"] and k["corridas_que_cumplen"] == 2
+
+
+def test_segmentos_por_universo_y_tipo_de_pedido():
+    import banco_final
+    banco = {"ids_bloqueados_productos": ["PRO002"], "casos": [
+        {"id": "U01-01", "banco": "COTIZACIONES"}, {"id": "U01-02", "banco": "COTIZACIONES"},
+        {"id": "U02-01", "banco": "COTIZACIONES"}, {"id": "PRO001", "banco": "PRODUCTOS"},
+        {"id": "PRO002", "banco": "PRODUCTOS"}, {"id": "CHAT001", "banco": "CHATS_COMPARTIDOS", "universo": "CH01"}]}
+    kpis = [{"indicador": "Exactitud del total cotizado", "fallas": ["U01-02"]},
+            {"indicador": "Calidad de respuesta sobre productos con condiciones especiales", "fallas": ["PRO002"]},
+            {"indicador": "Calidad del resumen para el asesor", "fallas": []}]
+    seg = {(s["banco"], s["segmento"]): s for s in banco_final.segmentos(kpis, banco)}
+    assert seg[("COTIZACIONES", "Universo U01")]["aciertos"] == 1 and seg[("COTIZACIONES", "Universo U01")]["casos"] == 2
+    assert seg[("PRODUCTOS", "Pedido no cotizable")]["fallas"] == ["PRO002"]
+    assert seg[("CHATS_COMPARTIDOS", "Universo CH01")]["porcentaje"] == 100.0
+    dos = banco_final.combinar_segmentos([list(seg.values()), list(seg.values())])
+    u01 = next(s for s in dos if s["segmento"] == "Universo U01")
+    assert (u01["aciertos"], u01["casos"]) == (2, 4)

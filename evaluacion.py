@@ -130,7 +130,8 @@ def evaluar_corrida(servidor: Servidor, banco: dict, sha: str, carpeta: Path, co
         "errores_del_juez": juez.get("errores_del_juez", []),
     }
     (destino / "resultado.json").write_text(json.dumps(
-        {"meta": meta, "kpis": kpis, "tiempos": banco_final.tiempos(filas)}, ensure_ascii=False, indent=2),
+        {"meta": meta, "kpis": kpis, "segmentos": banco_final.segmentos(kpis, banco),
+         "tiempos": banco_final.tiempos(filas)}, ensure_ascii=False, indent=2),
         encoding="utf-8")
     pdf = generar_pdf(destino, destino / f"Informe_final_{corrida}.pdf")
     _imprimir(kpis)
@@ -161,11 +162,12 @@ def combinar_corridas(destinos: list, nombre: str) -> Path:
             "errores_del_juez": [e for m in metas for e in (m.get("errores_del_juez") or [])],
             "corridas": [d.name for d in destinos]}
     kpis = banco_final.combinar_kpis([r["kpis"] for r in resultados])
+    segmentos = banco_final.combinar_segmentos([r.get("segmentos") or [] for r in resultados])
     destino = RAIZ / "evaluacion" / "reportes" / "banco_final" / nombre
     destino.mkdir(parents=True, exist_ok=True)
     (destino / "resultado.json").write_text(json.dumps(
-        {"meta": meta, "kpis": kpis, "tiempos": banco_final.tiempos(filas)}, ensure_ascii=False, indent=2),
-        encoding="utf-8")
+        {"meta": meta, "kpis": kpis, "segmentos": segmentos, "tiempos": banco_final.tiempos(filas)},
+        ensure_ascii=False, indent=2), encoding="utf-8")
     pdf = generar_pdf(destino, destino / f"Informe_final_{nombre}.pdf")
     print(f"Resultado de las {len(destinos)} corridas (promedio):")
     _imprimir(kpis)

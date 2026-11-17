@@ -23,7 +23,7 @@ El asistente, **Globix**, responde con información comercial aprobada por Globe
 10. [Instalación y ejecución](#10-instalación-y-ejecución)
 11. [Seguridad](#11-seguridad)
 12. [Estructura del repositorio](#12-estructura-del-repositorio)
-13. [Trabajo futuro](#13-trabajo-futuro)
+13. [Backlog para Capstone II](#13-backlog-para-capstone-ii)
 
 ---
 
@@ -73,7 +73,11 @@ Evaluación con el **banco final de preguntas del equipo** (228 casos: preguntas
 - **Tiempo de respuesta por turno:** p50 0.61 s y p95 1.04 s (sin los 5 s de agrupación de mensajes de WhatsApp).
 - **Motor de cotización:** 60/60 casos correctos al centavo frente a un oráculo independiente.
 
-El procedimiento para reproducir estos resultados está en [Evaluación](#9-evaluación).
+**Frente a un baseline de reglas** (sin LLM: palabras clave, menú y respuesta frecuente por coincidencia), Globix atendió correctamente **+20.7 puntos** más en un banco de 258 consultas reales y variantes (57.9 % vs 37.2 %, según el juez) y **+19.1 puntos** más en un lote de 60 casos reales (76.5 % vs 57.4 %, IC 95 % de la diferencia [+8.0, +30.9]).
+
+**Error por segmento:** los segmentos más débiles son las conversaciones del universo CH04 (53.3 %, datos que el cliente deja pendientes en el resumen) y los pedidos de productos no cotizables (86.7 %); los demás universos de cotización y de conversación están entre 90 % y 100 %.
+
+Detalle en la [Model Card](docs/model_card.md) y en el notebook [`evaluacion/analisis_resultados.ipynb`](evaluacion/analisis_resultados.ipynb). El procedimiento para reproducir estos resultados está en [Evaluación](#9-evaluación).
 
 ---
 
@@ -118,6 +122,16 @@ Meta WhatsApp Cloud API ── POST firmado (X-Hub-Signature-256) ──┐
 | Consola de asesores | Streamlit Cloud | Se conecta al backend con `BACKEND_URL` y `DASHBOARD_API_KEY` |
 | Base de datos | SQLite (`globex.db`) | En el plan gratuito de Render el disco es efímero: la base y los PDF se reinician con cada despliegue |
 | LLM | Groq (`openai/gpt-oss-120b`), keys de respaldo | La evaluación por API usa Cerebras con el mismo modelo |
+
+**Límites técnicos**
+
+| Límite | Valor | Consecuencia |
+| :-- | :-- | :-- |
+| Latencia | Procesamiento por turno p50 0.61 s, p95 1.04 s; el cliente espera además 5 s de agrupación de mensajes | Respuesta dentro de la meta (p50 ≤ 10 s, p95 ≤ 15 s) |
+| Costo del LLM | Entre USD 0.30 y USD 0.55 por 1 000 conversaciones (precios de Groq, ~3 300 tokens de entrada por llamada) | Costo marginal despreciable frente al margen por envío |
+| Cuota del LLM | El plan gratuito de Groq limita tokens por minuto y por día por key | Keys de respaldo con pausa automática; las corridas grandes se hacen por API, un caso por llamada |
+| Cómputo | Render gratuito: 512 MB de RAM, se duerme sin tráfico | Keep-alive cada 10 min; la evaluación envía un caso por llamada para no agotar la memoria |
+| Persistencia | Disco efímero en Render | La base y los PDF se reinician con cada despliegue (aceptado en la fase de pruebas) |
 
 ---
 
@@ -260,6 +274,24 @@ python evaluacion.py "<ruta>/Globex_Bancos_V2" --repeticiones 3
 
 Los resultados quedan en `evaluacion/reportes/banco_final/<corrida>/` (`Informe_final_<corrida>.pdf`, `resultado.json`, `casos.jsonl` y `juez.jsonl`); con `--repeticiones 3`, el informe combinado queda en `<corrida>-x3/`. Cada corrida tarda unos 18 minutos. Guía de la API: [`docs/api_evaluacion.md`](docs/api_evaluacion.md).
 
+### Análisis de resultados
+
+[`evaluacion/analisis_resultados.ipynb`](evaluacion/analisis_resultados.ipynb) lee los resultados de `evaluacion.py` y muestra los indicadores con su intervalo por corrida, el análisis de error por segmento y la comparación con el baseline de reglas.
+
+### Datos
+
+| Fuente | Tipo | En el repositorio |
+| :-- | :-- | :-- |
+| Exportaciones de WhatsApp de Globex (7 058 leads) | Real | No (datos personales); se usaron para la línea base y para diseñar los bancos |
+| Base de 132 respuestas y respuestas del menú | Redactadas por el equipo con información de Globex | Sí (`conocimiento/`, `knowledge_base.py`) |
+| Reglas de cotización y de mercancía | Reglas reales del negocio | Sí (`pricing_engine.py`, `guardrails.py`) |
+| Catálogo de pesos | Sintético (pesos aproximados) | Sí (`product_catalog.py`) |
+| Casos del motor y set de desarrollo | Sintéticos | Sí (`evaluacion/`) |
+| Datos demo de la consola | Sintéticos | Se generan con `scripts/datos_demo.py` |
+| Bancos de consultas reales y banco final | Reales y construidos por el equipo | No: se entregan aparte |
+
+Descripción completa en la [datasheet](docs/datasheet.md).
+
 ### Motor de cotización
 
 [`evaluacion/casos_motor.json`](evaluacion/casos_motor.json) tiene 60 casos en 10 categorías: flete y peso mínimo, exoneración bajo USD 200, tributos, TAX de tienda, tope de USD 2 000, entradas inválidas, anclaje de los argumentos al mensaje del cliente, anclaje del TAX, cantidades y pedidos de varios productos. Los valores esperados salen de un oráculo independiente en `Decimal` ([`evaluacion/generar_casos_motor.py`](evaluacion/generar_casos_motor.py)) y se comparan al centavo con el motor, el texto de WhatsApp y la validación de argumentos. Resultado: **60/60**.
@@ -285,6 +317,10 @@ python evaluacion/evaluar.py --solo COT-01,ALC-02 --repeticiones 1
 Corren en una carpeta temporal y no tocan `globex.db` ni envían mensajes a Meta:
 
 ```bash
+pip install pytest
+```
+
+```bash
 python -m pytest tests -q
 ```
 
@@ -292,7 +328,7 @@ python -m pytest tests -q
 
 ## 10. Instalación y ejecución
 
-**Requisitos:** Python 3.10+, una API key de [Groq](https://console.groq.com) y una app de Meta con WhatsApp Cloud API configurada.
+**Requisitos:** Python 3.10 o superior (probado con 3.12). Para la prueba local basta el repositorio; para conversar con Globix hace falta una API key de [Groq](https://console.groq.com), y para WhatsApp, una app de Meta con WhatsApp Cloud API.
 
 ```bash
 git clone https://github.com/BryanGuerraS/globex-mvp.git
@@ -312,6 +348,22 @@ Activar el entorno (Windows PowerShell: `.venv\Scripts\Activate.ps1`; Linux/Mac:
 pip install -r requirements.txt
 ```
 
+### Prueba local sin WhatsApp
+
+Permite ver la consola de asesores con conversaciones de ejemplo y conversar con Globix sin cuenta de Meta.
+
+1. Crear la base demo (conversaciones sintéticas: una cotización, un pedido derivado con su resumen, una pregunta frecuente y una mercancía prohibida):
+
+```bash
+python scripts/datos_demo.py
+```
+
+2. Copiar `.env.example` a `.env` y completar solo `GLOBEX_DB=globex_demo.db`, `DASHBOARD_API_KEY` (cualquier clave), `BACKEND_URL=http://localhost:8000` y, para conversar con Globix, `CHAT_API_KEY`.
+3. Levantar el backend y, en otra terminal, la consola (comandos en [Ejecutar](#ejecutar)). Los usuarios de prueba de la consola están en `USUARIOS` de [`dashboard.py`](dashboard.py).
+4. Para conversar con Globix: `POST /api/chat` con `X-API-Key` (`CHAT_API_KEY`) y `X-Groq-Key` (una key de Groq); la respuesta de Globix, con la cotización si corresponde, vuelve en la misma llamada. Guía y ejemplos: [`docs/api_chat.md`](docs/api_chat.md).
+
+### Variables de entorno
+
 Copiar `.env.example` a `.env` y completar:
 
 | Variable | Uso |
@@ -326,6 +378,7 @@ Copiar `.env.example` a `.env` y completar:
 | `CHAT_API_KEY` | Opcional: clave de `/api/chat` para conversar con Globix desde otra aplicación |
 | `EVAL_API_KEY` | Opcional: clave de la API de evaluación (`/api/eval/*`) |
 | `CEREBRAS_API_KEY`, `JUEZ_CEREBRAS_API_KEY` | Opcionales: keys de Cerebras para la API de evaluación y el juez |
+| `GLOBEX_DB` | Opcional: archivo de la base SQLite (por defecto `globex.db`) |
 
 Para generar una clave:
 
@@ -334,6 +387,8 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 ```
 
 En producción, las variables van en **Render → Environment** (backend) y en **Streamlit Cloud → Secrets** (`BACKEND_URL` y `DASHBOARD_API_KEY`).
+
+### Ejecutar
 
 Backend:
 
@@ -349,6 +404,17 @@ streamlit run dashboard.py
 
 Para que Meta alcance un backend local hace falta exponerlo con un túnel HTTPS (por ejemplo, ngrok) y registrar esa URL + `/meta-webhook` en el webhook de Meta.
 
+### Pasos manuales
+
+| Paso | Quién | Cuándo |
+| :-- | :-- | :-- |
+| Crear la app de Meta, el número de WhatsApp Business, el token permanente y registrar el webhook | Equipo técnico | Una vez, al configurar el canal |
+| Configurar las variables en Render y en Streamlit Cloud | Equipo técnico | Al desplegar o rotar una clave |
+| Programar el keep-alive en cron-job.org (cada 10 min) | Equipo técnico | Una vez |
+| Validar la cotización y enviar la proforma formal en PDF | Asesor, desde la consola | En cada cotización que el cliente quiere concretar |
+| Atender los casos derivados (negociación, pago, embarque, reclamos) | Asesor | En cada derivación |
+| Entregar la carpeta del banco final y la `EVAL_API_KEY` a quien evalúa | Equipo | Antes de la evaluación |
+
 ---
 
 ## 11. Seguridad
@@ -363,6 +429,8 @@ Para que Meta alcance un backend local hace falta exponerlo con un túnel HTTPS 
 | Falla cerrada | Si falta una clave, el endpoint rechaza la petición y el arranque lo avisa en los logs |
 | Proformas PDF | El nombre del archivo usa un identificador hasheado, no el teléfono del cliente |
 | Secretos y datos | `.env`, `globex.db` y `cotizaciones_pdf/` están en `.gitignore` |
+
+Privacidad (Ley N.° 29733), sesgos y riesgos con su disparador y mitigación: [`docs/riesgos_privacidad.md`](docs/riesgos_privacidad.md).
 
 ---
 
@@ -387,9 +455,10 @@ globex-mvp/
 ├── dashboard.py                 # Consola de asesores (Streamlit)
 ├── evaluacion.py                # Evaluación con el banco final en un comando
 ├── banco_final.py               # Verificación del banco e indicadores con sus metas
+├── scripts/datos_demo.py        # Base demo con conversaciones sintéticas para la prueba local
 ├── conocimiento/                # Base de respuestas aprobadas
 ├── evaluacion/                  # Scripts de evaluación, casos de prueba e informes
-├── docs/                        # Guías de las APIs, plan de evaluación y rúbrica
+├── docs/                        # Model Card, datasheet, riesgos y privacidad, guías de las APIs y plan de evaluación
 ├── tests/                       # Pruebas automatizadas (pytest)
 ├── assets/                      # Logo y material gráfico de Globex
 ├── requirements.txt
@@ -400,9 +469,17 @@ globex-mvp/
 
 ---
 
-## 13. Trabajo futuro
+## 13. Backlog para Capstone II
 
-- Aviso inmediato al asesor fuera de la consola cuando entra un caso derivado.
-- Embudo de ventas (ganado/perdido) en la consola.
-- Transcripción de notas de voz.
-- Base de datos persistente y credenciales de la consola fuera del código para producción.
+Criterio de prioridad: impacto en el KPI de primera atención útil y en la conversión, riesgo para la operación real y esfuerzo.
+
+| Prioridad | Ítem | Motivo |
+| :-: | :-- | :-- |
+| 1 | Medir el KPI de impacto en operación real (primera atención útil en ≤ 60 min frente a la línea base de 32 %) | Confirma si la salida cambia la decisión, la pregunta de Capstone II |
+| 1 | Aviso inmediato al asesor cuando entra un caso derivado | El caso derivado sigue esperando si el asesor no mira la consola; impacto directo en el tiempo de atención |
+| 1 | Base de datos persistente con copia de seguridad | Requisito para operar sin perder conversaciones; hoy se reinicia con cada despliegue |
+| 2 | Resumen con todos los datos que el cliente deja pendientes y elección de la respuesta frecuente específica | Son los segmentos más débiles de la evaluación (CH04 53 %, preguntas frecuentes 92 %) |
+| 2 | Política de privacidad, consentimiento y registro del banco de datos (Ley N.° 29733) | Requisito legal antes de atender clientes reales a escala |
+| 3 | Embudo de ventas (ganado/perdido) en la consola | Permite medir la conversión de los casos atendidos |
+| 3 | Transcripción de notas de voz | Parte de los clientes escribe por audio |
+| 3 | Autenticación de la consola con credenciales fuera del código | Hoy hay usuarios de prueba fijos |

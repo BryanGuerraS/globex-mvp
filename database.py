@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 import sqlite3
 from typing import Dict, List, Optional
@@ -12,11 +13,12 @@ def ahora() -> datetime:
     """Fecha y hora actual de Lima (sin zona, como se guarda en SQLite)."""
     return datetime.now(ZONA_HORARIA).replace(tzinfo=None)
 
+# Archivo de la base. La variable GLOBEX_DB (también desde .env) permite usar otra, por ejemplo la demo
 DB_FILE = "globex.db"
 
 
 def get_connection():
-    conn = sqlite3.connect(DB_FILE, check_same_thread=False)
+    conn = sqlite3.connect(os.getenv("GLOBEX_DB") or DB_FILE, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     return conn
 
