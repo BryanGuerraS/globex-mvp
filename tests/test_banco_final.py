@@ -170,3 +170,16 @@ def test_segmentos_por_universo_y_tipo_de_pedido():
     dos = banco_final.combinar_segmentos([list(seg.values()), list(seg.values())])
     u01 = next(s for s in dos if s["segmento"] == "Universo U01")
     assert (u01["aciertos"], u01["casos"]) == (2, 4)
+
+
+def test_comparar_globix_con_reglas():
+    import importlib.util
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    spec = importlib.util.spec_from_file_location("baseline_bf", repo / "evaluacion" / "baseline_banco_final.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    globix = [{"indicador": "A", "porcentaje": 90.0, "meta": 85}, {"indicador": "B", "porcentaje": None, "meta": 80}]
+    reglas = [{"indicador": "A", "porcentaje": 60.5, "cumple": False}, {"indicador": "B", "porcentaje": 50.0, "cumple": False}]
+    comp = {c["indicador"]: c for c in mod.comparar(globix, reglas)}
+    assert comp["A"]["diferencia_pp"] == 29.5 and comp["B"]["diferencia_pp"] is None

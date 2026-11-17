@@ -110,6 +110,19 @@ class ClienteReglas:
         ultimo = messages[-1]
         textos = [m["content"] for m in messages if m.get("role") == "user" and isinstance(m.get("content"), str)]
         if ultimo.get("role") == "tool":
+            # Respuestas frecuentes del sistema actual: la regla elige la candidata mejor ranqueada por la
+            # búsqueda (sin entender la pregunta) y la envía; si el sistema pide buscar, busca con el texto.
+            try:
+                faq = json.loads(ultimo.get("content") or "{}")
+            except json.JSONDecodeError:
+                faq = {}
+            if isinstance(faq, dict):
+                candidatos = faq.get("candidatos") or next(
+                    (b.get("candidatos") for b in faq.get("busquedas") or [] if b.get("candidatos")), None)
+                if candidatos:
+                    return _respuesta(herramienta="enviar_faq", args={"ids": [candidatos[0]["id"]]})
+                if "buscar_faq" in str(faq.get("error") or ""):
+                    return _respuesta(herramienta="buscar_faq", args={"preguntas": [textos[-1] if textos else ""]})
             # Vuelve el resultado del catálogo de pesos: cotizar si hay peso, si no pedirlo
             try:
                 datos = json.loads(ultimo.get("content") or "{}")

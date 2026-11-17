@@ -73,7 +73,18 @@ Evaluación con el **banco final de preguntas del equipo** (228 casos: preguntas
 - **Tiempo de respuesta por turno:** p50 0.61 s y p95 1.04 s (sin los 5 s de agrupación de mensajes de WhatsApp).
 - **Motor de cotización:** 60/60 casos correctos al centavo frente a un oráculo independiente.
 
-**Frente a un baseline de reglas** (sin LLM: palabras clave, menú y respuesta frecuente por coincidencia), Globix atendió correctamente **+20.7 puntos** más en un banco de 258 consultas reales y variantes (57.9 % vs 37.2 %, según el juez) y **+19.1 puntos** más en un lote de 60 casos reales (76.5 % vs 57.4 %, IC 95 % de la diferencia [+8.0, +30.9]).
+**Frente a un baseline de reglas** (el mismo sistema con el LLM reemplazado por palabras clave, sobre el mismo banco final y con el mismo juez):
+
+| Indicador | Globix (3 corridas) | Reglas | IC 95 % reglas | Diferencia |
+| :-- | --: | --: | --: | --: |
+| Calidad de respuesta a preguntas frecuentes | 91.9 % | 21.2 % | 13.6–30.6 % | **+70.7 pp** |
+| Derivación correcta | 100 % | 54.2 % | 32.8–74.4 % | **+45.8 pp** |
+| Calidad de respuesta sobre productos con condiciones especiales | 90.5 % | 62.9 % | 44.9–78.5 % | **+27.6 pp** |
+| Exactitud del total cotizado | 99.2 % | 62.5 % | 45.8–77.3 % | **+36.7 pp** |
+| Exactitud y completitud de los datos recopilados | 98.9 % | 47.9 % | — | **+51.1 pp** |
+| Calidad del resumen para el asesor | 88.9 % | 20.0 % | 7.7–38.6 % | **+68.9 pp** |
+
+El baseline no cumple ninguna meta. En bancos de consultas reales anteriores, Globix también lo superó (+20.7 puntos en 258 consultas y +19.1 en 60 casos reales, según el juez). Para reproducirlo: `python evaluacion/baseline_banco_final.py "<ruta>/Globex_Bancos_V2" --comparar <corrida de Globix>`.
 
 **Error por segmento:** los segmentos más débiles son las conversaciones del universo CH04 (53.3 %, datos que el cliente deja pendientes en el resumen) y los pedidos de productos no cotizables (86.7 %); los demás universos de cotización y de conversación están entre 90 % y 100 %.
 

@@ -39,7 +39,20 @@ Banco final del equipo, 3 corridas completas (684 casos, sin errores de ejecuci�
 - Tiempo de procesamiento por turno: p50 0.61 s, p95 1.04 s (más 5 s de agrupación de mensajes en WhatsApp).
 - Motor de cotización: 60/60 casos correctos al centavo frente a un oráculo independiente.
 
-**Comparación con un baseline de reglas** (sin LLM, `evaluacion/baseline_reglas.py`: palabras clave, menú y FAQ por coincidencia):
+**Comparación con un baseline de reglas sobre el banco final.** El baseline (`evaluacion/baseline_reglas.py`) es el mismo sistema con el LLM reemplazado por reglas de palabras clave: mismo control de mercancía, motor, respuestas aprobadas, derivación y resumen. Se corrió sobre los mismos 228 casos con el mismo juez y las mismas métricas (`evaluacion/baseline_banco_final.py`; las reglas son deterministas, una corrida). Las reglas se escribieron antes del banco final.
+
+| Indicador | Globix (3 corridas) | Reglas | IC 95 % reglas | Diferencia |
+| :-- | --: | --: | --: | --: |
+| Calidad de respuesta a preguntas frecuentes | 91.9 % | 21.2 % | 13.6–30.6 % | **+70.7 pp** |
+| Derivación correcta | 100 % | 54.2 % | 32.8–74.4 % | **+45.8 pp** |
+| Calidad de respuesta sobre productos con condiciones especiales | 90.5 % | 62.9 % | 44.9–78.5 % | **+27.6 pp** |
+| Exactitud del total cotizado | 99.2 % | 62.5 % | 45.8–77.3 % | **+36.7 pp** |
+| Exactitud y completitud de los datos recopilados | 98.9 % | 47.9 % | — | **+51.1 pp** |
+| Calidad del resumen para el asesor | 88.9 % | 20.0 % | 7.7–38.6 % | **+68.9 pp** |
+
+Globix supera al baseline en los 6 indicadores; el baseline no cumple ninguna meta. La mayor diferencia está en entender la pregunta (preguntas frecuentes, resumen y datos recopilados): la regla responde con la primera coincidencia o con el menú cuando ninguna palabra clave aparece.
+
+**Comparaciones anteriores con el mismo baseline** (sin LLM: palabras clave, menú y FAQ por coincidencia):
 
 | Conjunto | Globix | Reglas | Diferencia |
 | :-- | --: | --: | --: |
