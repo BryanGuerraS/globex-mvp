@@ -316,9 +316,21 @@ def limite_de(texto: str) -> Optional[Dict]:
     return None
 
 
+_SUMAR_CANTIDADES = re.compile(r"(?<![a-z])(?:marcas?|por separado|separad[oa]s|cada una|otras?\s+\w+\s+de)(?![a-z])")
+# "de una marca", "de un amigo": artículo, no cantidad
+_CANTIDAD_SUELTA = re.compile(rf"(?<![a-z0-9.,])(?<!de\s){_CANTIDAD}(?![a-z0-9.,])(?!\s*(?:usd|dolares|kg|kilos?|gramos?|%))")
+
+
 def cantidad_del_producto(texto: str, lim: Dict) -> Optional[int]:
-    """Cantidad escrita junto al producto ("cuatro perfumes", "6 pares de zapatos"); None si no está."""
+    """Cantidad escrita junto al producto ("cuatro perfumes", "6 pares de zapatos"); None si no está.
+    Si pregunta por marcas o por contarlas por separado ("dos cremas de una marca y dos de The Ordinary"),
+    se suman todas las cantidades: la marca no cambia el máximo de la categoría (guía §3.4)."""
     t = _normalizar(texto or "")
+    if _SUMAR_CANTIDADES.search(t):
+        valores = [int(v) if v.isdigit() else _NUM_PALABRA[v] for v in _CANTIDAD_SUELTA.findall(t)]
+        valores = [v for v in valores if v <= 50]
+        if len(valores) > 1:
+            return sum(valores)
     palabras = "|".join(re.escape(_normalizar(p)) for p in lim["palabras"] + lim.get("excepto", []))
     m = re.search(rf"(?<![a-z0-9]){_CANTIDAD}\W+(?:\w+\W+){{0,3}}?(?:{palabras})", t)
     if not m:

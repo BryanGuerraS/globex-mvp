@@ -961,6 +961,10 @@ def _especificas_mejores(texto: str, info_faq: Dict) -> List[Dict]:
              "respuesta": e["respuesta"], "orientacion_asesor": e.get("orientacion_asesor", "")} for e in mejores]
 
 
+_COMPRA_ASISTIDA = re.compile(
+    r"\b(?:compr(?:e|en|a|ar|en ustedes|as)\s+(?:el producto\s+|la compra\s+|los productos\s+)?(?:por m[ií]|por nosotros|"
+    r"en mi nombre|para m[ií] en la tienda)|compra asistida|compra por encargo|ustedes compr\w+|con (?:la )?tarjeta de ustedes|"
+    r"(?:pagu|pag)\w*\s+ustedes\s+(?:la compra|el producto))")
 _RECLAMO = re.compile(r"\b(?:reclamo|queja|dañad[oa]s?|danad[oa]s?|rot[oa]s?|roto|faltó|falto|faltan?|"
                       r"incomplet[oa]|perdid[oa]|no (?:me )?(?:llega|llegó|llego|aparece)|inaceptable)\b")
 # Monto en USD por encima del tope del cálculo automático, dicho por el cliente (DRV-06)
@@ -1123,6 +1127,16 @@ def ejecutar_herramienta(
                                              item["cantidad"])
             if limite:
                 return {"derivado": True}, derivar_por_limite(chat_id, limite)
+        con_precio = [i for i in items if i["precio_unitario"] is not None]
+        if con_precio and GlobexPricingEngine.requiere_asesor_pedido(con_precio):
+            print(f"💼 [Tope] los productos con su TAX superan el cálculo automático en [{chat_id}]")
+            actualizar_clasificacion_chat(chat_id, servicio="Cotización Courier (alto valor)", estado="Listo para Asesor", paso=4)
+            actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+            borrador.guardar(chat_id, borrador.construir(items, args.get("productos") or [], peso_total,
+                                                         estado["pesos_referenciales"], textos_cliente))
+            registrar_derivacion(chat_id, "tope", "; ".join(describir_producto(
+                {**i, "peso_kg": i["peso_kg"]}) for i in con_precio))
+            return {"derivado": True}, con_pedido_de_nombre(TEXTO_TOPE, chat_id)
         datos = borrador.guardar(chat_id, borrador.construir(items, args.get("productos") or [], peso_total,
                                                              estado["pesos_referenciales"], textos_cliente))
         # El catálogo va antes de pedirle el peso al cliente (el LLM a veces se lo salta)
@@ -1307,6 +1321,9 @@ def ejecutar_herramienta(
                       for e in elegidas)
         # Un reclamo concreto deriva aunque la FAQ elegida no lo pida, si el LLM marcó derivar (DRV-10)
         if args.get("derivar") and not general and _RECLAMO.search(texto_consolidado.lower()):
+            siempre = True
+        # Pedido explícito de compra asistida (guía §6, motivo 8): deriva elija la FAQ que elija (DER022)
+        if not general and _COMPRA_ASISTIDA.search(texto_consolidado.lower()):
             siempre = True
         if siempre or (args.get("derivar") and not general and any(faq_globex.requiere_asesor(e) and e["id"] not in faq_globex.NUNCA_DERIVA
                                                    for e in elegidas)):

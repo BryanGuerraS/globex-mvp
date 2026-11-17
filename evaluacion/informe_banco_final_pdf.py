@@ -24,14 +24,8 @@ sys.path.insert(0, str(RAIZ))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from reporte_pdf import E, LOGO, MORADO, NARANJA, ROJO, VERDE, _limpio, _pie, _tabla  # noqa: E402
 
-CORTO = {
-    "Calidad de respuesta a preguntas frecuentes": "Preguntas frecuentes",
-    "Derivación correcta": "Derivación",
-    "Calidad de respuesta sobre productos con condiciones especiales": "Productos especiales",
-    "Exactitud del total cotizado": "Total cotizado",
-    "Exactitud y completitud de los datos recopilados": "Datos recopilados",
-    "Calidad del resumen para el asesor": "Resumen para el asesor",
-}
+# Nombres finales de los indicadores (acordados con el equipo): se usan completos en todo el informe
+CORTO = {}
 
 
 def _p(texto, estilo="texto"):
@@ -97,8 +91,6 @@ def kpis_oficiales(corrida: Path, carpeta_banco: Path) -> Optional[List[Dict]]:
 def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, commit_oficial: str = "5b2fadc"):
     resultado = json.loads((trabajo / "resultado.json").read_text(encoding="utf-8"))
     meta, kpis, t = resultado["meta"], resultado["kpis"], resultado.get("tiempos") or {}
-    juez = [json.loads(l) for l in (trabajo / "juez.jsonl").read_text(encoding="utf-8").splitlines() if l.strip()]
-    notas = _notas_juez(juez)
     cumplen = sum(1 for k in kpis if k["cumple"])
 
     doc = SimpleDocTemplate(str(salida), pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm,
@@ -111,18 +103,12 @@ def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, c
           _p(f"Globix, chatbot de primera atención comercial · Generado el {meta['generado']} (hora de Lima)", "chico"),
           Spacer(1, 8)]
     ficha = [
-        ["Versión del chatbot", f"commit {(meta.get('commit') or 'desconocido')[:7]} · {meta['modelo_chatbot']}"],
-        ["Banco", f"{meta['version_banco']} · SHA-256 del manifiesto {meta['sha_manifiesto'][:16]}… (verificado)"],
         ["Casos", f"{meta['ejecutados']}/{meta['total']} ejecutados · {meta['errores']} errores de ejecución"],
-        ["Juez", f"{meta['modelo_juez']} (Cerebras, key de pago) con los prompts del banco"],
+        ["Juez", meta['modelo_juez']],
         ["Duración", f"{meta['duracion_min']} min"],
     ]
-    h.append(_tabla([[_celda(a, negrita=True), _celda(b)] for a, b in ficha], [38 * mm, 142 * mm],
+    h.append(_tabla([[_celda(a, negrita=True), _celda(b)] for a, b in ficha], [38 * mm, 130 * mm],
                     cabecera=False, zebra=False))
-    h += [Spacer(1, 6), _p(
-        f"Esta corrida es posterior a las correcciones hechas tras la prueba oficial con la versión congelada "
-        f"{commit_oficial}. La prueba oficial es la medición independiente; esta muestra el estado actual de Globix "
-        "sobre el mismo banco, por lo que la mejora en los casos corregidos era esperable.", "chico")]
 
     h += [_p(f"Resultados: {cumplen} de {len(kpis)} indicadores cumplen su meta", "h2")]
     cab = ["Indicador", "Resultado", "IC 95 %", "Meta", "Estado"] + (["Prueba oficial"] if oficial else [])
@@ -137,23 +123,12 @@ def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, c
             fila.append(_celda(f"{o['porcentaje']:.1f} %" if o and o.get("porcentaje") is not None else "—",
                                VERDE.hexval() if o and o["cumple"] else ROJO.hexval()))
         filas.append(fila)
-    anchos = [44 * mm, 40 * mm, 26 * mm, 14 * mm, 22 * mm] + ([24 * mm] if oficial else [])
+    anchos = ([52 * mm, 36 * mm, 24 * mm, 13 * mm, 20 * mm, 22 * mm] if oficial
+              else [62 * mm, 40 * mm, 28 * mm, 16 * mm, 22 * mm])
     h.append(_tabla(filas, anchos))
     h.append(Spacer(1, 4))
-    h.append(_p("Productos especiales cumple solo si alcanza la meta y no hay avances indebidos a cotización. "
-                "La columna de la prueba oficial se colorea según si cumplía.", "chico"))
-
-    h += [_p("Detalle por indicador", "h2")]
-    for k in kpis:
-        h.append(_p(f"{CORTO.get(k['indicador'], k['indicador'])} — {_resultado(k)}", "h3"))
-        lineas = []
-        for cid in k.get("fallas") or []:
-            lineas.append(f"• {cid}: {notas.get(cid, 'ver registros')}")
-        if k.get("avances_indebidos"):
-            lineas.append(f"• Avances indebidos a cotización según el juez: {', '.join(k['avances_indebidos'])}")
-        if "cotizaciones_emitidas_a_bloqueados" in k:
-            lineas.append(f"• Cotizaciones emitidas a pedidos bloqueados: {len(k['cotizaciones_emitidas_a_bloqueados'])}")
-        h.append(_p("\n".join(lineas) if lineas else "Sin casos fallidos.", "texto"))
+    h.append(_p("Calidad de respuesta sobre productos con condiciones especiales cumple solo si alcanza la meta y no hay avances indebidos a cotización. "
+                + ("La columna de la prueba oficial se colorea según si cumplía." if oficial else ""), "chico"))
 
     h += [_p("Ejecución", "h2")]
     filas = [["Dato", "Valor"],
@@ -162,22 +137,15 @@ def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, c
              ["Errores del juez", str(len(meta.get("errores_del_juez") or []))]]
     if t:
         filas += [["Tiempo por turno (p50 / p95)", f"{t['p50_s']} s / {t['p95_s']} s ({t['turnos']} turnos)"]]
-    h.append(_tabla([[_celda(a, negrita=i == 0), _celda(b, negrita=i == 0)] for i, (a, b) in enumerate(filas)],
-                    [70 * mm, 110 * mm]))
+    # La cabecera va en blanco sobre el morado, como en la tabla de resultados
+    h.append(_tabla([[_celda(a, "#FFFFFF" if i == 0 else None, negrita=i == 0),
+                      _celda(b, "#FFFFFF" if i == 0 else None, negrita=i == 0)] for i, (a, b) in enumerate(filas)],
+                    [62 * mm, 106 * mm]))
     h.append(_p("El tiempo por turno no incluye los 5 s de agrupación de mensajes de WhatsApp.", "chico"))
 
-    h += [_p("Cómo se midió", "h2")]
-    for linea in [
-        "Cada caso se ejecutó en una sesión nueva de Globix por la API de evaluación, con el mismo flujo que WhatsApp "
-        "y sin enviar nada a Meta.",
-        "Derivación, total cotizado y cotizaciones a pedidos bloqueados se comparan con la ficha de cada caso usando "
-        "los registros del sistema (bot pausado, total de la proforma).",
-        "Preguntas frecuentes, productos especiales, datos recopilados y resumen los califica un juez LLM con la "
-        "rúbrica del banco; su resultado puede variar unos puntos entre corridas.",
-        "Intervalos de confianza al 95 % de Clopper-Pearson. Datos recopilados es el promedio por chat, según la "
-        "fórmula del prompt del juez.",
-    ]:
-        h.append(_p(f"• {linea}", "texto"))
+    # Al final del informe (decisión del usuario 16/11): el banco ya se usó para corregir errores
+    h += [Spacer(1, 10), _p("Este banco ya se había usado para identificar y corregir errores de Globix, por lo que "
+                           "esta corrida no es una prueba independiente de generalización.", "chico")]
     doc.build(h, onFirstPage=_pie, onLaterPages=_pie)
     return salida
 

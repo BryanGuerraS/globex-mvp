@@ -297,3 +297,35 @@ def test_compra_sobre_el_tope_deriva_sin_pedir_datos(api):  # noqa: F811
         "corrida_id": "T1", "id": "TOPE-1", "pregunta": "Voy a comprar varias cosas por unos 3500 dólares en total"}).json()
     assert "supera los USD 2,000" in r["respuesta_bot"] and r["registros_acciones"]["bot_pausado"]
     assert r["registros_acciones"]["motivo_derivacion"] == "tope"
+
+
+# ---- Banco final, segunda ronda (16/11): tope por suma, compra asistida explícita, cantidades por marca ----
+def test_suma_de_productos_con_tax_sobre_el_tope_deriva(api):  # noqa: F811
+    cliente, con_llm = api
+    con_llm([_respuesta(tool_calls=[_tool_call("r1", "registrar_datos_pedido", {"productos": [
+        {"precio_unitario_usd": 1200, "tax_tienda_usd": 0}, {"precio_unitario_usd": 900, "tax_tienda_usd": 0}]})])])
+    r = cliente.post("/api/eval/caso", headers=KEY, json={
+        "corrida_id": "T2", "id": "TOPE-2",
+        "pregunta": "Dos productos en una cotización: uno de USD 1200 y otro de USD 900, con TAX de USD 0 cada uno"}).json()
+    assert "supera los USD 2,000" in r["respuesta_bot"] and r["registros_acciones"]["motivo_derivacion"] == "tope"
+
+
+@pytest.mark.parametrize("texto, deriva", [
+    ("Quiero que Globex compre el producto por mí en la tienda de Estados Unidos.", True),
+    ("¿Ustedes pueden comprar por mí en Amazon?", True),
+    ("En general, ¿hacen compras por encargo?", False),
+    ("Compré por Amazon y quiero cotizar", False),
+])
+def test_compra_asistida_explicita(texto, deriva):
+    assert bool(main._COMPRA_ASISTIDA.search(texto.lower())) is deriva and (
+        not deriva or not main._PREGUNTA_GENERAL.search(texto.lower()))
+
+
+@pytest.mark.parametrize("texto, inicio", [
+    ("Tengo dos cremas de una marca y dos de The Ordinary, ¿puedo contarlas por separado?",
+     "⚠️ No: el máximo es de 3 unidades de cremas por DNI, así que 4 lo supera."),
+    ("tres perfumes de una marca y uno de otra marca, ¿pasan?", "✅ Sí: traer 4 unidades de perfumes"),
+])
+def test_cantidades_por_marca_se_suman(texto, inicio):
+    from guardrails import respuesta_regla
+    assert respuesta_regla(texto).startswith(inicio)
