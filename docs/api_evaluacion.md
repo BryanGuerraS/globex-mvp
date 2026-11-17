@@ -173,7 +173,7 @@ pip install -r requirements-evaluacion.txt
 ```
 
 ```bash
-python evaluacion.py <carpeta Globex_Bancos_V2>
+python evaluacion.py <carpeta Globex_Bancos_V2> --repeticiones 3
 ```
 
 Solo hace falta la clave de evaluación en la variable `EVAL_API_KEY` (o en un archivo `.env`). El script verifica el
@@ -181,6 +181,11 @@ banco contra su manifiesto, envía cada caso a Globix en Render (`/api/eval/caso
 en el servidor (`/api/eval/juzgar`, key de pago; ninguna key de LLM sale del servidor) y deja el informe en PDF y
 los resultados en `evaluacion/reportes/banco_final/<corrida>/`. Cada llamada es corta, así que un reinicio de Render
 no interrumpe la corrida: el script reintenta y, si se corta, `--corrida <nombre>` continúa donde quedó.
+
+Con `--repeticiones N` corre el banco N veces (`<corrida>`, `<corrida>-R2`, …) y agrega en `<corrida>-xN/` el
+informe con el resultado de cada corrida, el promedio y el rango; un indicador cumple si su promedio alcanza la
+meta. Metas: las del índice del banco salvo los tres indicadores de calidad (FAQ, productos con condiciones
+especiales y resumen para el asesor) en 85 % y derivación correcta en 80 % (`banco_final.METAS_EQUIPO`).
 
 `POST /api/eval/juzgar` (`{"sistema": ..., "usuario": ...}` → `{"respuesta": ...}`) es el juez con la key de pago;
 límites `JUEZ_LIMITE_POR_MINUTO` 120 y `JUEZ_MAX_POR_DIA` 1500.

@@ -1,11 +1,11 @@
-"""Informe final del banco de preguntas en PDF, a partir de lo que descarga enviar_banco_final.py.
+"""Informe final del banco de preguntas en PDF (lo genera evaluacion.py; también se puede rehacer a mano).
 
 Uso:
-    python evaluacion/informe_banco_final_pdf.py <carpeta del trabajo> [--oficial <corrida 5b2fadc>] [--salida x.pdf]
+    python evaluacion/informe_banco_final_pdf.py <carpeta de la corrida> [--oficial <corrida .jsonl>] [--salida x.pdf]
 
-La carpeta del trabajo trae resultado.json (KPI y metadatos), casos.jsonl y juez.jsonl. Con --oficial se
-agrega la columna de la prueba oficial (versión congelada) para comparar. Reutiliza el estilo de
-reporte_pdf.py (logo, colores de Globex, fuente Vera).
+La carpeta trae resultado.json (KPI y metadatos). Si viene de varias corridas (meta.corridas), la tabla muestra
+el resultado por corrida, el promedio y el rango. Con --oficial se agrega una columna de comparación con otra
+corrida (opcional; evaluacion.py no la usa). Reutiliza el estilo de reporte_pdf.py (logo, colores, fuente Vera).
 """
 
 import argparse
@@ -14,18 +14,15 @@ import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm
-from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer
 
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from reporte_pdf import E, LOGO, MORADO, NARANJA, ROJO, VERDE, _limpio, _pie, _tabla  # noqa: E402
+from reporte_pdf import E, LOGO, ROJO, VERDE, _limpio, _pie, _tabla  # noqa: E402
 
-# Nombres finales de los indicadores (acordados con el equipo): se usan completos en todo el informe
-CORTO = {}
 
 
 def _p(texto, estilo="texto"):
@@ -48,31 +45,6 @@ def _resultado(k: Dict) -> str:
 
 def _cumple(k: Dict):
     return _celda("Cumple" if k["cumple"] else "No cumple", VERDE.hexval() if k["cumple"] else ROJO.hexval(), True)
-
-
-def _notas_juez(juez: List[Dict]) -> Dict[str, str]:
-    """Por caso no aprobado, las notas del juez en una línea (sin repetir la pregunta del banco)."""
-    notas = {}
-    for f in juez:
-        v = f.get("veredicto") or {}
-        if f.get("banco") == "CHATS_COMPARTIDOS":
-            s = ((v.get("resumen") or {}).get("casos") or [{}])[0]
-            bajos = [f"{c} {s[c].get('nota')}" for c in ("C1", "C2", "C3", "C4")
-                     if isinstance(s.get(c), dict) and (s[c].get("nota") or 5) < 4]
-            notas[f["id"]] = "resumen: " + (", ".join(bajos) or f"nota {s.get('nota_promedio')}")
-        else:
-            c = (v.get("casos") or [{}])[0]
-            criterios = {k: x.get("nota") for k, x in (c.get("criterios") or {}).items() if isinstance(x, dict)}
-            faltan = sum(1 for r in (c.get("requisitos") or []) if r.get("estado") != "COMUNICADO")
-            partes = [" ".join(f"{k} {n}" for k, n in criterios.items() if n is not None)]
-            if faltan:
-                partes.append(f"{faltan} requisito(s) no comunicado(s)")
-            if c.get("avance_indebido_a_cotizacion"):
-                partes.append("avance indebido a cotización")
-            if c.get("errores_criticos"):
-                partes.append("error crítico")
-            notas[f["id"]] = "; ".join(p for p in partes if p)
-    return notas
 
 
 def kpis_oficiales(corrida: Path, carpeta_banco: Path) -> Optional[List[Dict]]:
@@ -134,7 +106,7 @@ def generar(trabajo: Path, salida: Path, oficial: Optional[List[Dict]] = None, c
     por_nombre = {k["indicador"]: k for k in (oficial or [])}
     for k in kpis:
         ic = f"{k['ic95'][0]}–{k['ic95'][1]} %" if k.get("ic95") else "—"
-        fila = [_celda(CORTO.get(k["indicador"], k["indicador"]), negrita=True), _celda(_resultado(k)),
+        fila = [_celda(k["indicador"], negrita=True), _celda(_resultado(k)),
                 _celda(ic), _celda(f"{k['meta']} %"), _cumple(k)]
         if oficial:
             o = por_nombre.get(k["indicador"])
