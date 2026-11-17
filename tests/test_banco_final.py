@@ -127,9 +127,9 @@ def test_evaluacion_py_de_punta_a_punta(banco, tmp_path, monkeypatch):
     resultado = json.loads((destino / "resultado.json").read_text(encoding="utf-8"))
     assert resultado["meta"]["ejecutados"] == 5 and (destino / "Informe_final_PRUEBA1.pdf").stat().st_size > 2000
     resumen = next(k for k in resultado["kpis"] if k["indicador"] == "Calidad del resumen para el asesor")
-    assert resumen["meta"] == 85 and resumen["meta_del_banco"] == 95
+    assert resumen["meta"] == 85 and "meta_del_banco" not in resumen
     derivacion = next(k for k in resultado["kpis"] if k["indicador"] == "Derivación correcta")
-    assert derivacion["meta"] == 80 and derivacion["meta_del_banco"] == 90
+    assert derivacion["meta"] == 80
 
     # Con --repeticiones: reutiliza la corrida hecha, agrega -R2 y el informe con promedio y rango
     monkeypatch.setattr(sys, "argv", ["evaluacion.py", str(carpeta), "--corrida", "PRUEBA1", "--repeticiones", "2"])

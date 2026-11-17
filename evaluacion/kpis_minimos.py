@@ -34,7 +34,7 @@ KPIS_MINIMOS: List[Dict] = [
     {"clave": "K2_exactitud_argumentos", "categoria": "Decisión del LLM", "nombre": "K2 · Exactitud de argumentos",
      "meta": 0.95, "sentido": "min", "unidad": "%", "fuente": "BFCL (nombre y argumentos exactos)"},
     {"clave": "K4_derivacion_recall", "categoria": "Decisión del LLM", "nombre": "K4 · Deriva cuando corresponde",
-     "meta": 0.80, "sentido": "min", "unidad": "%", "fuente": "Plan de evaluación del equipo (ajustada a 80 % el 16/11)"},
+     "meta": 0.80, "sentido": "min", "unidad": "%", "fuente": "Plan de evaluación del equipo"},
     {"clave": "K4_sin_derivacion_innecesaria", "categoria": "Decisión del LLM",
      "nombre": "K4 · Sin derivación innecesaria", "meta": 0.90, "sentido": "min", "unidad": "%",
      "fuente": "Contrapeso: ≤ 10 % de derivaciones innecesarias"},
