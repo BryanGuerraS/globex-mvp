@@ -183,3 +183,15 @@ def test_faq_general_responde_directo_si_no_hay_una_mejor(entorno):  # noqa: F81
         _respuesta(tool_calls=[_tool_call("k1", "consultar_faq_comercial", {"tema": "plazos"})]),
     ])
     assert "5 días hábiles" in _texto(enviado)
+
+
+def test_si_la_eleccion_obligada_falla_envia_la_faq_general(entorno):  # noqa: F811
+    """Groq rechaza la elección obligada si el modelo escribe texto (400 tool_use_failed): no sale el error."""
+    pregunta = "En una compra enviada a provincia, ¿debo diferenciar lo que pago a la tienda, a Globex y a Shalom?"
+    error = RuntimeError("Error code: 400 - {'error': {'code': 'tool_use_failed'}}")
+    _, enviado = entorno("PE.kbfalla", pregunta, [
+        _respuesta(tool_calls=[_tool_call("k1", "consultar_faq_comercial", {"tema": "pagos"})]),
+        error, error,
+    ])
+    texto = _texto(enviado)
+    assert "Formas de pago" in texto and "problema para leer" not in texto

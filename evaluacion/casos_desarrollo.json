@@ -3001,6 +3001,206 @@
         "cotiza": true,
         "deriva": false
       }
+    },
+    {
+      "id": "DRV-01",
+      "categoria": "derivacion",
+      "descripcion": "Pide persona sin decir asesor",
+      "mensajes": [
+        "¿Me puede atender alguien de Globex, por favor? Prefiero hablar con una persona"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-02",
+      "categoria": "derivacion",
+      "descripcion": "Pide que lo llamen",
+      "mensajes": [
+        "¿Me pueden llamar al celular para explicarme el servicio?"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-03",
+      "categoria": "derivacion",
+      "descripcion": "Viajero explícito",
+      "mensajes": [
+        "Quiero enviar unas cosas con un viajero que viene de Miami la próxima semana"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-04",
+      "categoria": "derivacion",
+      "descripcion": "Maleta como producto: NO es viajero",
+      "mensajes": [
+        "Quiero traer una maleta Samsonite de 150 dólares que pesa 4 kg"
+      ],
+      "esperado": {
+        "deriva": false,
+        "cotiza": true
+      }
+    },
+    {
+      "id": "DRV-05",
+      "categoria": "derivacion",
+      "descripcion": "Reempaque",
+      "mensajes": [
+        "¿Pueden quitarle la caja original a mis zapatillas para que pese menos?"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-06",
+      "categoria": "derivacion",
+      "descripcion": "Compra de más de USD 2 000 sin datos",
+      "mensajes": [
+        "Voy a comprar varias cosas por unos 3500 dólares en total, ¿cómo lo cotizan?"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-07",
+      "categoria": "derivacion",
+      "descripcion": "Seguimiento concreto con tracking",
+      "mensajes": [
+        "Mi paquete con tracking 1Z999AA10123456784 no aparece, ¿ya llegó a Miami?"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-08",
+      "categoria": "derivacion",
+      "descripcion": "Seguimiento concreto sin tracking",
+      "mensajes": [
+        "Compré hace dos semanas y quiero saber si mi pedido ya llegó a su almacén"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-09",
+      "categoria": "derivacion",
+      "descripcion": "Reclamo: paquete dañado",
+      "mensajes": [
+        "Me llegó la laptop con la pantalla rota, quiero hacer un reclamo"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-10",
+      "categoria": "derivacion",
+      "descripcion": "Reclamo: falta un producto",
+      "mensajes": [
+        "En mi paquete faltó uno de los tres polos que compré, ¿qué hago?"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-11",
+      "categoria": "derivacion",
+      "descripcion": "Reclamo: demora de un pedido",
+      "mensajes": [
+        "Ya pasaron tres semanas y mi pedido no llega, esto es inaceptable"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-12",
+      "categoria": "derivacion",
+      "descripcion": "Negociación por volumen",
+      "mensajes": [
+        "Si les mando 50 kg al mes, ¿me hacen un precio especial por kilo?"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-13",
+      "categoria": "derivacion",
+      "descripcion": "Tarifa pactada",
+      "mensajes": [
+        "Con el asesor quedamos en 7 dólares el kilo, aplícame esa tarifa"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-14",
+      "categoria": "derivacion",
+      "descripcion": "Compra asistida",
+      "mensajes": [
+        "¿Ustedes pueden comprar el producto en Amazon por mí? No tengo tarjeta internacional"
+      ],
+      "esperado": {
+        "deriva": true
+      }
+    },
+    {
+      "id": "DRV-15",
+      "categoria": "derivacion",
+      "descripcion": "Control: pregunta general de reclamos",
+      "mensajes": [
+        "En general, ¿cómo funcionan los reclamos si un paquete llega dañado?"
+      ],
+      "esperado": {
+        "deriva": false
+      }
+    },
+    {
+      "id": "DRV-16",
+      "categoria": "derivacion",
+      "descripcion": "Control: cómo funciona el tracking",
+      "mensajes": [
+        "¿Qué es el código de tracking y quién me lo da?"
+      ],
+      "esperado": {
+        "deriva": false
+      }
+    },
+    {
+      "id": "DRV-17",
+      "categoria": "derivacion",
+      "descripcion": "Control: menciona persona en otro sentido",
+      "mensajes": [
+        "Es un regalo para una persona en Trujillo, ¿envían allá?"
+      ],
+      "esperado": {
+        "deriva": false
+      }
+    },
+    {
+      "id": "DRV-18",
+      "categoria": "derivacion",
+      "descripcion": "Control: descuento con datos completos",
+      "mensajes": [
+        "Una mochila de 60 dólares, 1 kg, ¿algún descuento?"
+      ],
+      "esperado": {
+        "deriva": false,
+        "cotiza": true
+      }
     }
   ]
 }

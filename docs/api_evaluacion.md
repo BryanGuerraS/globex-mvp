@@ -164,7 +164,32 @@ def correr_banco(casos, banco_id, corrida_id, salida="resultados.jsonl"):
 - Una vez que Globix deriva, no responde más en esa sesión (como en WhatsApp): los turnos siguientes salen
   con `tipo_respuesta: "bot_pausado"`.
 
-## Banco final en una sola llamada: `POST /api/eval/banco-final`
+## Evaluación completa con el banco final (recomendado): `python evaluacion.py`
+
+Para quien evalúa (por ejemplo, el profesor): clonar el repositorio, instalar lo mínimo y ejecutar un comando.
+
+```bash
+pip install -r requirements-evaluacion.txt
+```
+
+```bash
+python evaluacion.py <carpeta Globex_Bancos_V2>
+```
+
+Solo hace falta la clave de evaluación en la variable `EVAL_API_KEY` (o en un archivo `.env`). El script verifica el
+banco contra su manifiesto, envía cada caso a Globix en Render (`/api/eval/caso`), califica con el juez del equipo
+en el servidor (`/api/eval/juzgar`, key de pago; ninguna key de LLM sale del servidor) y deja el informe en PDF y
+los resultados en `evaluacion/reportes/banco_final/<corrida>/`. Cada llamada es corta, así que un reinicio de Render
+no interrumpe la corrida: el script reintenta y, si se corta, `--corrida <nombre>` continúa donde quedó.
+
+`POST /api/eval/juzgar` (`{"sistema": ..., "usuario": ...}` → `{"respuesta": ...}`) es el juez con la key de pago;
+límites `JUEZ_LIMITE_POR_MINUTO` 120 y `JUEZ_MAX_POR_DIA` 1500.
+
+## Banco final en una sola llamada: `POST /api/eval/banco-final` (no recomendado en el plan gratuito)
+
+Corre todo dentro del servidor y, en el plan gratuito de Render (512 MB), la instancia se quedó sin memoria a los
+56 casos (16/11). Se mantiene para un servidor con más memoria; para evaluar, usar `evaluacion.py`.
+
 
 Corre el banco final completo en el servidor y genera su informe en ese momento: se envía la carpeta del
 banco (`Globex_Bancos_V2`) comprimida en zip, el servidor verifica cada archivo contra su

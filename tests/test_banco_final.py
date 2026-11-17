@@ -97,3 +97,34 @@ def test_rechaza_un_banco_alterado_o_sin_key(banco):
     r = cliente.post("/api/eval/banco-final", headers=KEY, content=_zip(alterar=True))
     assert r.status_code == 422 and "manifiesto" in r.json()["detail"]
     assert cliente.post("/api/eval/banco-final", headers=KEY, content=b"no es un zip").status_code == 422
+
+
+def test_evaluacion_py_de_punta_a_punta(banco, tmp_path, monkeypatch):
+    """evaluacion.py: verifica la carpeta, corre los casos y el juez por la API y genera el PDF."""
+    import importlib.util
+    import sys
+    cliente, _ = banco
+    carpeta = tmp_path / "Globex_Bancos_V2"
+    with zipfile.ZipFile(io.BytesIO(_zip())) as z:
+        z.extractall(tmp_path)
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    spec = importlib.util.spec_from_file_location("evaluacion_cli", repo / "evaluacion.py")
+    cli = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cli)
+    monkeypatch.setattr(cli, "RAIZ", tmp_path)
+    monkeypatch.setenv("EVAL_API_KEY", "clave_eval_prueba")
+
+    class ServidorPrueba(cli.Servidor):
+        def __init__(self, url, key):
+            self.url, self.http = "", cliente
+            cliente.headers.update({"X-API-Key": key})
+
+    monkeypatch.setattr(cli, "Servidor", ServidorPrueba)
+    monkeypatch.setattr(sys, "argv", ["evaluacion.py", str(carpeta), "--corrida", "PRUEBA1"])
+    cli.main()
+    destino = tmp_path / "evaluacion" / "reportes" / "banco_final" / "PRUEBA1"
+    resultado = json.loads((destino / "resultado.json").read_text(encoding="utf-8"))
+    assert resultado["meta"]["ejecutados"] == 5 and (destino / "Informe_final_PRUEBA1.pdf").stat().st_size > 2000
+    resumen = next(k for k in resultado["kpis"] if k["indicador"] == "Calidad del resumen para el asesor")
+    assert resumen["meta"] == 90 and resumen["meta_del_banco"] == 95

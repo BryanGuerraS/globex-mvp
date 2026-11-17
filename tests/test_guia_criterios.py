@@ -277,3 +277,23 @@ def test_registrar_con_cantidad_sobre_el_maximo_deriva(api):  # noqa: F811
 def test_pistola_arma_si_y_de_agua_no(texto, tipo):
     r = verificar(texto)
     assert (r["tipo"] if r else None) == tipo
+
+
+# ---- Derivación (16/11): tope sin datos, reclamos, viajero ----
+@pytest.mark.parametrize("texto, monto", [
+    ("Voy a comprar varias cosas por unos 3500 dólares en total", 3500.0),
+    ("Una laptop de USD 2.500", 2500.0),
+    ("Un libro de 40 dólares", None),
+    ("Mi compra es de $1,999.99", None),
+])
+def test_monto_sobre_el_tope(texto, monto):
+    assert main.monto_sobre_tope(texto) == monto
+
+
+def test_compra_sobre_el_tope_deriva_sin_pedir_datos(api):  # noqa: F811
+    cliente, con_llm = api
+    con_llm([])  # no debe llegar al LLM
+    r = cliente.post("/api/eval/caso", headers=KEY, json={
+        "corrida_id": "T1", "id": "TOPE-1", "pregunta": "Voy a comprar varias cosas por unos 3500 dólares en total"}).json()
+    assert "supera los USD 2,000" in r["respuesta_bot"] and r["registros_acciones"]["bot_pausado"]
+    assert r["registros_acciones"]["motivo_derivacion"] == "tope"

@@ -217,7 +217,7 @@ REGLAS DE DISEÑO CONVERSACIONAL (MOBILE-FIRST):
      Si pregunta en general cómo funciona el tracking (quién da el código, dónde se ve, si debe informar varios trackings o qué hacer si su compra viene en varios paquetes, qué significa "Delivered"), no es un seguimiento: usa 'buscar_faq'. Solo es seguimiento si su compra YA fue despachada y pide saber dónde está o si Globex ya la recibió; si todavía no compra o no despacha, es una pregunta general.
 
    - CUADRANTE 3 [COTIZACIÓN VIAJERO]:
-     Si menciona "viajero" o "maleta": llama a 'clasificar_como_viajero'.
+     Si quiere usar la modalidad viajero (enviar o traer cosas con un viajero o en la maleta de alguien que viaja): llama a 'clasificar_como_viajero'. Si quiere COMPRAR o traer una maleta como producto, es una cotización normal.
 
 3. PREGUNTAS GENERALES (FAQs):
    Si preguntan por dirección de Miami, plazos de entrega, entregas en Lima (recojo en oficina, delivery), envíos a provincias o agencias (Olva, Shalom), cómo funciona o formas de pago, usa 'consultar_faq_comercial'.
@@ -940,7 +940,9 @@ LIMITE_CUERPO_INTERACTIVO = 1000
 # Máximo de llamadas al LLM por mensaje del cliente (evita bucles de herramientas).
 MAX_RONDAS_HERRAMIENTAS = 3
 TEXTO_PIDE_PESO = "¿Cuánto pesa aproximadamente en kg? 📦"  # texto aprobado (regla 1c del prompt)
-MAX_PREGUNTAS_FAQ = 4  # preguntas de la base ampliada que se responden en un mismo mensaje
+MAX_PREGUNTAS_FAQ = 4
+TEXTO_TOPE = (f"Como tu compra supera los USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}, "
+              "un asesor de Globex preparará tu cotización personalizada y te escribirá por este chat lo antes posible.")  # preguntas de la base ampliada que se responden en un mismo mensaje
 
 
 MARGEN_FAQ_ESPECIFICA = 0.1  # puntaje de similitud que una respuesta específica debe superar a la general
@@ -957,6 +959,30 @@ def _especificas_mejores(texto: str, info_faq: Dict) -> List[Dict]:
     mejores = especificas[:4]
     return [{"id": e["id"], "tema": e["tema"], "pregunta_ejemplo": e.get("pregunta", ""),
              "respuesta": e["respuesta"], "orientacion_asesor": e.get("orientacion_asesor", "")} for e in mejores]
+
+
+_RECLAMO = re.compile(r"\b(?:reclamo|queja|dañad[oa]s?|danad[oa]s?|rot[oa]s?|roto|faltó|falto|faltan?|"
+                      r"incomplet[oa]|perdid[oa]|no (?:me )?(?:llega|llegó|llego|aparece)|inaceptable)\b")
+# Monto en USD por encima del tope del cálculo automático, dicho por el cliente (DRV-06)
+_MONTO_USD = re.compile(r"(?:usd|us\$|\$)\s*(\d[\d.,]*)|(\d[\d.,]*)\s*(?:usd|dólares|dolares|d[oó]lares americanos)",
+                        re.IGNORECASE)
+
+
+def monto_sobre_tope(texto: str) -> Optional[float]:
+    """Mayor monto en USD del mensaje si supera el tope del cálculo automático (USD 2 000)."""
+    montos = []
+    for m in _MONTO_USD.finditer(texto):
+        bruto = (m.group(1) or m.group(2)).rstrip(".,")
+        if re.fullmatch(r"\d{1,3}(?:[.,]\d{3})+", bruto):  # 3.500 / 3,500
+            bruto = re.sub(r"[.,]", "", bruto)
+        else:
+            bruto = bruto.replace(",", ".")
+        try:
+            montos.append(float(bruto))
+        except ValueError:
+            continue
+    mayor = max(montos, default=0)
+    return mayor if mayor > GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA else None
 
 
 _PIDE_PERSONA = re.compile(r"\b(?:asesor|asesora|persona|humano|alguien del equipo|ejecutivo)\b")
@@ -1158,10 +1184,7 @@ def ejecutar_herramienta(
             actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
             # El resumen aún no ve esta llamada en las métricas: los datos del pedido van en el detalle
             registrar_derivacion(chat_id, "tope", "; ".join(describir_producto(prod) for prod in productos))
-            return {"derivado": True}, con_pedido_de_nombre(
-                f"Como tu compra supera los USD {GlobexPricingEngine.LIMITE_COTIZACION_AUTOMATICA:,.0f}, "
-                "un asesor de Globex preparará tu cotización personalizada y te escribirá por este chat lo antes posible."
-            , chat_id)
+            return {"derivado": True}, con_pedido_de_nombre(TEXTO_TOPE, chat_id)
         resultado = GlobexPricingEngine.calcular_pedido(productos, peso_total)
         estado["resultado_calculo"] = resultado
         borrador.guardar(chat_id, datos_pedido, {"aceptada": True, "error": None,
@@ -1218,6 +1241,7 @@ def ejecutar_herramienta(
             estado.setdefault("candidatos_faq", []).extend(c["id"] for c in candidatos)
             estado["busco_faq"] = estado.get("busco_faq", 0) + 1
             estado["elegir_faq"] = True  # la siguiente llamada debe ser enviar_faq: nada de texto libre
+            estado["faq_respaldo"] = info_faq["contenido"]  # si la elección obligada falla
             return {"candidatos": candidatos,
                     "instruccion": "Elige con enviar_faq la candidata que responde exactamente lo que preguntó el "
                                    "cliente; si hizo varias preguntas, pasa varios ids. Usa la general (KB-...) si "
@@ -1276,9 +1300,14 @@ def ejecutar_herramienta(
         textos = list(dict.fromkeys(e["respuesta"] for e in elegidas))
         print(f"📚 [FAQ Globex] {', '.join(ids)} en [{chat_id}]")
         texto = "\n\n".join(textos)
-        siempre = any(e["id"] in faq_globex.DERIVA_SIEMPRE for e in elegidas)
         # "En general…", "normalmente…": consulta informativa, no un caso suyo en curso (guía §6)
         general = bool(_PREGUNTA_GENERAL.search(texto_consolidado.lower()))
+        # Reempaque deriva siempre (decisión del usuario 14/11); reclamos y compra asistida, salvo pregunta general
+        siempre = any(e["id"] in faq_globex.DERIVA_SIEMPRE and (not general or e["id"] in ("G126", "G127"))
+                      for e in elegidas)
+        # Un reclamo concreto deriva aunque la FAQ elegida no lo pida, si el LLM marcó derivar (DRV-10)
+        if args.get("derivar") and not general and _RECLAMO.search(texto_consolidado.lower()):
+            siempre = True
         if siempre or (args.get("derivar") and not general and any(faq_globex.requiere_asesor(e) and e["id"] not in faq_globex.NUNCA_DERIVA
                                                    for e in elegidas)):
             actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
@@ -1453,6 +1482,16 @@ async def _procesar_turno(
     # 🛡️ 2. GUARDRAIL DE MERCANCÍA RESTRINGIDA / SUNAT (CE11, CE12, F28, F31)
     alerta_aduanera = verificar_mercancia_restringida(texto_consolidado)
     limite = None if alerta_aduanera else limite_en_mensaje(texto_consolidado)
+    tope = None if alerta_aduanera or limite else monto_sobre_tope(texto_consolidado)
+    if tope:
+        actualizar_clasificacion_chat(chat_id, servicio="Cotización Courier (alto valor)", estado="Listo para Asesor", paso=4)
+        actualizar_estado_chat(chat_id, nuevo_estado="Listo para Asesor", bot_activo=0)
+        registrar_derivacion(chat_id, "tope", f"el cliente mencionó USD {tope:,.2f}")
+        bot_reply = con_pedido_de_nombre(TEXTO_TOPE, chat_id)
+        medidor.tipo_respuesta = "derivacion"
+        registrar_mensaje_saliente(chat_id, "bot", bot_reply, None)
+        await send_meta_whatsapp_message(chat_id, bot_reply)
+        return
     if limite:
         bot_reply = derivar_por_limite(chat_id, limite)
         medidor.tipo_respuesta = "guardrail"
@@ -1507,8 +1546,21 @@ async def _procesar_turno(
             # (antes repetía buscar_faq y el cliente recibía el mensaje de error: VFAQ015, VFAQ048)
             elegir = ((estado.pop("elegir_faq", False) or ronda == MAX_RONDAS_HERRAMIENTAS - 1 and estado.get("busco_faq"))
                       and not respuestas_finales)
-            ai_response, espera_limite_ms = await _llamar_llm(
-                history, tool_choice={"type": "function", "function": {"name": "enviar_faq"}} if elegir else "auto")
+            try:
+                ai_response, espera_limite_ms = await _llamar_llm(
+                    history, tool_choice={"type": "function", "function": {"name": "enviar_faq"}} if elegir else "auto")
+            except Exception as e:
+                # Groq rechaza la elección obligada si el modelo escribe texto (400 tool_use_failed): se envía la
+                # respuesta general aprobada del tema en lugar del mensaje de error
+                if not (elegir and estado.get("faq_respaldo") and _es_tool_use_failed(e)):
+                    raise
+                print(f"🔁 [FAQ] La elección obligada falló en [{chat_id}]; se envía la respuesta general aprobada")
+                respuestas_finales.append(estado["faq_respaldo"])
+                tipos_finales.append("faq")
+                estado.setdefault("menu", BOTONES_POST_FAQ)
+                bot_reply = chr(10).join(respuestas_finales)
+                medidor.tipo_respuesta = "faq"
+                break
             medidor.registrar_llamada_llm(
                 ai_response, (time.perf_counter() - inicio_llm) * 1000, espera_limite_ms
             )
@@ -2614,3 +2666,46 @@ def api_banco_final_resultados(trabajo_id: str, tipo: str = "casos"):
     if not os.path.exists(ruta):
         raise HTTPException(status_code=404, detail="Todavía no hay resultados")
     return FileResponse(ruta, media_type="application/x-ndjson", filename=f"{trabajo_id}-{tipo}.jsonl")
+
+
+# Juez del equipo con la key de pago, para que evaluacion.py (en la computadora del evaluador) califique
+# sin tener ninguna key de LLM: envía el prompt del banco y la entrada de un caso, recibe el veredicto.
+class JuzgarPayload(BaseModel):
+    sistema: str
+    usuario: str
+
+
+JUEZ_LIMITE_POR_MINUTO = int(os.getenv("JUEZ_LIMITE_POR_MINUTO", "120"))
+JUEZ_MAX_POR_DIA = int(os.getenv("JUEZ_MAX_POR_DIA", "1500"))
+_llamadas_juez: deque = deque()
+_juez_por_dia: Dict[str, int] = {}
+_juez_pago = None
+
+
+@app.post("/api/eval/juzgar", dependencies=[Depends(verificar_eval_key)])
+async def api_eval_juzgar(payload: JuzgarPayload):
+    """Una calificación del juez (qwen-3.8-27b en Cerebras, key de pago: JUEZ_CEREBRAS_API_KEY o la última
+    key de Cerebras). Devuelve el texto del juez tal cual; el formato lo define el prompt del banco."""
+    global _juez_pago
+    if len(payload.sistema) > 60000 or len(payload.usuario) > 60000:
+        raise HTTPException(status_code=413, detail="Prompt o entrada demasiado largos (máx. 60 000 caracteres)")
+    instante = time.monotonic()
+    while _llamadas_juez and instante - _llamadas_juez[0] > 60:
+        _llamadas_juez.popleft()
+    dia = ahora().strftime("%Y-%m-%d")
+    if len(_llamadas_juez) >= JUEZ_LIMITE_POR_MINUTO or _juez_por_dia.get(dia, 0) >= JUEZ_MAX_POR_DIA:
+        raise HTTPException(status_code=429, detail="Límite de calificaciones alcanzado; reintenta en un minuto")
+    _llamadas_juez.append(instante)
+    _juez_por_dia[dia] = _juez_por_dia.get(dia, 0) + 1
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "evaluacion"))
+    import juez_banco
+    if _juez_pago is None:
+        destinos = juez_banco.destinos_pago(os.environ)
+        if not destinos:
+            raise HTTPException(status_code=503, detail="Falta la key del juez en el servidor")
+        _juez_pago = juez_banco.Juez(destinos=destinos)
+    try:
+        texto = await asyncio.to_thread(_juez_pago, payload.sistema, payload.usuario)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=f"El juez no respondió: {e.__class__.__name__}")
+    return {"respuesta": texto, "modelo_juez": juez_banco.MODELO_JUEZ}

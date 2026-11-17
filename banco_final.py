@@ -52,6 +52,16 @@ def preparar(zip_bytes: bytes) -> Tuple[Path, Dict, str]:
     if len(indices) != 1:
         raise BancoInvalido("El zip debe traer una sola carpeta con 00_Indice_Bancos.txt")
     carpeta = indices[0].parent
+    banco, sha = verificar_carpeta(carpeta)
+    return carpeta, banco, sha
+
+
+def verificar_carpeta(carpeta: Path) -> Tuple[Dict, str]:
+    """Verifica cada archivo de la carpeta del banco contra MANIFIESTO_SHA256.txt y la convierte.
+    Devuelve (JSON de ejecución, SHA-256 del manifiesto). Lanza BancoInvalido si algo no coincide."""
+    carpeta = Path(carpeta)
+    if not (carpeta / "00_Indice_Bancos.txt").exists():
+        raise BancoInvalido("La carpeta no tiene 00_Indice_Bancos.txt")
     manifiesto = carpeta / "MANIFIESTO_SHA256.txt"
     if not manifiesto.exists():
         raise BancoInvalido("Falta MANIFIESTO_SHA256.txt")
@@ -71,7 +81,7 @@ def preparar(zip_bytes: bytes) -> Tuple[Path, Dict, str]:
         banco = convertir(carpeta)
     except SystemExit as e:  # convertir() valida los ids contra el índice
         raise BancoInvalido(str(e)) from e
-    return carpeta, banco, sha
+    return banco, sha
 
 
 def _pct(n: int, d: int) -> Optional[float]:
@@ -82,10 +92,15 @@ def _ic(n: int, d: int) -> Optional[List[float]]:
     return [round(100 * x, 1) for x in clopper_pearson(n, d)] if d else None
 
 
+# Metas que el equipo ajustó respecto del índice del banco (16/11, decisión del usuario): el resumen para
+# el asesor pasa de 95 % a 90 % porque el banco tiene solo 30 chats.
+METAS_EQUIPO = {"resumen": 90}
+
+
 def calcular_kpis(filas: List[Dict], revision: Dict, juez: Dict, indice: Dict) -> List[Dict]:
-    """Los 6 indicadores del contrato con su meta (del índice del banco) y si se cumple."""
+    """Los 6 indicadores del contrato con su meta (del índice del banco o ajustada por el equipo)."""
     metas = {b["banco"]: b for b in indice["bancos"]}
-    chats = metas.get("CHATS_COMPARTIDOS", {}).get("metas", {})
+    chats = {**metas.get("CHATS_COMPARTIDOS", {}).get("metas", {}), **METAS_EQUIPO}
     faq, pro = juez.get("FAQ", {}), juez.get("PRODUCTOS", {})
     cot, der = revision["cotizaciones"], revision["derivacion_efectiva"]
     bloq = revision["productos_bloqueados"]
@@ -115,7 +130,9 @@ def calcular_kpis(filas: List[Dict], revision: Dict, juez: Dict, indice: Dict) -
         fila("Exactitud y completitud de los datos recopilados", None, rec.get("evaluados"),
              chats.get("recopilacion", 90), porcentaje=rec.get("promedio_porcentaje")),
         fila("Calidad del resumen para el asesor", res.get("aceptables"), res.get("decididos"),
-             chats.get("resumen", 95), extra={"fallas": res.get("no_aceptables", [])}),
+             chats.get("resumen", 95), extra={"fallas": res.get("no_aceptables", []),
+                                              "meta_del_banco": metas.get("CHATS_COMPARTIDOS", {}).get("metas", {}).get("resumen"),
+                                              "meta_ajustada_por_el_equipo": "resumen" in METAS_EQUIPO}),
     ]
 
 
