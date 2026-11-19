@@ -140,7 +140,7 @@ Meta WhatsApp Cloud API ── POST firmado (X-Hub-Signature-256) ──┐
 | Límite | Valor | Consecuencia |
 | :-- | :-- | :-- |
 | Latencia | Procesamiento por turno p50 0.61 s, p95 1.04 s; el cliente espera además 5 s de agrupación de mensajes | Respuesta dentro de la meta (p50 ≤ 10 s, p95 ≤ 15 s) |
-| Costo del LLM | ~USD 0.015 por conversación de seis turnos (tarifas de Cerebras: USD 0.35 por millón de tokens de entrada y USD 0.75 de salida); ~USD 4.87 al mes para 322 conversaciones. Las 3 corridas del banco final cuestan ~USD 6.76 (USD 1.91 Globix + USD 4.85 juez) | Costo marginal bajo frente al ingreso esperado por lead |
+| Costo estimado del LLM | USD 0.00736 por conversación de seis turnos con tarifas estándar de Groq; aproximadamente USD 2.37 mensuales para 322.1 conversaciones. El cálculo utiliza el perfil de tokens registrado en las pruebas del proyecto. Con tarifas de Cerebras, ese mismo perfil equivale a USD 0.01511 por conversación y USD 4.87 mensuales | Costo marginal bajo frente al ingreso esperado por lead |
 | Cuota del LLM | El plan gratuito de Groq limita tokens por minuto y por día por key | Keys de respaldo con pausa automática; las corridas grandes se hacen por API, un caso por llamada |
 | Cómputo | Render gratuito: 512 MB de RAM, se duerme sin tráfico | Keep-alive cada 10 min; la evaluación envía un caso por llamada para no agotar la memoria |
 | Persistencia | Disco efímero en Render | La base y los PDF se reinician con cada despliegue (aceptado en la fase de pruebas) |

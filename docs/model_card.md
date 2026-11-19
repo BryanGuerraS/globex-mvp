@@ -37,7 +37,7 @@ Banco final del equipo, 3 corridas completas (684 casos, sin errores de ejecuci�
 
 - Cotizaciones emitidas a pedidos no cotizables: 0 en las 3 corridas.
 - Tiempo de procesamiento por turno: p50 0.61 s, p95 1.04 s (más 5 s de agrupación de mensajes en WhatsApp).
-- Costo estimado (tarifas de Cerebras: USD 0.35 por millón de tokens de entrada y USD 0.75 de salida para Globix; USD 0.99 y USD 1.49 para el juez): ~USD 0.0028 por caso del banco, ~USD 0.015 por conversación de seis turnos y ~USD 4.87 al mes para 322 conversaciones; las 3 corridas del banco final, ~USD 6.76 (USD 1.91 Globix + USD 4.85 juez).
+- Costo estimado (tarifas de Cerebras: USD 0.35 por millón de tokens de entrada y USD 0.75 de salida para Globix; USD 0.99 y USD 1.49 para el juez): ~USD 0.0028 por caso del banco, USD 0.01511 por conversación de seis turnos y USD 4.87 al mes para 322.1 conversaciones (con tarifas estándar de Groq, el mismo perfil de tokens equivale a USD 0.00736 por conversación y USD 2.37 al mes); las 3 corridas del banco final, ~USD 6.76 (USD 1.91 Globix + USD 4.85 juez).
 - Motor de cotización: 60/60 casos correctos al centavo frente a un oráculo independiente.
 
 **Comparación con un baseline de reglas sobre el banco final.** El baseline (`evaluacion/baseline_reglas.py`) es el mismo sistema con el LLM reemplazado por reglas de palabras clave: mismo control de mercancía, motor, respuestas aprobadas, derivación y resumen. Se corrió sobre los mismos 228 casos con el mismo juez y las mismas métricas (`evaluacion/baseline_banco_final.py`; las reglas son deterministas, una corrida). Las reglas se escribieron antes del banco final.
