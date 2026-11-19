@@ -183,6 +183,9 @@ def test_comparar_globix_con_reglas():
     reglas = [{"indicador": "A", "porcentaje": 60.5, "cumple": False}, {"indicador": "B", "porcentaje": 50.0, "cumple": False}]
     comp = {c["indicador"]: c for c in mod.comparar(globix, reglas)}
     assert comp["A"]["diferencia_pp"] == 29.5 and comp["B"]["diferencia_pp"] is None
+    # Varias corridas: se resta el promedio sin redondear (98.89 - 47.85 = 51.0, no 98.9 - 47.85 = 51.1)
+    combinado = [{"indicador": "C", "porcentaje": 98.9, "por_corrida": [99.05, 99.05, 98.57], "meta": 90}]
+    assert mod.comparar(combinado, [{"indicador": "C", "porcentaje": 47.85}])[0]["diferencia_pp"] == 51.0
 
 
 def _cli(tmp_path, monkeypatch):

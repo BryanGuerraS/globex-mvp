@@ -41,7 +41,10 @@ def comparar(kpis_globix: list, kpis_base: list) -> list:
         b = base.get(g["indicador"])
         if not b:
             continue
-        dif = None if g.get("porcentaje") is None or b.get("porcentaje") is None else round(g["porcentaje"] - b["porcentaje"], 1)
+        # Con varias corridas, la diferencia se calcula con el promedio sin redondear (por_corrida)
+        valores = [v for v in g.get("por_corrida") or [] if v is not None]
+        promedio = sum(valores) / len(valores) if valores else g.get("porcentaje")
+        dif = None if promedio is None or b.get("porcentaje") is None else round(promedio - b["porcentaje"], 1)
         filas.append({"indicador": g["indicador"], "globix": g.get("porcentaje"), "reglas": b.get("porcentaje"),
                       "diferencia_pp": dif, "meta": g.get("meta"), "reglas_cumple": b.get("cumple")})
     return filas

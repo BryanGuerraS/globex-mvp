@@ -48,7 +48,7 @@ Banco final del equipo, 3 corridas completas (684 casos, sin errores de ejecuci�
 | Derivación correcta | 100 % | 54.2 % | 32.8–74.4 % | **+45.8 pp** |
 | Calidad de respuesta sobre productos con condiciones especiales | 90.5 % | 62.9 % | 44.9–78.5 % | **+27.6 pp** |
 | Exactitud del total cotizado | 99.2 % | 62.5 % | 45.8–77.3 % | **+36.7 pp** |
-| Exactitud y completitud de los datos recopilados | 98.9 % | 47.9 % | — | **+51.1 pp** |
+| Exactitud y completitud de los datos recopilados | 98.9 % | 47.9 % | — | **+51.0 pp** |
 | Calidad del resumen para el asesor | 88.9 % | 20.0 % | 7.7–38.6 % | **+68.9 pp** |
 
 Globix supera al baseline en los 6 indicadores; el baseline no cumple ninguna meta. La mayor diferencia está en entender la pregunta (preguntas frecuentes, resumen y datos recopilados): la regla responde con la primera coincidencia o con el menú cuando ninguna palabra clave aparece.

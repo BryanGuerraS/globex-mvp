@@ -82,7 +82,7 @@ Evaluación con el **banco final de preguntas del equipo** (228 casos: preguntas
 | Derivación correcta | 100 % | 54.2 % | 32.8–74.4 % | **+45.8 pp** |
 | Calidad de respuesta sobre productos con condiciones especiales | 90.5 % | 62.9 % | 44.9–78.5 % | **+27.6 pp** |
 | Exactitud del total cotizado | 99.2 % | 62.5 % | 45.8–77.3 % | **+36.7 pp** |
-| Exactitud y completitud de los datos recopilados | 98.9 % | 47.9 % | — | **+51.1 pp** |
+| Exactitud y completitud de los datos recopilados | 98.9 % | 47.9 % | — | **+51.0 pp** |
 | Calidad del resumen para el asesor | 88.9 % | 20.0 % | 7.7–38.6 % | **+68.9 pp** |
 
 El baseline no cumple ninguna meta. En bancos de consultas reales anteriores, Globix también lo superó (+20.7 puntos en 258 consultas y +19.1 en 60 casos reales, según el juez). Para reproducirlo: `python evaluacion/baseline_banco_final.py "<ruta>/Globex_Bancos_V2" --comparar <corrida de Globix>`.
