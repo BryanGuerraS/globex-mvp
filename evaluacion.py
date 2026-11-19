@@ -1,7 +1,8 @@
 """Evaluación de Globix con el banco final: un comando, informe en PDF.
 
     pip install -r requirements-evaluacion.txt
-    python evaluacion.py <carpeta Globex_Bancos_V2>
+    python evaluacion.py                      # usa el zip (o la carpeta) que esté en bancos/
+    python evaluacion.py <zip o carpeta Globex_Bancos_V2>
 
 Qué hace (opción B, decisión del equipo 16/11):
 1. Verifica cada archivo del banco contra su MANIFIESTO_SHA256.txt.
@@ -14,7 +15,8 @@ Qué hace (opción B, decisión del equipo 16/11):
    Con --repeticiones N corre el banco N veces y agrega un informe con el promedio y el rango
    (mínimo–máximo) de cada indicador en <corrida>-xN/; cumple si el promedio alcanza la meta.
 
-Solo necesita la clave de evaluación: variable EVAL_API_KEY (o en un archivo .env).
+Solo necesita la clave de evaluación: variable EVAL_API_KEY (o en el archivo .env; si no existe, se crea
+con la plantilla EVAL_API_KEY=PON_TU_CLAVE_AQUI).
 """
 
 import argparse
@@ -37,6 +39,48 @@ import revisar_banco_api  # noqa: E402
 from informe_banco_final_pdf import generar as generar_pdf  # noqa: E402
 
 URL = "https://globex-mvp.onrender.com"
+BANCOS = RAIZ / "bancos"
+PLANTILLA_KEY = "PON_TU_CLAVE_AQUI"
+
+
+def leer_key() -> str:
+    """EVAL_API_KEY desde el entorno o el .env de la raíz; crea el .env con la plantilla si no existe."""
+    env = RAIZ / ".env"
+    if not env.exists() and not os.environ.get("EVAL_API_KEY"):
+        env.write_text(f"EVAL_API_KEY={PLANTILLA_KEY}\n", encoding="utf-8")
+        sys.exit(f"Se creó {env}. Abre ese archivo, reemplaza {PLANTILLA_KEY} por la clave entregada por el "
+                 "equipo y vuelve a ejecutar el comando.")
+    load_dotenv(env)
+    key = (os.environ.get("EVAL_API_KEY") or "").strip()
+    if not key or key == PLANTILLA_KEY:
+        sys.exit(f"Falta la clave: en {env} reemplaza {PLANTILLA_KEY} por la clave entregada por el equipo.")
+    return key
+
+
+def ubicar_banco(ruta: str = None):
+    """Devuelve (carpeta, banco, sha) desde un zip o una carpeta. Sin ruta, busca en bancos/."""
+    if ruta is None:
+        zips = sorted(BANCOS.glob("*.zip"))
+        indices = list(BANCOS.rglob("00_Indice_Bancos.txt"))
+        if len(zips) == 1:
+            ruta = str(zips[0])
+        elif not zips and len(indices) == 1:
+            ruta = str(indices[0].parent)
+        elif not zips and not indices:
+            raise banco_final.BancoInvalido(f"No hay ningún zip del banco en {BANCOS}. Copia ahí el zip entregado "
+                                            "por el equipo, sin descomprimirlo.")
+        else:
+            raise banco_final.BancoInvalido(f"Hay más de un banco en {BANCOS}: deja solo uno o indica la ruta.")
+    ruta = Path(ruta)
+    if ruta.is_file() and ruta.suffix.lower() == ".zip":
+        print(f"   Banco: {ruta.name} (zip)")
+        return banco_final.preparar(ruta.read_bytes())
+    indices = [ruta] if (ruta / "00_Indice_Bancos.txt").exists() else [i.parent for i in ruta.rglob("00_Indice_Bancos.txt")]
+    if len(indices) != 1:
+        raise banco_final.BancoInvalido(f"{ruta} no tiene una carpeta Globex_Bancos_V2 con 00_Indice_Bancos.txt")
+    print(f"   Banco: {indices[0]}")
+    banco, sha = banco_final.verificar_carpeta(indices[0])
+    return indices[0], banco, sha
 
 
 class Servidor:
@@ -177,24 +221,21 @@ def combinar_corridas(destinos: list, nombre: str) -> Path:
 
 def main():
     p = argparse.ArgumentParser(description="Evalúa Globix con el banco final y genera el informe en PDF.")
-    p.add_argument("banco", help="carpeta Globex_Bancos_V2 (con 00_Indice_Bancos.txt y MANIFIESTO_SHA256.txt)")
+    p.add_argument("banco", nargs="?", help="zip o carpeta Globex_Bancos_V2 (con 00_Indice_Bancos.txt y "
+                                            "MANIFIESTO_SHA256.txt); si se omite, usa el que esté en bancos/")
     p.add_argument("--url", default=os.environ.get("GLOBIX_URL", URL))
     p.add_argument("--corrida", help="nombre de la corrida; repetirlo continúa una corrida cortada")
     p.add_argument("--repeticiones", type=int, default=1,
                    help="corridas completas del banco (la 1.ª se llama <corrida>, las demás <corrida>-R2, -R3…); "
                         "con más de una se genera además el informe con el promedio y el rango")
     a = p.parse_args()
-    load_dotenv(RAIZ / ".env")
-    key = os.environ.get("EVAL_API_KEY")
-    if not key:
-        sys.exit("Falta EVAL_API_KEY (variable de entorno o archivo .env).")
+    key = leer_key()
     if a.repeticiones < 1:
         sys.exit("--repeticiones debe ser 1 o más.")
-    carpeta = Path(a.banco)
 
     print("1. Verificando el banco contra su manifiesto…")
     try:
-        banco, sha = banco_final.verificar_carpeta(carpeta)
+        carpeta, banco, sha = ubicar_banco(a.banco)
     except banco_final.BancoInvalido as e:
         sys.exit(f"Banco no válido: {e}")
     print(f"   {len(banco['casos'])} casos · manifiesto {sha[:16]}… verificado")

@@ -183,3 +183,52 @@ def test_comparar_globix_con_reglas():
     reglas = [{"indicador": "A", "porcentaje": 60.5, "cumple": False}, {"indicador": "B", "porcentaje": 50.0, "cumple": False}]
     comp = {c["indicador"]: c for c in mod.comparar(globix, reglas)}
     assert comp["A"]["diferencia_pp"] == 29.5 and comp["B"]["diferencia_pp"] is None
+
+
+def _cli(tmp_path, monkeypatch):
+    import importlib.util
+    from pathlib import Path
+    repo = Path(__file__).resolve().parent.parent
+    spec = importlib.util.spec_from_file_location("evaluacion_cli_bancos", repo / "evaluacion.py")
+    cli = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cli)
+    monkeypatch.setattr(cli, "RAIZ", tmp_path)
+    monkeypatch.setattr(cli, "BANCOS", tmp_path / "bancos")
+    (tmp_path / "bancos").mkdir()
+    return cli
+
+
+def test_evaluacion_py_encuentra_el_banco_en_la_carpeta_bancos(tmp_path, monkeypatch):
+    """Sin ruta, usa el zip (o la carpeta) que esté en bancos/; con dos o ninguno, avisa."""
+    cli = _cli(tmp_path, monkeypatch)
+    with pytest.raises(cli.banco_final.BancoInvalido, match="No hay ningún zip"):
+        cli.ubicar_banco()
+    (tmp_path / "bancos" / "Globex_Bancos_V2_entrega.zip").write_bytes(_zip())
+    carpeta, banco, sha = cli.ubicar_banco()
+    assert (carpeta / "00_Indice_Bancos.txt").exists() and len(banco["casos"]) == 5 and len(sha) == 64
+    (tmp_path / "bancos" / "otro.zip").write_bytes(_zip())
+    with pytest.raises(Exception, match="más de un banco"):
+        cli.ubicar_banco()
+    # Carpeta descomprimida (también la de afuera del zip) o ruta directa al zip
+    for z in (tmp_path / "bancos").glob("*.zip"):
+        z.unlink()
+    with zipfile.ZipFile(io.BytesIO(_zip())) as z:
+        z.extractall(tmp_path / "bancos" / "Globex_Bancos_Prompts_Compactos")
+    assert cli.ubicar_banco()[2] == sha
+    assert cli.ubicar_banco(str(tmp_path / "bancos" / "Globex_Bancos_Prompts_Compactos"))[2] == sha
+    (tmp_path / "x.zip").write_bytes(_zip(alterar=True))
+    with pytest.raises(Exception, match="manifiesto"):
+        cli.ubicar_banco(str(tmp_path / "x.zip"))
+
+
+def test_evaluacion_py_crea_el_env_con_la_plantilla(tmp_path, monkeypatch):
+    cli = _cli(tmp_path, monkeypatch)
+    monkeypatch.delenv("EVAL_API_KEY", raising=False)
+    with pytest.raises(SystemExit, match="Se creó"):
+        cli.leer_key()
+    assert (tmp_path / ".env").read_text(encoding="utf-8") == "EVAL_API_KEY=PON_TU_CLAVE_AQUI\n"
+    with pytest.raises(SystemExit, match="reemplaza PON_TU_CLAVE_AQUI"):
+        cli.leer_key()
+    monkeypatch.delenv("EVAL_API_KEY", raising=False)
+    (tmp_path / ".env").write_text("EVAL_API_KEY=clave_de_prueba\n", encoding="utf-8")
+    assert cli.leer_key() == "clave_de_prueba"

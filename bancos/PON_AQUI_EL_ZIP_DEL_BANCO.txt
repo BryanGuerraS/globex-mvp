@@ -1,0 +1,8 @@
+Copia en esta carpeta el zip del banco final entregado por el equipo (sin descomprimirlo).
+
+Luego, desde la raíz del proyecto:
+
+    python evaluacion.py --repeticiones 3
+
+El script encuentra el zip aquí, verifica cada archivo contra MANIFIESTO_SHA256.txt y corre la evaluación.
+También sirve dejar aquí la carpeta Globex_Bancos_V2 ya descomprimida (solo un banco a la vez).

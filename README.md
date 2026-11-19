@@ -250,25 +250,36 @@ Todo está disponible en `GET /api/metricas` y en la página **Métricas** de la
 
 [`evaluacion.py`](evaluacion.py) ejecuta el banco final contra Globix desplegado y genera el informe en PDF. No hace falta instalar el backend ni tener keys de LLM: el chatbot y el juez corren en el servidor.
 
-**Requisitos:** Python 3.10 o superior, la carpeta del banco `Globex_Bancos_V2` (con `00_Indice_Bancos.txt` y `MANIFIESTO_SHA256.txt`) y la clave `EVAL_API_KEY`. El equipo entrega la carpeta y la clave por separado; no están en el repositorio.
+**Requisitos:** Python 3.10 o superior, el zip del banco final y la clave `EVAL_API_KEY`. El equipo entrega el zip y la clave por separado; no están en el repositorio.
 
-```bash
-git clone https://github.com/BryanGuerraS/globex-mvp.git
+Estructura para la evaluación:
+
+```text
+globex-mvp/
+├── evaluacion.py
+├── .env                          ← EVAL_API_KEY=PON_TU_CLAVE_AQUI
+├── bancos/
+│   ├── PON_AQUI_EL_ZIP_DEL_BANCO.txt
+│   └── <zip del banco final>     ← se copia aquí, sin descomprimir
+└── requirements-evaluacion.txt
 ```
 
-```bash
-cd globex-mvp
-```
+1. Descargar el repositorio (`git clone https://github.com/BryanGuerraS/globex-mvp.git` o *Code → Download ZIP*) y abrir una terminal en su carpeta.
+2. Instalar las dependencias:
 
-```bash
-pip install -r requirements-evaluacion.txt
-```
+   ```bash
+   pip install -r requirements-evaluacion.txt
+   ```
 
-Crear un archivo `.env` en la raíz con la línea `EVAL_API_KEY=<clave entregada por el equipo>` y ejecutar:
+3. Copiar el zip del banco en la carpeta `bancos/`, sin descomprimirlo.
+4. Ejecutar una vez `python evaluacion.py`: crea el archivo `.env` con la línea `EVAL_API_KEY=PON_TU_CLAVE_AQUI`. Abrirlo y reemplazar `PON_TU_CLAVE_AQUI` por la clave entregada por el equipo.
+5. Ejecutar la evaluación:
 
-```bash
-python evaluacion.py "<ruta>/Globex_Bancos_V2" --repeticiones 3
-```
+   ```bash
+   python evaluacion.py --repeticiones 3
+   ```
+
+El script toma el zip que está en `bancos/` (debe haber uno solo). También acepta la ruta a un zip o a la carpeta del banco ya descomprimida: `python evaluacion.py "<ruta>" --repeticiones 3`.
 
 **Qué hace:**
 
@@ -466,6 +477,7 @@ globex-mvp/
 ├── metricas.py                  # Costo, latencia, KPI de atención e intervalos de confianza
 ├── dashboard.py                 # Consola de asesores (Streamlit)
 ├── evaluacion.py                # Evaluación con el banco final en un comando
+├── bancos/                      # Aquí se copia el zip del banco final para evaluar
 ├── banco_final.py               # Verificación del banco e indicadores con sus metas
 ├── scripts/datos_demo.py        # Base demo con conversaciones sintéticas para la prueba local
 ├── conocimiento/                # Base de respuestas aprobadas

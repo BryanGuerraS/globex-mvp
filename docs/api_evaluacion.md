@@ -173,7 +173,7 @@ pip install -r requirements-evaluacion.txt
 ```
 
 ```bash
-python evaluacion.py <carpeta Globex_Bancos_V2> --repeticiones 3
+python evaluacion.py --repeticiones 3          # toma el zip de bancos/ (o pasar la ruta del zip o de la carpeta)
 ```
 
 Solo hace falta la clave de evaluación en la variable `EVAL_API_KEY` (o en un archivo `.env`). El script verifica el
