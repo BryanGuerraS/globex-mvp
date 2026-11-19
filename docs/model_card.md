@@ -12,7 +12,7 @@ Ficha del componente de IA del chatbot Globix (Globex Courier). Sigue el formato
 | Parámetros | Temperatura 0.2; hasta 3 rondas de herramientas por turno; contexto de las últimas 12 h (máx. 40 mensajes) |
 | Componentes deterministas | Motor de cotización (`pricing_engine.py`), validación de argumentos (`validaciones.py`), control de mercancía (`guardrails.py`), resumen del caso (`resumen_caso.py`) |
 | Responsables | Equipo 1, Capstone Project I, UTEC |
-| Versión | v0 del MVP (la versión exacta es el commit desplegado en Render) |
+| Versión | v0 del MVP; la evaluación final corrió con los commits 1610fbb (corrida 1) y b19e340 (corridas 2 y 3), que tienen el mismo comportamiento de Globix |
 
 **Principio de diseño:** el LLM decide qué herramienta usar y con qué datos; ningún monto lo calcula el LLM. Cada argumento que pasa al motor se valida en código contra los mensajes del cliente.
 
@@ -37,6 +37,7 @@ Banco final del equipo, 3 corridas completas (684 casos, sin errores de ejecuci�
 
 - Cotizaciones emitidas a pedidos no cotizables: 0 en las 3 corridas.
 - Tiempo de procesamiento por turno: p50 0.61 s, p95 1.04 s (más 5 s de agrupación de mensajes en WhatsApp).
+- Costo estimado (tarifas de Cerebras: USD 0.35 por millón de tokens de entrada y USD 0.75 de salida para Globix; USD 0.99 y USD 1.49 para el juez): ~USD 0.0028 por caso del banco, ~USD 0.015 por conversación de seis turnos y ~USD 4.87 al mes para 322 conversaciones; las 3 corridas del banco final, ~USD 6.76 (USD 1.91 Globix + USD 4.85 juez).
 - Motor de cotización: 60/60 casos correctos al centavo frente a un oráculo independiente.
 
 **Comparación con un baseline de reglas sobre el banco final.** El baseline (`evaluacion/baseline_reglas.py`) es el mismo sistema con el LLM reemplazado por reglas de palabras clave: mismo control de mercancía, motor, respuestas aprobadas, derivación y resumen. Se corrió sobre los mismos 228 casos con el mismo juez y las mismas métricas (`evaluacion/baseline_banco_final.py`; las reglas son deterministas, una corrida). Las reglas se escribieron antes del banco final.

@@ -31,11 +31,11 @@ El asistente, **Globix**, responde con información comercial aprobada por Globe
 
 Los asesores de Globex atienden WhatsApp mientras también reciben, pesan y despachan paquetes, así que muchos prospectos esperan demasiado por una primera respuesta útil.
 
-| Indicador (histórico de 3 años) | Valor |
+| Indicador (histórico de WhatsApp, marzo de 2024 a septiembre de 2026) | Valor |
 | :-- | :-- |
-| Prospectos que no volvieron a escribir tras una respuesta tardía (> 60 min) | 1 804 (41 % de los evaluables) |
-| Prospectos con primera respuesta útil en ≤ 60 min (línea base) | 32 % |
-| Pérdida anual estimada (conversión 35 %, margen USD 45/envío) | ~USD 9 465 |
+| Contactos atendidos en los primeros 7 días cuya primera respuesta llegó después de 60 min | 46.99 % |
+| Leads sin una primera atención humana durante 7 días | 8.23 % |
+| Leads que no retomaron la conversación en los 7 días siguientes a la primera respuesta | 25.57 % si la respuesta fue oportuna · 41.32 % si fue tardía |
 
 **Objetivo:** que cada prospecto reciba una primera atención útil, correcta y dentro de los 60 minutos, y que el asesor reciba el caso con el contexto necesario para cerrarlo. Un saludo automático **no** cuenta como atención útil.
 
@@ -46,11 +46,12 @@ Los asesores de Globex atienden WhatsApp mientras también reciben, pesan y desp
 | # | Funcionalidad | Qué hace | Indicador y meta |
 | :-: | :-- | :-- | :-- |
 | 1 | **Atención inicial y preguntas frecuentes** | Responde con una base de 132 respuestas aprobadas por el equipo, enviadas tal cual, sin redactarlas | Calidad de respuesta a preguntas frecuentes ≥ 85 % |
-| 2 | **Recopilación de datos y resumen del caso** | Guarda producto, tienda, cantidad, precio, TAX y peso en un borrador del pedido, pide solo lo que falta y arma el resumen para el asesor | Exactitud y completitud de los datos recopilados ≥ 90 % · Calidad del resumen para el asesor ≥ 85 % |
+| 2 | **Recopilación y actualización de datos** | Guarda producto, tienda, cantidad, precio, TAX y peso en un borrador del pedido, pide solo lo que falta e incorpora las correcciones | Exactitud y completitud de los datos recopilados ≥ 90 % |
 | 3 | **Cotización referencial** | Calcula con un motor determinista (uno o varios productos) y envía la proforma en imagen | Exactitud del total cotizado ≥ 95 % |
-| 4 | **Control de mercancía** | Detecta productos prohibidos, no admitidos, con receta, usados o por encima del máximo por categoría, y no los cotiza | Calidad de respuesta sobre productos con condiciones especiales ≥ 85 % y cero cotizaciones emitidas a pedidos bloqueados |
-| 5 | **Derivación al asesor** | Deriva cuando corresponde, pausa el bot y deja el caso con su resumen en la consola | Derivación correcta ≥ 80 % |
-| 6 | **Consola del asesor** | Bandeja, conversación, resumen del caso, revisión y envío de la proforma formal | Éxito de tareas en la prueba de uso ≥ 80 % |
+| 4 | **Control de productos con condiciones especiales** | Detecta productos prohibidos, no admitidos, con receta, usados o por encima del máximo por categoría, y no los cotiza | Calidad de respuesta sobre productos con condiciones especiales ≥ 85 % |
+| 5 | **Derivación y atención humana** | Deriva cuando corresponde, registra el motivo y pausa el bot mientras atiende el asesor | Derivación correcta ≥ 80 % |
+| 6 | **Resumen para el asesor** | Deja en la consola el motivo, la necesidad, los datos vigentes, la cotización y los pendientes del caso | Calidad del resumen para el asesor ≥ 85 % |
+| 7 | **Consola del asesor** | Bandeja, conversación, pedido y resumen; respuesta por WhatsApp, pausa o reactivación del bot, revisión y envío de la proforma formal | Comprobación funcional: el asesor ingresa, localiza el caso, consulta la conversación y el resumen, responde, controla la pausa y envía el PDF |
 
 Transversal: tiempo de respuesta por turno p50 ≤ 10 s y p95 ≤ 15 s.
 
@@ -139,7 +140,7 @@ Meta WhatsApp Cloud API ── POST firmado (X-Hub-Signature-256) ──┐
 | Límite | Valor | Consecuencia |
 | :-- | :-- | :-- |
 | Latencia | Procesamiento por turno p50 0.61 s, p95 1.04 s; el cliente espera además 5 s de agrupación de mensajes | Respuesta dentro de la meta (p50 ≤ 10 s, p95 ≤ 15 s) |
-| Costo del LLM | Entre USD 0.30 y USD 0.55 por 1 000 conversaciones (precios de Groq, ~3 300 tokens de entrada por llamada) | Costo marginal despreciable frente al margen por envío |
+| Costo del LLM | ~USD 0.015 por conversación de seis turnos (tarifas de Cerebras: USD 0.35 por millón de tokens de entrada y USD 0.75 de salida); ~USD 4.87 al mes para 322 conversaciones. Las 3 corridas del banco final cuestan ~USD 6.76 (USD 1.91 Globix + USD 4.85 juez) | Costo marginal bajo frente al ingreso esperado por lead |
 | Cuota del LLM | El plan gratuito de Groq limita tokens por minuto y por día por key | Keys de respaldo con pausa automática; las corridas grandes se hacen por API, un caso por llamada |
 | Cómputo | Render gratuito: 512 MB de RAM, se duerme sin tráfico | Keep-alive cada 10 min; la evaluación envía un caso por llamada para no agotar la memoria |
 | Persistencia | Disco efímero en Render | La base y los PDF se reinician con cada despliegue (aceptado en la fase de pruebas) |
@@ -293,7 +294,7 @@ Los resultados quedan en `evaluacion/reportes/banco_final/<corrida>/` (`Informe_
 
 | Fuente | Tipo | En el repositorio |
 | :-- | :-- | :-- |
-| Exportaciones de WhatsApp de Globex (7 058 leads) | Real | No (datos personales); se usaron para la línea base y para diseñar los bancos |
+| Exportaciones de WhatsApp de Globex (10 511 instancias chat-cuenta; 7 037 registros de atención y 7 101 de necesidades) | Real | No (datos personales); se usaron para el diagnóstico y para diseñar los bancos |
 | Base de 132 respuestas y respuestas del menú | Redactadas por el equipo con información de Globex | Sí (`conocimiento/`, `knowledge_base.py`) |
 | Reglas de cotización y de mercancía | Reglas reales del negocio | Sí (`pricing_engine.py`, `guardrails.py`) |
 | Catálogo de pesos | Sintético (pesos aproximados) | Sí (`product_catalog.py`) |
@@ -486,7 +487,7 @@ Criterio de prioridad: impacto en el KPI de primera atención útil y en la conv
 
 | Prioridad | Ítem | Motivo |
 | :-: | :-- | :-- |
-| 1 | Medir el KPI de impacto en operación real (primera atención útil en ≤ 60 min frente a la línea base de 32 %) | Confirma si la salida cambia la decisión, la pregunta de Capstone II |
+| 1 | Medir el KPI de impacto en operación real (primera atención útil en ≤ 60 min frente al histórico: 46.99 % de los contactos atendidos recibió su primera respuesta después de 60 min) | Confirma si la salida cambia la decisión, la pregunta de Capstone II |
 | 1 | Aviso inmediato al asesor cuando entra un caso derivado | El caso derivado sigue esperando si el asesor no mira la consola; impacto directo en el tiempo de atención |
 | 1 | Base de datos persistente con copia de seguridad | Requisito para operar sin perder conversaciones; hoy se reinicia con cada despliegue |
 | 2 | Resumen con todos los datos que el cliente deja pendientes y elección de la respuesta frecuente específica | Son los segmentos más débiles de la evaluación (CH04 53 %, preguntas frecuentes 92 %) |

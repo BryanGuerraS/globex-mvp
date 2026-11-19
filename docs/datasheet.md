@@ -6,16 +6,18 @@ Ficha de los datos que usa y con los que se evaluó Globix, según *Datasheets f
 
 | # | Fuente | Tipo | Contenido | Uso | En el repositorio |
 | :-: | :-- | :-- | :-- | :-- | :-- |
-| D1 | Exportaciones de WhatsApp de Globex (4 cuentas) | Real | 10 511 instancias chat-cuenta y 7 058 leads | Línea base del KPI (32 % con primera respuesta útil en ≤ 60 min), dimensionamiento y diseño de los bancos | **No**: contienen datos personales |
+| D1 | Exportaciones de WhatsApp de Globex (4 cuentas) | Real | 10 511 instancias chat-cuenta (fechas observadas de julio de 2023 a septiembre de 2026); 7 037 registros del análisis de atención y 7 101 del análisis de necesidades (6 974 en común), con ingresos de clientes potenciales desde marzo de 2024 | Diagnóstico de la atención (46.99 % de los contactos atendidos con primera respuesta después de 60 min; 8.23 % sin atención humana en 7 días), conocimiento comercial y diseño de los bancos | **No**: contienen datos personales |
 | D2 | Base de conocimiento de 132 respuestas | Derivada de datos reales | Preguntas y respuestas comerciales redactadas por el equipo con información de Globex | Respuestas frecuentes de Globix (se envían tal cual) | Sí: `conocimiento/` |
 | D3 | Respuestas del menú | Derivada de datos reales | Dirección en Miami, plazos, entregas, provincias, pagos, cómo funciona, viajero | Menú *Otras consultas* | Sí: `knowledge_base.py` |
 | D4 | Reglas de cotización y de mercancía | Real (reglas del negocio) | Tarifas, tributos, tope, prohibidos, máximos por categoría | Motor y control de mercancía | Sí: `pricing_engine.py`, `guardrails.py` |
 | D5 | Catálogo de pesos referenciales | Sintética (curada) | Peso aproximado con empaque de 13 productos frecuentes | Estimar el peso cuando el cliente no lo da (se marca como estimado) | Sí: `product_catalog.py` |
 | D6 | Casos del motor | Sintética | 60 casos con su resultado calculado por un oráculo independiente | Verificación al centavo del motor | Sí: `evaluacion/casos_motor.json` |
 | D7 | Set de desarrollo | Sintética | 173 conversaciones guionadas con el resultado esperado | Probar y ajustar el comportamiento | Sí: `evaluacion/casos_desarrollo.json` |
+| D7b | Banco de desarrollo del equipo | Construido por el equipo a partir del historial | 137 casos en los mismos 5 bancos que el banco final | Probar y ajustar el comportamiento | No: se entrega aparte |
 | D8 | Banco de consultas reales y variantes | Real y variantes | 267 casos: 79 consultas reales, 158 variantes y 30 controles | Comparación con el baseline de reglas | No: reservado |
 | D9 | Lote de casos reales | Real | 60 consultas de leads distintos de D8 | Comparación de versiones y con el baseline | No: reservado |
-| D10 | Banco final del equipo | Construido por el equipo | 228 casos en 5 bancos (preguntas frecuentes, derivación, productos, cotizaciones y conversaciones) con referencias y prompts del juez | Evaluación final de los 6 indicadores | No: se entrega aparte con su manifiesto SHA-256 |
+| D10 | Banco final del equipo | Construido por el equipo a partir del historial y validado con Globex | 228 casos en 5 bancos (preguntas frecuentes, derivación, productos, cotizaciones y conversaciones) con referencias y prompts del juez | Evaluación final de los 6 indicadores | No: se entrega aparte con su manifiesto SHA-256 |
+| D11 | Pruebas de uso | Real | Conversaciones y proformas de 4 participantes por WhatsApp, incluido el responsable comercial de Globex | Revisar el recorrido comercial con usuarios | No: datos personales |
 
 ## 2. Recolección y preparación
 
