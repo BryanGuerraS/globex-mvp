@@ -371,6 +371,21 @@ Activar el entorno (Windows PowerShell: `.venv\Scripts\Activate.ps1`; Linux/Mac:
 pip install -r requirements.txt
 ```
 
+### Entorno y semillas
+
+| Elemento | Valor |
+| :-- | :-- |
+| Python | 3.12 (funciona desde 3.10) |
+| Dependencias | Versiones fijas en `requirements.txt`; `requirements-evaluacion.txt` solo para `evaluacion.py` |
+| Modelo del chatbot | `openai/gpt-oss-120b`, temperatura 0.2 (Groq en producción; Cerebras en la evaluación) |
+| Juez | `qwen-3.8-27b`, temperatura 0 |
+| Motor de cotización | Determinista (`Decimal`): mismas entradas, mismo total |
+| Datos demo | `scripts/datos_demo.py` genera siempre las mismas 4 conversaciones sintéticas |
+| Semillas fijas | Bootstrap de diferencias (`comparar_resultados.py`: 17 y 19), errores sembrados (`errores_sembrados.py`: 11) e intervalos de la revisión humana (`revision_humana.py`: 13) |
+| Banco final | Verificado contra `MANIFIESTO_SHA256.txt` antes de cada corrida (SHA del manifiesto `4735cb559b78eea6…`) |
+
+El LLM no admite semilla: la variación entre ejecuciones se mide corriendo el banco 3 veces y se reporta como rango mínimo–máximo junto al promedio.
+
 ### Prueba local sin WhatsApp
 
 Permite ver la consola de asesores con conversaciones de ejemplo y conversar con Globix sin cuenta de Meta.
